@@ -1,0 +1,27 @@
+# ======================= #
+# Unreal Engine generated #
+# ======================= #
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+ 
+# ======================= #
+# Visual Studio generated #
+# ======================= #
+*.opensdf
+*.sdf
+*.sln
+*.suo
+*.user
+ 
+# ============ #
+# Third party  #
+# ============ #
+ThirdParty/EyeX/include/
+ThirdParty/EyeX/lib/
+
+# ============ #
+# OS generated #
+# ============ #
+Thumbs.db
