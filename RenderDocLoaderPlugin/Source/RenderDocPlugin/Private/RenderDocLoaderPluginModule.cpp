@@ -70,8 +70,8 @@ void FRenderDocLoaderPluginModule::StartupModule()
 
 void FRenderDocLoaderPluginModule::ShutdownModule()
 {
-	if (RenderDocDLL)
-		FreeLibrary(RenderDocDLL);
+	/*if (RenderDocDLL)
+		FreeLibrary(RenderDocDLL);*/
 
 	UE_LOG(RenderDocLoaderPlugin, Log, TEXT("RenderDoc Loader Plugin unloaded!"));
 }

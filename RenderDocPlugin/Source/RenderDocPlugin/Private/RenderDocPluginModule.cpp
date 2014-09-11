@@ -49,7 +49,8 @@ void FRenderDocPluginModule::StartupModule()
 	RenderDocInitRemoteAccess(&SocketPort);
 
 	//Init UI
-	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin started!"));
+	int32 RenderDocVersion = RenderDocGetAPIVersion();
+	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin started! Your renderdoc installation is v%i"), RenderDocVersion);
 
 	FRenderDocPluginStyle::Initialize();
 	FRenderDocPluginCommands::Register();
@@ -57,8 +58,8 @@ void FRenderDocPluginModule::StartupModule()
 	RenderDocPluginCommands = MakeShareable(new FUICommandList);
 
 	RenderDocPluginCommands->MapAction(FRenderDocPluginCommands::Get().CaptureFrameButton,
-		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureNextFrameAndLaunchUI),
-		FCanExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CanCaptureNextFrameAndLaunchUI));
+		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureCurrentViewport),
+		FCanExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CanCaptureCurrentViewport));
 
 	ToolbarExtender = MakeShareable(new FExtender);
 	ToolbarExtension = ToolbarExtender->AddToolBarExtension("CameraSpeed", EExtensionHook::After, RenderDocPluginCommands,
@@ -74,10 +75,21 @@ void FRenderDocPluginModule::StartupModule()
 	RenderDocRunner = new FRenderDocRunner();
 }
 
-void FRenderDocPluginModule::CaptureNextFrameAndLaunchUI()
+void FRenderDocPluginModule::CaptureCurrentViewport()
 {
 	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
 
+	CaptureFrame();
+	LaunchRenderDoc();
+}
+
+bool FRenderDocPluginModule::CanCaptureCurrentViewport()
+{
+	return true;
+}
+
+void FRenderDocPluginModule::CaptureFrame()
+{
 	HWND ActiveWindowHandle = GetActiveWindow();
 	FViewport* ActiveViewport = GEditor->GetActiveViewport();
 
@@ -99,7 +111,10 @@ void FRenderDocPluginModule::CaptureNextFrameAndLaunchUI()
 		{
 		EndFrameCapture(WindowHandle);
 	});
+}
 
+void FRenderDocPluginModule::LaunchRenderDoc()
+{
 	FString BinaryPath;
 	if (GConfig)
 	{
@@ -123,11 +138,6 @@ void* FRenderDocPluginModule::GetRenderDocFunctionPointer(HINSTANCE ModuleHandle
 
 	check(OutTarget);
 	return OutTarget;
-}
-
-bool FRenderDocPluginModule::CanCaptureNextFrameAndLaunchUI()
-{
-	return true;
 }
 
 void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder)

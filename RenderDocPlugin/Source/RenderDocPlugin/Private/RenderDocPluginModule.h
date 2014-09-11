@@ -20,8 +20,11 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-	void CaptureNextFrameAndLaunchUI();
-	bool CanCaptureNextFrameAndLaunchUI();
+	void CaptureCurrentViewport();
+	bool CanCaptureCurrentViewport();
+	
+	void CaptureFrame();
+	void LaunchRenderDoc();
 
 private:
 	FRenderDocRunner* RenderDocRunner;
