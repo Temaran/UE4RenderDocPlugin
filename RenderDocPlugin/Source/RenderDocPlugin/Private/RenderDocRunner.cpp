@@ -1,30 +1,26 @@
 #include "RenderDocPluginPrivatePCH.h"
 #include "RenderDocRunner.h"
 
-FRenderDocRunner* FRenderDocRunner::Runnable = NULL;
-
-FRenderDocRunner::FRenderDocRunner(FString PathToRenderDocExecutable, FString FrameCaptureBaseDirectory)
-: ExecutablePath(PathToRenderDocExecutable)
-, CaptureBaseDirectory(FrameCaptureBaseDirectory)
+FRenderDocRunner::FRenderDocRunner()
 {
-	Thread = FRunnableThread::Create(this, TEXT("FRenderDocRunner"), 0, TPri_BelowNormal);
+	IsRunning = false;
 }
- 
+
 FRenderDocRunner::~FRenderDocRunner()
 {
-	delete Thread;
-	Thread = NULL;
+	Stop();
 }
- 
+
 bool FRenderDocRunner::Init()
 {
 	return true;
 }
- 
+
 uint32 FRenderDocRunner::Run()
 {
+	IsRunning = true;
 	//Initial wait before starting to ensure RenderDoc has the time to capture a new frame
-	FPlatformProcess::Sleep(4);
+	FPlatformProcess::Sleep(2);
 
 	TArray<FString> AllCaptures;
 	IFileManager::Get().FindFilesRecursive(AllCaptures, *CaptureBaseDirectory, *FString("*.*"), true, false);
@@ -40,9 +36,9 @@ uint32 FRenderDocRunner::Run()
 			NewestCapture = AllCaptures[i];
 		}
 	}
-	 
+
 	FString ExecutablePathInQuotes = FString::Printf(TEXT("\"%s\""), *ExecutablePath);
-	FString NewestCaptureInQuotes = FString::Printf(TEXT("\"%s\""), *FPaths::ConvertRelativePathToFull(NewestCapture));
+	FString ArgumentString = FString::Printf(TEXT("--remoteaccess localhost:%u \"%s\""), SocketPort, *FPaths::ConvertRelativePathToFull(NewestCapture));
 
 	if (!NewestCapture.IsEmpty())
 	{
@@ -50,7 +46,7 @@ uint32 FRenderDocRunner::Run()
 
 		if (!FPlatformProcess::ExecProcess(
 			*ExecutablePathInQuotes,
-			*NewestCaptureInQuotes,
+			*ArgumentString,
 			&ReturnCode,
 			/*OutStdOut =*/nullptr,
 			/*OutStdErr =*/nullptr))
@@ -59,35 +55,28 @@ uint32 FRenderDocRunner::Run()
 		}
 	}
 
+	IsRunning = false;
 	return 0;
 }
- 
+
 void FRenderDocRunner::Stop()
 {
-	StopTaskCounter.Increment();
-}
- 
-FRenderDocRunner* FRenderDocRunner::LaunchRenderDoc(FString PathToRenderDocExecutable, FString FrameCaptureBaseDirectory)
-{
-	if (!Runnable && FPlatformProcess::SupportsMultithreading())
+	if (Thread)
 	{
-		Runnable = new FRenderDocRunner(PathToRenderDocExecutable, FrameCaptureBaseDirectory);
+		delete Thread;
 	}
-	return Runnable;
+
+	Thread = NULL;
+	IsRunning = false;
 }
- 
-void FRenderDocRunner::EnsureCompletion()
+
+void FRenderDocRunner::StartRenderDoc(FString PathToRenderDocExecutable, FString FrameCaptureBaseDirectory, uint32 Port)
 {
-	Stop();
-	Thread->WaitForCompletion();
-}
- 
-void FRenderDocRunner::Shutdown()
-{
-	if (Runnable)
-	{
-		Runnable->EnsureCompletion();
-		delete Runnable;
-		Runnable = NULL;
-	}
+	if (IsRunning)
+		return;
+	
+	ExecutablePath = PathToRenderDocExecutable;
+	CaptureBaseDirectory = FrameCaptureBaseDirectory;
+	SocketPort = Port;
+	Thread = FRunnableThread::Create(this, TEXT("FRenderDocRunner"), 0, TPri_BelowNormal);
 }

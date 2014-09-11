@@ -1,6 +1,6 @@
 #include "RenderDocPluginPrivatePCH.h" 
+#include "RendererInterface.h"
 #include "RenderDocPluginModule.h"
-#include "RenderDocRunner.h"
 
 void FRenderDocPluginModule::StartupModule()
 {
@@ -21,17 +21,17 @@ void FRenderDocPluginModule::StartupModule()
 	}
 
 	//Init function pointers
-	RenderDocTriggerCapture = NULL;
-	RenderDocSetLogFile = NULL;
-	RenderDocTriggerCapture = (pRENDERDOC_TriggerCapture)(void*)GetProcAddress(RenderDocDLL, "RENDERDOC_TriggerCapture");
-	RenderDocSetLogFile = (pRENDERDOC_SetLogFile)(void*)GetProcAddress(RenderDocDLL, "RENDERDOC_SetLogFile");
+	RenderDocGetAPIVersion = (pRENDERDOC_GetAPIVersion)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_GetAPIVersion");
+	RenderDocSetLogFile = (pRENDERDOC_SetLogFile)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_SetLogFile");
+	RenderDocSetCaptureOptions = (pRENDERDOC_SetCaptureOptions)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_SetCaptureOptions");
+	RenderDocSetActiveWindow = (pRENDERDOC_SetActiveWindow)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_SetActiveWindow");
+	RenderDocTriggerCapture = (pRENDERDOC_TriggerCapture)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_TriggerCapture");
+	RenderDocStartFrameCapture = (pRENDERDOC_StartFrameCapture)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_StartFrameCapture");
+	RenderDocEndFrameCapture = (pRENDERDOC_EndFrameCapture)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_EndFrameCapture");
+	RenderDocGetOverlayBits = (pRENDERDOC_GetOverlayBits)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_GetOverlayBits");
+	RenderDocMaskOverlayBits = (pRENDERDOC_MaskOverlayBits)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_MaskOverlayBits");
+	RenderDocInitRemoteAccess = (pRENDERDOC_InitRemoteAccess)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_InitRemoteAccess");
 
-	if (!RenderDocTriggerCapture || !RenderDocSetLogFile)
-	{
-		UE_LOG(RenderDocPlugin, Error, TEXT("Could not load Renderdoc function pointers, the function names might have changed, or you are using an incompatible version of Renderdoc"));
-		return;
-	}
-	
 	//Set capture settings
 	FString RenderDocCapturePath = FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures"));
 	if (!IFileManager::Get().DirectoryExists(*RenderDocCapturePath))
@@ -44,9 +44,13 @@ void FRenderDocPluginModule::StartupModule()
 	FPaths::NormalizeDirectoryName(CapturePath);
 	RenderDocSetLogFile(*CapturePath);
 
+	//Init remote access
+	SocketPort = 0;
+	RenderDocInitRemoteAccess(&SocketPort);
+
 	//Init UI
 	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin started!"));
-	
+
 	FRenderDocPluginStyle::Initialize();
 	FRenderDocPluginCommands::Register();
 
@@ -56,29 +60,67 @@ void FRenderDocPluginModule::StartupModule()
 		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureNextFrameAndLaunchUI),
 		FCanExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CanCaptureNextFrameAndLaunchUI));
 
-	ToolbarExtender = MakeShareable(new FExtender);       //"Debugging" ?
-	ToolbarExtension = ToolbarExtender->AddToolBarExtension("Game", EExtensionHook::After, RenderDocPluginCommands,
+	ToolbarExtender = MakeShareable(new FExtender);
+	ToolbarExtension = ToolbarExtender->AddToolBarExtension("CameraSpeed", EExtensionHook::After, RenderDocPluginCommands,
 		FToolBarExtensionDelegate::CreateRaw(this, &FRenderDocPluginModule::AddToolbarExtension));
 
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
 
 	ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
+
+	RenderDocRunner = new FRenderDocRunner();
 }
 
 void FRenderDocPluginModule::CaptureNextFrameAndLaunchUI()
 {
 	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
 
-	RenderDocTriggerCapture();
-	
+	HWND ActiveWindowHandle = GetActiveWindow();
+	FViewport* ActiveViewport = GEditor->GetActiveViewport();
+
+	RenderDocSetActiveWindow(ActiveWindowHandle);
+	ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
+		StartRenderDocCapture,
+		HWND, WindowHandle, ActiveWindowHandle,
+		pRENDERDOC_StartFrameCapture, StartFrameCapture, RenderDocStartFrameCapture,
+		{
+		StartFrameCapture(WindowHandle);
+	});
+
+	ActiveViewport->Draw(true);
+
+	ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
+		EndRenderDocCapture,
+		HWND, WindowHandle, ActiveWindowHandle,
+		pRENDERDOC_EndFrameCapture, EndFrameCapture, RenderDocEndFrameCapture,
+		{
+		EndFrameCapture(WindowHandle);
+	});
+
 	FString BinaryPath;
 	if (GConfig)
 	{
 		GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), BinaryPath, GGameIni);
 	}
-	FRenderDocRunner::LaunchRenderDoc(FPaths::Combine(*BinaryPath, *FString("renderdocui.exe"))
-									, FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
+
+	RenderDocRunner->StartRenderDoc(FPaths::Combine(*BinaryPath, *FString("renderdocui.exe"))
+		, FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures"))
+		, SocketPort);
+}
+
+void* FRenderDocPluginModule::GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName)
+{
+	void* OutTarget = NULL;
+	OutTarget = (void*)GetProcAddress(ModuleHandle, FunctionName);
+
+	if (!OutTarget)
+	{
+		UE_LOG(RenderDocPlugin, Error, TEXT("Could not load renderdoc function %s. You are most likely using an incompatible version of Renderdoc"), FunctionName);
+	}
+
+	check(OutTarget);
+	return OutTarget;
 }
 
 bool FRenderDocPluginModule::CanCaptureNextFrameAndLaunchUI()
@@ -91,8 +133,11 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
 #define LOCTEXT_NAMESPACE "LevelEditorToolBar"
 
 	UE_LOG(RenderDocPlugin, Log, TEXT("Starting extension..."));
-	FSlateIcon IconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.CaptureFrameIcon");
+	ToolbarBuilder.AddSeparator();
+	ToolbarBuilder.BeginSection("RenderdocPlugin");
+	FSlateIcon IconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.CaptureFrameIcon.Small");
 	ToolbarBuilder.AddToolBarButton(FRenderDocPluginCommands::Get().CaptureFrameButton, NAME_None, LOCTEXT("MyButton_Override", "Capture Frame"), LOCTEXT("MyButton_ToolTipOverride", "Captures the next frame and launches the renderdoc UI"), IconBrush, NAME_None);
+	ToolbarBuilder.EndSection();
 
 #undef LOCTEXT_NAMESPACE
 }

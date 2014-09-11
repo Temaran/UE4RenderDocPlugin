@@ -1,5 +1,5 @@
 #pragma once
- 
+
 #include "ModuleManager.h"
 #include "Editor/LevelEditor/Public/LevelEditor.h"
 #include "SharedPointer.h"
@@ -8,8 +8,8 @@
 #include "Internationalization.h"
 #include "Slate.h"
 #include "MultiBoxExtender.h"
-
-#include "../ThirdParty/RenderDoc/Include/renderdoc.h"
+#include "RenderDocAPI.h"
+#include "RenderDocRunner.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
 DEFINE_LOG_CATEGORY(RenderDocPlugin);
@@ -23,8 +23,8 @@ public:
 	void CaptureNextFrameAndLaunchUI();
 	bool CanCaptureNextFrameAndLaunchUI();
 
-private: 
-	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder);
+private:
+	FRenderDocRunner* RenderDocRunner;
 
 	TSharedPtr<FUICommandList> RenderDocPluginCommands;
 	TSharedPtr<FExtensibilityManager> ExtensionManager;
@@ -32,8 +32,26 @@ private:
 	TSharedPtr<const FExtensionBase> ToolbarExtension;
 
 	HINSTANCE RenderDocDLL;
+	uint32 SocketPort;
 
-	pRENDERDOC_TriggerCapture RenderDocTriggerCapture;
+	void* GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName);
+	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder);
+
+	//General
+	pRENDERDOC_GetAPIVersion RenderDocGetAPIVersion;
 	pRENDERDOC_SetLogFile RenderDocSetLogFile;
-};
+	pRENDERDOC_SetCaptureOptions RenderDocSetCaptureOptions;
 
+	//Capture
+	pRENDERDOC_SetActiveWindow RenderDocSetActiveWindow;
+	pRENDERDOC_TriggerCapture RenderDocTriggerCapture;
+	pRENDERDOC_StartFrameCapture RenderDocStartFrameCapture;
+	pRENDERDOC_EndFrameCapture RenderDocEndFrameCapture;
+
+	//Overlay
+	pRENDERDOC_GetOverlayBits RenderDocGetOverlayBits;
+	pRENDERDOC_MaskOverlayBits RenderDocMaskOverlayBits;
+
+	//Remote access
+	pRENDERDOC_InitRemoteAccess RenderDocInitRemoteAccess;
+};

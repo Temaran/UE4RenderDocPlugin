@@ -16,6 +16,7 @@ TSharedPtr<class ISlateStyle> FRenderDocPluginStyle::Get() { return StyleSet; }
 void FRenderDocPluginStyle::Initialize()
 {
 	// Const icon sizes
+	const FVector2D Icon20x20(20.0f, 20.0f);
 	const FVector2D Icon40x40(40.0f, 40.0f);
 
 	// Only register once
@@ -29,6 +30,7 @@ void FRenderDocPluginStyle::Initialize()
 	StyleSet->SetCoreContentRoot(FPaths::GamePluginsDir() / TEXT("RenderDocPlugin/Resources"));
 
 	StyleSet->Set("RenderDocPlugin.CaptureFrameIcon", new FSlateImageBrush(FRenderDocPluginStyle::InContent("Icon40", ".png"), Icon40x40));
+	StyleSet->Set("RenderDocPlugin.CaptureFrameIcon.Small", new FSlateImageBrush(FRenderDocPluginStyle::InContent("Icon20", ".png"), Icon20x20));
 	
 	FSlateStyleRegistry::RegisterSlateStyle(*StyleSet.Get());
 };
