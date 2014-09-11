@@ -19,8 +19,6 @@ bool FRenderDocRunner::Init()
 uint32 FRenderDocRunner::Run()
 {
 	IsRunning = true;
-	//Initial wait before starting to ensure RenderDoc has the time to capture a new frame
-	FPlatformProcess::Sleep(2);
 
 	TArray<FString> AllCaptures;
 	IFileManager::Get().FindFilesRecursive(AllCaptures, *CaptureBaseDirectory, *FString("*.*"), true, false);
