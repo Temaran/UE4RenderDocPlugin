@@ -69,6 +69,8 @@ void FRenderDocPluginModule::StartupModule()
 
 	ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
 
+	RenderDocMaskOverlayBits(eOverlay_None, eOverlay_None);
+
 	RenderDocRunner = new FRenderDocRunner();
 }
 
