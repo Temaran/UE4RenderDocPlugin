@@ -1,9 +1,3 @@
-Synchronous API so I don't have to sleep
-Api call that returns the last saved file name
-Api call that does start -> stop -> and does not save the file or equivalent subcalls to init the API correctly
-
-Fix API stuff
-MIT License stuff
 Progress bar while launching
 Icon gone?
 Hotkey
