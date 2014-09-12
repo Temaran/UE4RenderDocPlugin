@@ -3,12 +3,12 @@
 #include "Slate.h"
 #include "ThreadingBase.h"
 
-class FRenderDocRunner : public FRunnable
+class FRenderDocGUI : public FRunnable
 {	
 public: 
 	//Constructor / Destructor
-	FRenderDocRunner();
-	virtual ~FRenderDocRunner();
+	FRenderDocGUI();
+	virtual ~FRenderDocGUI();
  
 	// Begin FRunnable interface.
 	virtual bool Init();
@@ -17,6 +17,7 @@ public:
 	// End FRunnable interface
  
 	void StartRenderDoc(FString PathToRenderDocExecutable, FString FrameCaptureBaseDirectory, uint32 Port);
+	FString GetNewestCapture(FString BaseDirectory);
 
 private:
 	FRunnableThread* Thread;

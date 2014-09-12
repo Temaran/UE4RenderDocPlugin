@@ -9,7 +9,7 @@
 #include "Slate.h"
 #include "MultiBoxExtender.h"
 #include "RenderDocAPI.h"
-#include "RenderDocRunner.h"
+#include "RenderDocGUI.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
 DEFINE_LOG_CATEGORY(RenderDocPlugin);
@@ -20,14 +20,8 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-	void CaptureCurrentViewport();
-	bool CanCaptureCurrentViewport();
-	
-	void CaptureFrame();
-	void LaunchRenderDoc();
-
 private:
-	FRenderDocRunner* RenderDocRunner;
+	FRenderDocGUI* RenderDocGUI;
 
 	TSharedPtr<FUICommandList> RenderDocPluginCommands;
 	TSharedPtr<FExtensibilityManager> ExtensionManager;
@@ -36,6 +30,15 @@ private:
 
 	HINSTANCE RenderDocDLL;
 	uint32 SocketPort;
+	bool _isInitialized;
+
+	void CaptureCurrentViewport();
+	bool CanCaptureCurrentViewport();
+	
+	void CaptureFrame();
+	void LaunchRenderDoc();
+
+	void Initialize(SWindow& SlateWindow, void* ViewportRHIPtr);
 
 	void* GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName);
 	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder);

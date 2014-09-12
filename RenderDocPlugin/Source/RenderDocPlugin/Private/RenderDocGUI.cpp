@@ -1,40 +1,28 @@
 #include "RenderDocPluginPrivatePCH.h"
-#include "RenderDocRunner.h"
+#include "RenderDocGUI.h"
 
-FRenderDocRunner::FRenderDocRunner()
+FRenderDocGUI::FRenderDocGUI()
 {
 	IsRunning = false;
 }
 
-FRenderDocRunner::~FRenderDocRunner()
+FRenderDocGUI::~FRenderDocGUI()
 {
 	Stop();
 }
 
-bool FRenderDocRunner::Init()
+bool FRenderDocGUI::Init()
 {
 	return true;
 }
 
-uint32 FRenderDocRunner::Run()
+uint32 FRenderDocGUI::Run()
 {
 	IsRunning = true;
 
-	TArray<FString> AllCaptures;
-	IFileManager::Get().FindFilesRecursive(AllCaptures, *CaptureBaseDirectory, *FString("*.*"), true, false);
-	FString NewestCapture;
-	double ShortestLifeTime = MAXDWORD32;
-	for (int32 i = 0; i < AllCaptures.Num(); i++)
-	{
-		double FileLifeTime = IFileManager::Get().GetFileAgeSeconds(*AllCaptures[i]);
+	FPlatformProcess::Sleep(1);
 
-		if (FileLifeTime < ShortestLifeTime)
-		{
-			ShortestLifeTime = FileLifeTime;
-			NewestCapture = AllCaptures[i];
-		}
-	}
-
+	FString NewestCapture = GetNewestCapture(CaptureBaseDirectory);
 	FString ExecutablePathInQuotes = FString::Printf(TEXT("\"%s\""), *ExecutablePath);
 	FString ArgumentString = FString::Printf(TEXT("--remoteaccess localhost:%u \"%s\""), SocketPort, *FPaths::ConvertRelativePathToFull(NewestCapture));
 
@@ -57,7 +45,7 @@ uint32 FRenderDocRunner::Run()
 	return 0;
 }
 
-void FRenderDocRunner::Stop()
+void FRenderDocGUI::Stop()
 {
 	if (Thread)
 	{
@@ -68,7 +56,7 @@ void FRenderDocRunner::Stop()
 	IsRunning = false;
 }
 
-void FRenderDocRunner::StartRenderDoc(FString PathToRenderDocExecutable, FString FrameCaptureBaseDirectory, uint32 Port)
+void FRenderDocGUI::StartRenderDoc(FString PathToRenderDocExecutable, FString FrameCaptureBaseDirectory, uint32 Port)
 {
 	if (IsRunning)
 		return;
@@ -77,4 +65,24 @@ void FRenderDocRunner::StartRenderDoc(FString PathToRenderDocExecutable, FString
 	CaptureBaseDirectory = FrameCaptureBaseDirectory;
 	SocketPort = Port;
 	Thread = FRunnableThread::Create(this, TEXT("FRenderDocRunner"), 0, TPri_BelowNormal);
+}
+
+FString FRenderDocGUI::GetNewestCapture(FString BaseDirectory)
+{
+	TArray<FString> AllCaptures;
+	IFileManager::Get().FindFilesRecursive(AllCaptures, *BaseDirectory, *FString("*.*"), true, false);
+	FString NewestCapture;
+	double ShortestLifeTime = MAXDWORD32;
+	for (int32 i = 0; i < AllCaptures.Num(); i++)
+	{
+		double FileLifeTime = IFileManager::Get().GetFileAgeSeconds(*AllCaptures[i]);
+
+		if (FileLifeTime < ShortestLifeTime)
+		{
+			ShortestLifeTime = FileLifeTime;
+			NewestCapture = AllCaptures[i];
+		}
+	}
+
+	return NewestCapture;
 }

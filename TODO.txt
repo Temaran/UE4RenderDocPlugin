@@ -1,22 +1,8 @@
-http://www.dreamincode.net/forums/topic/171917-how-to-setread-registry-key-in-c/
-HKLM\Software\Classes\RenderDoc.RDCCapture.1\DefaultIcon\
-http://msdn.microsoft.com/en-us/library/ms646960.aspx
+Synchronous API so I don't have to sleep
+Api call that returns the last saved file name
+Api call that does start -> stop -> and does not save the file or equivalent subcalls to init the API correctly
 
-1. Try to read reg key, if failed go to (2). If success go to (3)
-2. Launch browse for file dialog and browse for renderdocui exe
-3. Save directory of renderdoc path in UE4 config file
-4. Read directory from config file when needed
-
-
-Fix capture hotkey
-Make capture possible
-Launch renderdoc on button press
-
-Need to unload properly   (Oculus wtf? Eject function?)
-Distro RenderDoc?
-Attach UI to running instance on launch
-Need to find correct window with focus on startup and keep it
-Need to be able to hide text
-
-Would be nice to only have one plugin
-Choose path instead of %appdata%/../local/temp/UE4Editor_date_frameN.rdc
+Progress bar while launching
+Fix exit crash
+Hotkey
+Settings menu

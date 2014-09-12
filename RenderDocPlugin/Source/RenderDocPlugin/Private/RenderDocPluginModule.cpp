@@ -69,10 +69,14 @@ void FRenderDocPluginModule::StartupModule()
 	LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
 
 	ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
-
+	
 	RenderDocMaskOverlayBits(eOverlay_None, eOverlay_None);
 
-	RenderDocRunner = new FRenderDocRunner();
+	RenderDocGUI = new FRenderDocGUI();
+
+	_isInitialized = false;
+	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
+	SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::Initialize);
 }
 
 void FRenderDocPluginModule::CaptureCurrentViewport()
@@ -121,9 +125,45 @@ void FRenderDocPluginModule::LaunchRenderDoc()
 		GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), BinaryPath, GGameIni);
 	}
 
-	RenderDocRunner->StartRenderDoc(FPaths::Combine(*BinaryPath, *FString("renderdocui.exe"))
+	RenderDocGUI->StartRenderDoc(FPaths::Combine(*BinaryPath, *FString("renderdocui.exe"))
 		, FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures"))
 		, SocketPort);
+}
+
+void FRenderDocPluginModule::Initialize(SWindow& SlateWindow, void* ViewportRHIPtr)
+{	
+	if (_isInitialized)
+		return;
+
+	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
+	SlateRenderer->OnSlateWindowRendered().RemoveRaw(this, &FRenderDocPluginModule::Initialize);
+
+	//Trigger a capture just to make sure we are set up correctly. This should prevent us from crashing on exit.
+	_isInitialized = true;
+	HWND ActiveWindowHandle = GetActiveWindow();
+	ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
+		StartRenderDocCapture,
+		HWND, WindowHandle, ActiveWindowHandle,
+		pRENDERDOC_StartFrameCapture, StartFrameCapture, RenderDocStartFrameCapture,
+		{
+		StartFrameCapture(WindowHandle);
+	}); 
+
+	ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
+		EndRenderDocCapture,
+		HWND, WindowHandle, ActiveWindowHandle,
+		pRENDERDOC_EndFrameCapture, EndFrameCapture, RenderDocEndFrameCapture,
+		{
+		EndFrameCapture(WindowHandle);
+	});
+
+	FPlatformProcess::Sleep(1);
+
+	//Remove the capture that was created from the initialization pass
+	FString NewestCapture = RenderDocGUI->GetNewestCapture(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
+	IFileManager::Get().Delete(*NewestCapture);
+
+	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin initialized!"));
 }
 
 void* FRenderDocPluginModule::GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName)
