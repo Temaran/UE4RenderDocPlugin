@@ -45,6 +45,8 @@ public:
 	virtual void ShutdownModule() override;
 
 private:
+	static const FName SettingsUITabName;
+
 	FRenderDocGUI* RenderDocGUI;
 
 	TSharedPtr<FUICommandList> RenderDocPluginCommands;
@@ -60,6 +62,8 @@ private:
 	void CaptureCurrentViewport();	
 
 	void* GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName);
+
+	TSharedRef<SDockTab> CreateSettingsWindow(const FSpawnTabArgs& SpawnTabArgs);
 	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder);
 
 	//General

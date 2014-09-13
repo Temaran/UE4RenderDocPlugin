@@ -47,6 +47,8 @@ namespace UnrealBuildTool.Rules
                                                     "EditorStyle",
                                                     "LevelEditor",
                                                     "UnrealEd",
+					                                "Projects",
+					                                "GameProjectGeneration",
                                                     "RenderCore"
 				                                });
         }

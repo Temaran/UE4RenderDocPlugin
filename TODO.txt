@@ -1,10 +1,41 @@
+Check widget path to see if I cant add myself to the path.
+Need to run process commandlist on my command list. For this I need a keydown callback :)
+
 Progress bar while launching
-Icon gone?
-Hotkey
 Settings menu
+Turn off renderdoc native hotkeys
+Engine stuff
+
+Alpha release
 
 
 
 Engine:
 Release buffers in correct spot
 Shader compile problem
+
+
+Bugs:
+Icon gone??
+
+
+Release:
+Post in forum
+Post in wiki
+
+
+
+Settings:
+
+
+* CaptureCallstacks/CaptureCallstacksOnlyDraws - Default to off. This causes every event or only every drawcall to capture a callstack of where it was called in engine code, 
+  that you can then resolve and look up in renderdoc. Could be pretty useful and you can change this at any time - it will apply for the next capture. Might be quite cool to have as a setting.
+
+* RefAllResources - Default to off. This causes renderdoc to suppress its usual behaviour of not including resources that are alive, but unreferenced in the captured frame. 
+  Can be useful if you want to see all the textures loaded (and have a look at the memory footprint or whatever), and you can change this at any time it will apply for the next frame captured. Would be a good setting.
+
+* SaveAllInitials - Default to off. We talked about this before, this causes renderdoc to save the initial state of all render targets of all size, even if it thinks they will be overwritten in the frame. 
+  It can be set any time, and it applies to the next frame. Definitely a good one for UE, and potentially until we have a more fine-grained API if you spot any GPU particle systems running you should enable 
+  this one yourself as I know it breaks them :). A bit nasty requiring that of user code, but I'd hate to have to always save these states as it does bloat the capture a fair bit.
+
+* Do not strip shader debug data - Changing this and closing and saving the window should regenerate shaders

@@ -25,18 +25,26 @@
 #pragma once
 
 #include "Slate.h"
-#include "EditorStyle.h"
-#include "RenderDocPluginStyle.h"
 
-class FRenderDocPluginCommands : public TCommands<FRenderDocPluginCommands>
+class SRenderDocPluginSettingsEditor : public SCompoundWidget
 {
-public:
-	FRenderDocPluginCommands()
-		: TCommands<FRenderDocPluginCommands>(TEXT("RenderDocPlugin"), NSLOCTEXT("Contexts", "RenderDocPlugin", "RenderDoc Plugin"), NAME_None, FRenderDocPluginStyle::Get()->GetStyleSetName())
-	{			
+	SLATE_BEGIN_ARGS(SRenderDocPluginSettingsEditor)
+	{
 	}
 
-	virtual void RegisterCommands() override;
+	SLATE_END_ARGS()
+		
+	/** Widget constructor */
+	void Construct(const FArguments& Args);
 
-	TSharedPtr<FUICommandInfo> CaptureFrameButton;
+	/** SWidget overrides */
+	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyboardEvent& InKeyboardEvent) override;
+	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
+	
+private:
+	bool bCaptureCallStacks;
+	bool bRefAllResources;
+	bool bSaveAllInitials;
+	bool bDoNotStripShaderDebugData;
 };
+

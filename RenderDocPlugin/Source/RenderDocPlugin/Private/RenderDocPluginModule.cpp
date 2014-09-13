@@ -25,6 +25,11 @@
 #include "RenderDocPluginPrivatePCH.h" 
 #include "RendererInterface.h"
 #include "RenderDocPluginModule.h"
+#include "RenderDocPluginSettingsEditor.h"
+
+const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"));
+
+#define LOCTEXT_NAMESPACE "RenderDocPlugin"
 
 void FRenderDocPluginModule::StartupModule()
 {
@@ -73,17 +78,8 @@ void FRenderDocPluginModule::StartupModule()
 	RenderDocInitRemoteAccess(&SocketPort);
 
 	//Init UI
-	int32 RenderDocVersion = RenderDocGetAPIVersion();
-	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin started! Your renderdoc installation is v%i"), RenderDocVersion);
-
 	FRenderDocPluginStyle::Initialize();
 	FRenderDocPluginCommands::Register();
-
-	RenderDocPluginCommands = MakeShareable(new FUICommandList);
-
-	RenderDocPluginCommands->MapAction(FRenderDocPluginCommands::Get().CaptureFrameButton,
-		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureCurrentViewport),
-		FCanExecuteAction());
 
 	ToolbarExtender = MakeShareable(new FExtender);
 	ToolbarExtension = ToolbarExtender->AddToolBarExtension("CameraSpeed", EExtensionHook::After, RenderDocPluginCommands,
@@ -91,9 +87,35 @@ void FRenderDocPluginModule::StartupModule()
 
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 	LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
+	
+	TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
+	CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureFrameButton,
+		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureCurrentViewport),
+		FCanExecuteAction());
 
 	ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
+		
+	// Init settings UI
+	/*FGlobalTabmanager::Get()->RegisterTabSpawner(SettingsUITabName, FOnSpawnTab::CreateRaw(this, &FRenderDocPluginModule::CreateSettingsWindow))
+		.SetDisplayName(LOCTEXT("SettingsEditorTabTitle", "Settings Editor"))
+		.SetTooltipText(LOCTEXT("SettingsEditorTooltipText", "Open the renderdoc settings editor."));
 	
+	auto DockTab = FGlobalTabmanager::Get()->InvokeTab(SettingsUITabName);
+	DockTab->GetParentWindow()->Resize(FVector2D(300, 200));
+
+	
+	const bool bShowImmediately = false;
+	CursorDecoratorWindow = FSlateApplication::Get().AddWindow( SWindow::MakeCursorDecorator(), bShowImmediately );
+	// Usually cursor decorators figure out their size automatically from content, but we will drive it
+	// here because the window will reshape itself to better reflect what will happen when the user drops the Tab.
+	CursorDecoratorWindow->SetSizingRule( ESizingRule::FixedSize );
+	CursorDecoratorWindow->SetOpacity(0.45f);
+	*/
+
+
+
+
+	//Init renderdoc
 	RenderDocMaskOverlayBits(eOverlay_None, eOverlay_None);
 
 	RenderDocGUI = new FRenderDocGUI();
@@ -101,6 +123,9 @@ void FRenderDocPluginModule::StartupModule()
 	_isInitialized = false;
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
 	SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::Initialize);
+
+	int32 RenderDocVersion = RenderDocGetAPIVersion();
+	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin started! Your renderdoc installation is v%i"), RenderDocVersion);
 }
 
 void FRenderDocPluginModule::Initialize(SWindow& SlateWindow, void* ViewportRHIPtr)
@@ -112,16 +137,17 @@ void FRenderDocPluginModule::Initialize(SWindow& SlateWindow, void* ViewportRHIP
 
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
 	SlateRenderer->OnSlateWindowRendered().RemoveRaw(this, &FRenderDocPluginModule::Initialize);
-	
+
+	HWND WindowHandle = GetActiveWindow();
+
 	//Trigger a capture just to make sure we are set up correctly. This should prevent us from crashing on exit.
-	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
+	ENQUEUE_UNIQUE_RENDER_COMMAND_FOURPARAMETER(
 		InitializeRenderDoc,
+		HWND, WindowHandle, WindowHandle,
 		FRenderDocGUI*, RenderDocGUI, RenderDocGUI,
 		pRENDERDOC_StartFrameCapture, RenderDocStartFrameCapture, RenderDocStartFrameCapture,
 		pRENDERDOC_EndFrameCapture, RenderDocEndFrameCapture, RenderDocEndFrameCapture,
 		{
-		HWND WindowHandle = GetActiveWindow();
-
 		RenderDocStartFrameCapture(WindowHandle);
 		RenderDocEndFrameCapture(WindowHandle);
 
@@ -136,22 +162,26 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 {
 	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
 
-	ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
+	HWND WindowHandle = GetActiveWindow();
+
+	ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
 		StartRenderDocCapture,
+		HWND, WindowHandle, WindowHandle,
 		pRENDERDOC_StartFrameCapture, RenderDocStartFrameCapture, RenderDocStartFrameCapture,
 		{
-		RenderDocStartFrameCapture(GetActiveWindow());
+		RenderDocStartFrameCapture(WindowHandle);
 	});
 
 	GEditor->GetActiveViewport()->Draw(true);
 
-	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
+	ENQUEUE_UNIQUE_RENDER_COMMAND_FOURPARAMETER(
 		EndRenderDocCapture,
+		HWND, WindowHandle, WindowHandle,
 		uint32, SocketPort, SocketPort,
 		FRenderDocGUI*, RenderDocGUI, RenderDocGUI,
 		pRENDERDOC_EndFrameCapture, RenderDocEndFrameCapture, RenderDocEndFrameCapture,
 		{
-		RenderDocEndFrameCapture(GetActiveWindow());
+		RenderDocEndFrameCapture(WindowHandle);
 
 		FString BinaryPath;
 		if (GConfig)
@@ -180,6 +210,16 @@ void* FRenderDocPluginModule::GetRenderDocFunctionPointer(HINSTANCE ModuleHandle
 
 	check(OutTarget);
 	return OutTarget;
+}
+
+
+TSharedRef<SDockTab> FRenderDocPluginModule::CreateSettingsWindow(const FSpawnTabArgs& SpawnTabArgs)
+{
+	const TSharedRef<SDockTab> MajorTab = SNew(SDockTab).TabRole(ETabRole::MajorTab);
+
+	MajorTab->SetContent(SNew(SRenderDocPluginSettingsEditor));
+
+	return MajorTab;
 }
 
 void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder)
@@ -211,6 +251,11 @@ void FRenderDocPluginModule::ShutdownModule()
 	{
 		ExtensionManager.Reset();
 	}
+
+	// Unregister the tab spawner
+	FGlobalTabmanager::Get()->UnregisterTabSpawner(SettingsUITabName);
 }
+
+#undef LOCTEXT_NAMESPACE
 
 IMPLEMENT_MODULE(FRenderDocPluginModule, RenderDocPlugin)
