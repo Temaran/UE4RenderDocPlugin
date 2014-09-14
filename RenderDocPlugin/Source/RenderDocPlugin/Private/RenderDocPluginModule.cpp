@@ -26,6 +26,7 @@
 #include "RendererInterface.h"
 #include "RenderDocPluginModule.h"
 #include "RenderDocPluginSettingsEditor.h"
+#include "RenderDocPluginNotification.h"
 
 const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"));
 
@@ -118,7 +119,7 @@ void FRenderDocPluginModule::StartupModule()
 	//Init renderdoc
 	RenderDocMaskOverlayBits(eOverlay_None, eOverlay_None);
 
-	RenderDocGUI = new FRenderDocGUI();
+	RenderDocGUI = new FRenderDocPluginGUI();
 
 	_isInitialized = false;
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
@@ -144,7 +145,7 @@ void FRenderDocPluginModule::Initialize(SWindow& SlateWindow, void* ViewportRHIP
 	ENQUEUE_UNIQUE_RENDER_COMMAND_FOURPARAMETER(
 		InitializeRenderDoc,
 		HWND, WindowHandle, WindowHandle,
-		FRenderDocGUI*, RenderDocGUI, RenderDocGUI,
+		FRenderDocPluginGUI*, RenderDocGUI, RenderDocGUI,
 		pRENDERDOC_StartFrameCapture, RenderDocStartFrameCapture, RenderDocStartFrameCapture,
 		pRENDERDOC_EndFrameCapture, RenderDocEndFrameCapture, RenderDocEndFrameCapture,
 		{
@@ -162,6 +163,8 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 {
 	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
 
+	FRenderDocPluginNotification::Get().ShowNotification();
+
 	HWND WindowHandle = GetActiveWindow();
 
 	ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
@@ -178,7 +181,7 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 		EndRenderDocCapture,
 		HWND, WindowHandle, WindowHandle,
 		uint32, SocketPort, SocketPort,
-		FRenderDocGUI*, RenderDocGUI, RenderDocGUI,
+		FRenderDocPluginGUI*, RenderDocGUI, RenderDocGUI,
 		pRENDERDOC_EndFrameCapture, RenderDocEndFrameCapture, RenderDocEndFrameCapture,
 		{
 		RenderDocEndFrameCapture(WindowHandle);

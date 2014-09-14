@@ -23,24 +23,24 @@
 ******************************************************************************/
 
 #include "RenderDocPluginPrivatePCH.h"
-#include "RenderDocGUI.h"
+#include "RenderDocPluginGUI.h"
 
-FRenderDocGUI::FRenderDocGUI()
+FRenderDocPluginGUI::FRenderDocPluginGUI()
 {
 	IsRunning = false;
 }
 
-FRenderDocGUI::~FRenderDocGUI()
+FRenderDocPluginGUI::~FRenderDocPluginGUI()
 {
 	Stop();
 }
 
-bool FRenderDocGUI::Init()
+bool FRenderDocPluginGUI::Init()
 {
 	return true;
 }
 
-uint32 FRenderDocGUI::Run()
+uint32 FRenderDocPluginGUI::Run()
 {
 	IsRunning = true;
 
@@ -69,7 +69,7 @@ uint32 FRenderDocGUI::Run()
 	return 0;
 }
 
-void FRenderDocGUI::Stop()
+void FRenderDocPluginGUI::Stop()
 {
 	if (Thread)
 	{
@@ -80,7 +80,7 @@ void FRenderDocGUI::Stop()
 	IsRunning = false;
 }
 
-void FRenderDocGUI::StartRenderDoc(FString PathToRenderDocExecutable, FString FrameCaptureBaseDirectory, uint32 Port)
+void FRenderDocPluginGUI::StartRenderDoc(FString PathToRenderDocExecutable, FString FrameCaptureBaseDirectory, uint32 Port)
 {
 	if (IsRunning)
 		return;
@@ -91,7 +91,7 @@ void FRenderDocGUI::StartRenderDoc(FString PathToRenderDocExecutable, FString Fr
 	Thread = FRunnableThread::Create(this, TEXT("FRenderDocRunner"), 0, TPri_BelowNormal);
 }
 
-FString FRenderDocGUI::GetNewestCapture(FString BaseDirectory)
+FString FRenderDocPluginGUI::GetNewestCapture(FString BaseDirectory)
 {
 	TArray<FString> AllCaptures;
 	IFileManager::Get().FindFilesRecursive(AllCaptures, *BaseDirectory, *FString("*.*"), true, false);

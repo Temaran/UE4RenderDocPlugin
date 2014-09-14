@@ -1,7 +1,6 @@
 Check widget path to see if I cant add myself to the path.
 Need to run process commandlist on my command list. For this I need a keydown callback :)
 
-Progress bar while launching
 Settings menu
 Turn off renderdoc native hotkeys
 Engine stuff
@@ -23,6 +22,9 @@ Release:
 Post in forum
 Post in wiki
 
+
+Tests:
+Spam capture button
 
 
 Settings:

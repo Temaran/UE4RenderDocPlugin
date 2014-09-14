@@ -22,32 +22,37 @@
 * THE SOFTWARE.
 ******************************************************************************/
 
-#pragma once
+#include "UnrealEd.h"
+#include "Editor/MainFrame/Public/MainFrame.h"
 
-#include "Slate.h"
-#include "ThreadingBase.h"
+class FRenderDocPluginNotification : public FTickableEditorObject
+{
+public:
+	static FRenderDocPluginNotification& Get()
+	{
+		static FRenderDocPluginNotification Instance;
+		return Instance;
+	}
 
-class FRenderDocGUI : public FRunnable
-{	
-public: 
-	//Constructor / Destructor
-	FRenderDocGUI();
-	virtual ~FRenderDocGUI();
- 
-	// Begin FRunnable interface.
-	virtual bool Init();
-	virtual uint32 Run();
-	virtual void Stop();
-	// End FRunnable interface
- 
-	void StartRenderDoc(FString PathToRenderDocExecutable, FString FrameCaptureBaseDirectory, uint32 Port);
-	FString GetNewestCapture(FString BaseDirectory);
+	void ShowNotification();
+	void HideNotification();
+
+protected:
+	/** FTickableEditorObject interface */
+	virtual void Tick(float DeltaTime);
+	virtual bool IsTickable() const
+	{
+		return true;
+	}
+	virtual TStatId GetStatId() const override;
 
 private:
-	FRunnableThread* Thread;
+	FRenderDocPluginNotification() { LastEnableTime = 0; }
+	FRenderDocPluginNotification(FRenderDocPluginNotification const&);
+	void operator=(FRenderDocPluginNotification const&);
 
-	bool IsRunning;
-	uint32 SocketPort;
-	FString ExecutablePath;
-	FString CaptureBaseDirectory;
+	double LastEnableTime;
+
+	/** The source code symbol query in progress message */
+	TWeakPtr<SNotificationItem> RenderDocNotificationPtr;
 };

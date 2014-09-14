@@ -49,7 +49,8 @@ namespace UnrealBuildTool.Rules
                                                     "UnrealEd",
 					                                "Projects",
 					                                "GameProjectGeneration",
-                                                    "RenderCore"
+                                                    "RenderCore",
+                                                    "MainFrame"
 				                                });
         }
     }

@@ -33,7 +33,7 @@
 #include "Slate.h"
 #include "MultiBoxExtender.h"
 #include "RenderDocAPI.h"
-#include "RenderDocGUI.h"
+#include "RenderDocPluginGUI.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
 DEFINE_LOG_CATEGORY(RenderDocPlugin);
@@ -47,7 +47,7 @@ public:
 private:
 	static const FName SettingsUITabName;
 
-	FRenderDocGUI* RenderDocGUI;
+	FRenderDocPluginGUI* RenderDocGUI;
 
 	TSharedPtr<FUICommandList> RenderDocPluginCommands;
 	TSharedPtr<FExtensibilityManager> ExtensionManager;
