@@ -82,40 +82,23 @@ void FRenderDocPluginModule::StartupModule()
 	FRenderDocPluginStyle::Initialize();
 	FRenderDocPluginCommands::Register();
 
-	ToolbarExtender = MakeShareable(new FExtender);
-	ToolbarExtension = ToolbarExtender->AddToolBarExtension("CameraSpeed", EExtensionHook::After, RenderDocPluginCommands,
-		FToolBarExtensionDelegate::CreateRaw(this, &FRenderDocPluginModule::AddToolbarExtension));
-
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-	LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
-	
 	TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
-	CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureFrameButton,
+	ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
+
+	CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureFrame,
 		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureCurrentViewport),
 		FCanExecuteAction());
+	CommandBindings->MapAction(FRenderDocPluginCommands::Get().OpenSettings,
+		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::OpenSettingsEditorWindow),
+		FCanExecuteAction());
 
-	ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
-		
-	// Init settings UI
-	/*FGlobalTabmanager::Get()->RegisterTabSpawner(SettingsUITabName, FOnSpawnTab::CreateRaw(this, &FRenderDocPluginModule::CreateSettingsWindow))
-		.SetDisplayName(LOCTEXT("SettingsEditorTabTitle", "Settings Editor"))
-		.SetTooltipText(LOCTEXT("SettingsEditorTooltipText", "Open the renderdoc settings editor."));
-	
-	auto DockTab = FGlobalTabmanager::Get()->InvokeTab(SettingsUITabName);
-	DockTab->GetParentWindow()->Resize(FVector2D(300, 200));
+	ToolbarExtender = MakeShareable(new FExtender);
+	ToolbarExtension = ToolbarExtender->AddToolBarExtension("CameraSpeed", EExtensionHook::After, CommandBindings,
+		FToolBarExtensionDelegate::CreateRaw(this, &FRenderDocPluginModule::AddToolbarExtension));
 
-	
-	const bool bShowImmediately = false;
-	CursorDecoratorWindow = FSlateApplication::Get().AddWindow( SWindow::MakeCursorDecorator(), bShowImmediately );
-	// Usually cursor decorators figure out their size automatically from content, but we will drive it
-	// here because the window will reshape itself to better reflect what will happen when the user drops the Tab.
-	CursorDecoratorWindow->SetSizingRule( ESizingRule::FixedSize );
-	CursorDecoratorWindow->SetOpacity(0.45f);
-	*/
-
-
-
-
+	LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
+				
 	//Init renderdoc
 	RenderDocMaskOverlayBits(eOverlay_None, eOverlay_None);
 
@@ -149,12 +132,12 @@ void FRenderDocPluginModule::Initialize(SWindow& SlateWindow, void* ViewportRHIP
 		pRENDERDOC_StartFrameCapture, RenderDocStartFrameCapture, RenderDocStartFrameCapture,
 		pRENDERDOC_EndFrameCapture, RenderDocEndFrameCapture, RenderDocEndFrameCapture,
 		{
-		RenderDocStartFrameCapture(WindowHandle);
-		RenderDocEndFrameCapture(WindowHandle);
+			RenderDocStartFrameCapture(WindowHandle);
+			RenderDocEndFrameCapture(WindowHandle);
 
-		FString NewestCapture = RenderDocGUI->GetNewestCapture(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
-		IFileManager::Get().Delete(*NewestCapture);
-	});
+			FString NewestCapture = RenderDocGUI->GetNewestCapture(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
+			IFileManager::Get().Delete(*NewestCapture);
+		});
 	
 	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin initialized!"));
 }
@@ -172,8 +155,8 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 		HWND, WindowHandle, WindowHandle,
 		pRENDERDOC_StartFrameCapture, RenderDocStartFrameCapture, RenderDocStartFrameCapture,
 		{
-		RenderDocStartFrameCapture(WindowHandle);
-	});
+			RenderDocStartFrameCapture(WindowHandle);
+		});
 
 	GEditor->GetActiveViewport()->Draw(true);
 
@@ -184,22 +167,41 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 		FRenderDocPluginGUI*, RenderDocGUI, RenderDocGUI,
 		pRENDERDOC_EndFrameCapture, RenderDocEndFrameCapture, RenderDocEndFrameCapture,
 		{
-		RenderDocEndFrameCapture(WindowHandle);
+			RenderDocEndFrameCapture(WindowHandle);
 
-		FString BinaryPath;
-		if (GConfig)
-		{
-			GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), BinaryPath, GGameIni);
-		}
+			FString BinaryPath;
+			if (GConfig)
+			{
+				GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), BinaryPath, GGameIni);
+			}
 
-		RenderDocGUI->StartRenderDoc(FPaths::Combine(*BinaryPath, *FString("renderdocui.exe"))
-			, FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures"))
-			, SocketPort);
-	});
+			RenderDocGUI->StartRenderDoc(FPaths::Combine(*BinaryPath, *FString("renderdocui.exe"))
+				, FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures"))
+				, SocketPort);
+		});
 }
 
+void FRenderDocPluginModule::OpenSettingsEditorWindow()
+{
+	UE_LOG(RenderDocPlugin, Log, TEXT("COOOMBOOO"));
+
+	// Init settings UI
+	/*FGlobalTabmanager::Get()->RegisterTabSpawner(SettingsUITabName, FOnSpawnTab::CreateRaw(this, &FRenderDocPluginModule::CreateSettingsWindow))
+	.SetDisplayName(LOCTEXT("SettingsEditorTabTitle", "Settings Editor"))
+	.SetTooltipText(LOCTEXT("SettingsEditorTooltipText", "Open the renderdoc settings editor."));
+
+	auto DockTab = FGlobalTabmanager::Get()->InvokeTab(SettingsUITabName);
+	DockTab->GetParentWindow()->Resize(FVector2D(300, 200));
 
 
+	const bool bShowImmediately = false;
+	CursorDecoratorWindow = FSlateApplication::Get().AddWindow( SWindow::MakeCursorDecorator(), bShowImmediately );
+	// Usually cursor decorators figure out their size automatically from content, but we will drive it
+	// here because the window will reshape itself to better reflect what will happen when the user drops the Tab.
+	CursorDecoratorWindow->SetSizingRule( ESizingRule::FixedSize );
+	CursorDecoratorWindow->SetOpacity(0.45f);
+	*/
+}
 
 void* FRenderDocPluginModule::GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName)
 {
@@ -231,12 +233,48 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
 
 	UE_LOG(RenderDocPlugin, Log, TEXT("Starting extension..."));
 	ToolbarBuilder.AddSeparator();
+	
 	ToolbarBuilder.BeginSection("RenderdocPlugin");
+	
 	FSlateIcon IconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.CaptureFrameIcon.Small");
-	ToolbarBuilder.AddToolBarButton(FRenderDocPluginCommands::Get().CaptureFrameButton, NAME_None, LOCTEXT("MyButton_Override", "Capture Frame"), LOCTEXT("MyButton_ToolTipOverride", "Captures the next frame and launches the renderdoc UI"), IconBrush, NAME_None);
+	ToolbarBuilder.AddToolBarButton(
+		FRenderDocPluginCommands::Get().CaptureFrame, 
+		NAME_None, 
+		LOCTEXT("RenderDocCapture_Override", "Capture Frame"), 
+		LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame and launches the renderdoc UI"), 
+		IconBrush, 
+		NAME_None);
+	
+	FUIAction RenderDocSettingsMenuAction;
+	RenderDocSettingsMenuAction.IsActionVisibleDelegate = FIsActionButtonVisible();
+
+	ToolbarBuilder.AddComboButton(
+		RenderDocSettingsMenuAction,
+		FOnGetContent::CreateRaw(this, &FRenderDocPluginModule::GenerateSettingsMenuContent),
+		LOCTEXT("RenderDocCaptureSettings_Override", "Settings"),
+		LOCTEXT("RenderDocCaptureSettings_ToolTipOverride", "Edit RenderDoc Settings"),
+		IconBrush,
+		true
+		);
+
 	ToolbarBuilder.EndSection();
 
 #undef LOCTEXT_NAMESPACE
+}
+
+TSharedRef< SWidget > FRenderDocPluginModule::GenerateSettingsMenuContent()
+{
+	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+	TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
+	FMenuBuilder MenuBuilder(true, CommandBindings);
+
+	MenuBuilder.BeginSection("RenderDocSettings");
+	{
+		MenuBuilder.AddMenuEntry(FRenderDocPluginCommands::Get().OpenSettings);
+	}
+	MenuBuilder.EndSection();
+
+	return MenuBuilder.MakeWidget();
 }
 
 void FRenderDocPluginModule::ShutdownModule()

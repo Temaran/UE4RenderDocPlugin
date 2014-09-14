@@ -3,6 +3,8 @@ Need to run process commandlist on my command list. For this I need a keydown ca
 
 Settings menu
 Turn off renderdoc native hotkeys
+Swap RenderDoc API file
+Use the new enumerate files API
 Engine stuff
 
 Alpha release

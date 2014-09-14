@@ -40,7 +40,7 @@ DEFINE_LOG_CATEGORY(RenderDocPlugin);
 
 class FRenderDocPluginModule : public IModuleInterface
 {
-public:
+public:	
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
@@ -49,7 +49,6 @@ private:
 
 	FRenderDocPluginGUI* RenderDocGUI;
 
-	TSharedPtr<FUICommandList> RenderDocPluginCommands;
 	TSharedPtr<FExtensibilityManager> ExtensionManager;
 	TSharedPtr<FExtender> ToolbarExtender;
 	TSharedPtr<const FExtensionBase> ToolbarExtension;
@@ -60,11 +59,13 @@ private:
 
 	void Initialize(SWindow& SlateWindow, void* ViewportRHIPtr);
 	void CaptureCurrentViewport();	
+	void OpenSettingsEditorWindow();
 
 	void* GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName);
 
+	TSharedRef<SWidget> GenerateSettingsMenuContent();
 	TSharedRef<SDockTab> CreateSettingsWindow(const FSpawnTabArgs& SpawnTabArgs);
-	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder);
+	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder); 
 
 	//General
 	pRENDERDOC_GetAPIVersion RenderDocGetAPIVersion;
