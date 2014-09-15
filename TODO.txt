@@ -1,11 +1,6 @@
-F12 Crash? Turn off renderdoc native hotkeys
-
 Engine:
 Release buffers in correct spot
 Shader compile problem
-
-Bugs:
-Icon gone??
 
 Release:
 Post in forum
@@ -14,7 +9,3 @@ Post in wiki
 Tests:
 Spam capture button
 See that tests are loaded correctly on: Startup, after set.
-
-Notify:
-Problem with hotkey?
-InitRemoteAPI is missing from the API header

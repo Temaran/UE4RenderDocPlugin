@@ -82,8 +82,8 @@ void FRenderDocPluginModule::StartupModule()
 	FPaths::NormalizeDirectoryName(CapturePath);
 	RenderDocSetLogFile(*CapturePath);
 
-	//RenderDocSetFocusToggleKeys(NULL, 0);
-	//RenderDocSetCaptureKeys(NULL, 0);
+	RenderDocSetFocusToggleKeys(NULL, 0);
+	RenderDocSetCaptureKeys(NULL, 0);
 
 	CaptureOptions Options = RenderDocSettings.CreateOptions();
 	RenderDocSetCaptureOptions(&Options);

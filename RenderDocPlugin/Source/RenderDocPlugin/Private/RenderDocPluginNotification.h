@@ -22,6 +22,8 @@
 * THE SOFTWARE.
 ******************************************************************************/
 
+#pragma once
+
 #include "UnrealEd.h"
 #include "Editor/MainFrame/Public/MainFrame.h"
 
