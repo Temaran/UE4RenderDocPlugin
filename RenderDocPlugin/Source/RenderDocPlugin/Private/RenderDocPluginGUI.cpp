@@ -97,7 +97,13 @@ FString FRenderDocPluginGUI::GetNewestCapture(FString BaseDirectory)
 	wchar_t logFile[512];
 	uint64_t timestamp;
 	uint32 logPathLength = 512;
-	GetCapture(0, logFile, &logPathLength, &timestamp);
-
-	return FString(logPathLength, logFile);
+	int32 index = 0;
+	FString OutString;
+	while (GetCapture(index, logFile, &logPathLength, &timestamp))
+	{
+		OutString = FString(logPathLength, logFile);
+		index++;
+	}
+	
+	return OutString;
 }
