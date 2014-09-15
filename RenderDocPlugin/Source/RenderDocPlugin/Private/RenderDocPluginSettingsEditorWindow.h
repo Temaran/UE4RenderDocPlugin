@@ -25,31 +25,36 @@
 #pragma once
 
 #include "Slate.h"
-#include "ThreadingBase.h"
-#include "renderdoc_app.h"
+#include "RenderDocPluginSettings.h"
 
-class FRenderDocPluginGUI : public FRunnable
-{	
-public: 
-	FRenderDocPluginGUI(pRENDERDOC_GetCapture RenderDocGetCapture);
-	virtual ~FRenderDocPluginGUI();
- 
-	// Begin FRunnable interface.
-	virtual bool Init();
-	virtual uint32 Run();
-	virtual void Stop();
-	// End FRunnable interface
- 
-	bool IsGUIOpen() { return IsRunning; }
-	void StartRenderDoc(FString PathToRenderDocExecutable, FString FrameCaptureBaseDirectory, uint32 Port);
-	FString GetNewestCapture(FString BaseDirectory);
+class SRenderDocPluginSettingsEditorWindow : public SWindow
+{
+public:
+	SLATE_BEGIN_ARGS(SRenderDocPluginSettingsEditorWindow)
+	{
+	}
+	SLATE_ARGUMENT(FRenderDocPluginSettings, Settings)
+		SLATE_ARGUMENT(pRENDERDOC_SetCaptureOptions, SetCaptureOptions)
+
+		SLATE_END_ARGS()
+
+		SRenderDocPluginSettingsEditorWindow() {}
+
+	/** Widget constructor */
+	void Construct(const FArguments& Args);
+
+	FRenderDocPluginSettings GetSettings() { return RenderDocSettings; }
 
 private:
-	pRENDERDOC_GetCapture GetCapture;
-	FRunnableThread* Thread;
+	FRenderDocPluginSettings RenderDocSettings;
+	pRENDERDOC_SetCaptureOptions SetOptions;
+	bool bOriginalStripDebugDataSetting;
 
-	bool IsRunning;
-	uint32 SocketPort;
-	FString ExecutablePath;
-	FString CaptureBaseDirectory;
+	void OnCaptureCallStacksChanged(ESlateCheckBoxState::Type NewState);
+	void OnRefAllResourcesChanged(ESlateCheckBoxState::Type NewState);
+	void OnSaveAllInitialsChanged(ESlateCheckBoxState::Type NewState);
+	void OnDoNotStripShaderDebugDataChanged(ESlateCheckBoxState::Type NewState);
+		
+	FReply SaveAndClose();
+	FReply Close();
 };

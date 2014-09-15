@@ -34,7 +34,7 @@ public:
 		return Instance;
 	}
 
-	void ShowNotification();
+	void ShowNotification(bool bIsRenderDocGUIOpen);
 	void HideNotification();
 
 protected:
@@ -51,6 +51,7 @@ private:
 	FRenderDocPluginNotification(FRenderDocPluginNotification const&);
 	void operator=(FRenderDocPluginNotification const&);
 
+	bool bIsGUIOpen;
 	double LastEnableTime;
 
 	/** The source code symbol query in progress message */

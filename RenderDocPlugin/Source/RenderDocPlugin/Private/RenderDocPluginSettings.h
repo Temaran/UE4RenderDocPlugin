@@ -25,26 +25,47 @@
 #pragma once
 
 #include "Slate.h"
+#include "renderdoc_app.h"
 
-class SRenderDocPluginSettingsEditor : public SCompoundWidget
+struct FRenderDocPluginSettings
 {
-	SLATE_BEGIN_ARGS(SRenderDocPluginSettingsEditor)
-	{
-	}
-
-	SLATE_END_ARGS()
-		
-	/** Widget constructor */
-	void Construct(const FArguments& Args);
-
-	/** SWidget overrides */
-	virtual FReply OnKeyDown(const FGeometry& MyGeometry, const FKeyboardEvent& InKeyboardEvent) override;
-	virtual void Tick(const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime) override;
-	
-private:
+public:
 	bool bCaptureCallStacks;
 	bool bRefAllResources;
 	bool bSaveAllInitials;
 	bool bDoNotStripShaderDebugData;
-};
 
+	FRenderDocPluginSettings()
+	{
+		if (!GConfig->GetBool(TEXT("RenderDoc"), TEXT("CaptureCallStacks"), bCaptureCallStacks, GGameIni))
+			bCaptureCallStacks = false;
+
+		if (!GConfig->GetBool(TEXT("RenderDoc"), TEXT("RefAllResources"), bRefAllResources, GGameIni))
+			bRefAllResources = false;
+
+		if (!GConfig->GetBool(TEXT("RenderDoc"), TEXT("SaveAllInitials"), bSaveAllInitials, GGameIni))
+			bSaveAllInitials = false;
+
+		if (!GConfig->GetBool(TEXT("RenderDoc"), TEXT("DoNotStripShaderDebugData"), bDoNotStripShaderDebugData, GGameIni))
+			bDoNotStripShaderDebugData = false;
+	}
+
+	void Save()
+	{
+		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureCallStacks"), bCaptureCallStacks, GGameIni);
+		GConfig->SetBool(TEXT("RenderDoc"), TEXT("RefAllResources"), bRefAllResources, GGameIni);
+		GConfig->SetBool(TEXT("RenderDoc"), TEXT("SaveAllInitials"), bSaveAllInitials, GGameIni);
+		GConfig->SetBool(TEXT("RenderDoc"), TEXT("DoNotStripShaderDebugData"), bDoNotStripShaderDebugData, GGameIni);
+		GConfig->Flush(false, GGameIni);
+	}
+
+	CaptureOptions CreateOptions()
+	{
+		CaptureOptions Options;
+		Options.CaptureCallstacks = bCaptureCallStacks;
+		Options.RefAllResources = bRefAllResources;
+		Options.SaveAllInitials = bSaveAllInitials;
+
+		return Options;
+	}
+};

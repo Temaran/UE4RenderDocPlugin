@@ -32,8 +32,10 @@
 #include "Internationalization.h"
 #include "Slate.h"
 #include "MultiBoxExtender.h"
-#include "RenderDocAPI.h"
+#include "renderdoc_app.h"
 #include "RenderDocPluginGUI.h"
+#include "RenderDocPluginSettings.h"
+#include "RenderDocPluginSettingsEditorWindow.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
 DEFINE_LOG_CATEGORY(RenderDocPlugin);
@@ -53,26 +55,29 @@ private:
 	TSharedPtr<FExtender> ToolbarExtender;
 	TSharedPtr<const FExtensionBase> ToolbarExtension;
 
+	HWND RootWindow;
+
+	FRenderDocPluginSettings RenderDocSettings;
 	HINSTANCE RenderDocDLL;
 	uint32 SocketPort;
 	bool _isInitialized;
 
 	void Initialize(SWindow& SlateWindow, void* ViewportRHIPtr);
+
 	void CaptureCurrentViewport();	
 	void OpenSettingsEditorWindow();
 
-	void* GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName);
-
-	TSharedRef<SWidget> GenerateSettingsMenuContent();
-	TSharedRef<SDockTab> CreateSettingsWindow(const FSpawnTabArgs& SpawnTabArgs);
 	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder); 
 
+	void* GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName);
+	
 	//General
 	pRENDERDOC_GetAPIVersion RenderDocGetAPIVersion;
 	pRENDERDOC_SetLogFile RenderDocSetLogFile;
-	pRENDERDOC_SetCaptureOptions RenderDocSetCaptureOptions;
 
 	//Capture
+	pRENDERDOC_SetCaptureOptions RenderDocSetCaptureOptions;
+	pRENDERDOC_GetCapture RenderDocGetCapture;
 	pRENDERDOC_SetActiveWindow RenderDocSetActiveWindow;
 	pRENDERDOC_TriggerCapture RenderDocTriggerCapture;
 	pRENDERDOC_StartFrameCapture RenderDocStartFrameCapture;
@@ -81,6 +86,10 @@ private:
 	//Overlay
 	pRENDERDOC_GetOverlayBits RenderDocGetOverlayBits;
 	pRENDERDOC_MaskOverlayBits RenderDocMaskOverlayBits;
+
+	//Hotkeys
+	pRENDERDOC_SetFocusToggleKeys RenderDocSetFocusToggleKeys;
+	pRENDERDOC_SetCaptureKeys RenderDocSetCaptureKeys;
 
 	//Remote access
 	pRENDERDOC_InitRemoteAccess RenderDocInitRemoteAccess;

@@ -25,7 +25,6 @@
 #include "RenderDocPluginPrivatePCH.h" 
 #include "RendererInterface.h"
 #include "RenderDocPluginModule.h"
-#include "RenderDocPluginSettingsEditor.h"
 #include "RenderDocPluginNotification.h"
 
 const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"));
@@ -50,16 +49,25 @@ void FRenderDocPluginModule::StartupModule()
 		return;
 	}
 
+	RootWindow = GetActiveWindow();
+
 	//Init function pointers
 	RenderDocGetAPIVersion = (pRENDERDOC_GetAPIVersion)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_GetAPIVersion");
 	RenderDocSetLogFile = (pRENDERDOC_SetLogFile)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_SetLogFile");
+	
 	RenderDocSetCaptureOptions = (pRENDERDOC_SetCaptureOptions)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_SetCaptureOptions");
+	RenderDocGetCapture = (pRENDERDOC_GetCapture)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_GetCapture");
 	RenderDocSetActiveWindow = (pRENDERDOC_SetActiveWindow)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_SetActiveWindow");
 	RenderDocTriggerCapture = (pRENDERDOC_TriggerCapture)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_TriggerCapture");
 	RenderDocStartFrameCapture = (pRENDERDOC_StartFrameCapture)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_StartFrameCapture");
 	RenderDocEndFrameCapture = (pRENDERDOC_EndFrameCapture)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_EndFrameCapture");
+	
 	RenderDocGetOverlayBits = (pRENDERDOC_GetOverlayBits)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_GetOverlayBits");
 	RenderDocMaskOverlayBits = (pRENDERDOC_MaskOverlayBits)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_MaskOverlayBits");
+
+	RenderDocSetFocusToggleKeys = (pRENDERDOC_SetFocusToggleKeys)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_SetFocusToggleKeys");
+	RenderDocSetCaptureKeys = (pRENDERDOC_SetCaptureKeys)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_SetCaptureKeys");
+
 	RenderDocInitRemoteAccess = (pRENDERDOC_InitRemoteAccess)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_InitRemoteAccess");
 
 	//Set capture settings
@@ -73,6 +81,12 @@ void FRenderDocPluginModule::StartupModule()
 	CapturePath = FPaths::ConvertRelativePathToFull(CapturePath);
 	FPaths::NormalizeDirectoryName(CapturePath);
 	RenderDocSetLogFile(*CapturePath);
+
+	//RenderDocSetFocusToggleKeys(NULL, 0);
+	//RenderDocSetCaptureKeys(NULL, 0);
+
+	CaptureOptions Options = RenderDocSettings.CreateOptions();
+	RenderDocSetCaptureOptions(&Options);
 
 	//Init remote access
 	SocketPort = 0;
@@ -98,11 +112,11 @@ void FRenderDocPluginModule::StartupModule()
 		FToolBarExtensionDelegate::CreateRaw(this, &FRenderDocPluginModule::AddToolbarExtension));
 
 	LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
-				
+
 	//Init renderdoc
 	RenderDocMaskOverlayBits(eOverlay_None, eOverlay_None);
 
-	RenderDocGUI = new FRenderDocPluginGUI();
+	RenderDocGUI = new FRenderDocPluginGUI(RenderDocGetCapture);
 
 	_isInitialized = false;
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
@@ -132,13 +146,13 @@ void FRenderDocPluginModule::Initialize(SWindow& SlateWindow, void* ViewportRHIP
 		pRENDERDOC_StartFrameCapture, RenderDocStartFrameCapture, RenderDocStartFrameCapture,
 		pRENDERDOC_EndFrameCapture, RenderDocEndFrameCapture, RenderDocEndFrameCapture,
 		{
-			RenderDocStartFrameCapture(WindowHandle);
-			RenderDocEndFrameCapture(WindowHandle);
+		RenderDocStartFrameCapture(WindowHandle);
+		RenderDocEndFrameCapture(WindowHandle);
 
-			FString NewestCapture = RenderDocGUI->GetNewestCapture(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
-			IFileManager::Get().Delete(*NewestCapture);
+		FString NewestCapture = RenderDocGUI->GetNewestCapture(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
+		IFileManager::Get().Delete(*NewestCapture);
 		});
-	
+
 	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin initialized!"));
 }
 
@@ -146,7 +160,7 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 {
 	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
 
-	FRenderDocPluginNotification::Get().ShowNotification();
+	FRenderDocPluginNotification::Get().ShowNotification(RenderDocGUI->IsGUIOpen());
 
 	HWND WindowHandle = GetActiveWindow();
 
@@ -155,7 +169,7 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 		HWND, WindowHandle, WindowHandle,
 		pRENDERDOC_StartFrameCapture, RenderDocStartFrameCapture, RenderDocStartFrameCapture,
 		{
-			RenderDocStartFrameCapture(WindowHandle);
+		RenderDocStartFrameCapture(WindowHandle);
 		});
 
 	GEditor->GetActiveViewport()->Draw(true);
@@ -167,40 +181,40 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 		FRenderDocPluginGUI*, RenderDocGUI, RenderDocGUI,
 		pRENDERDOC_EndFrameCapture, RenderDocEndFrameCapture, RenderDocEndFrameCapture,
 		{
-			RenderDocEndFrameCapture(WindowHandle);
+		RenderDocEndFrameCapture(WindowHandle);
 
-			FString BinaryPath;
-			if (GConfig)
-			{
-				GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), BinaryPath, GGameIni);
-			}
+		FString BinaryPath;
+		if (GConfig)
+		{
+			GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), BinaryPath, GGameIni);
+		}
 
-			RenderDocGUI->StartRenderDoc(FPaths::Combine(*BinaryPath, *FString("renderdocui.exe"))
-				, FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures"))
-				, SocketPort);
+		RenderDocGUI->StartRenderDoc(FPaths::Combine(*BinaryPath, *FString("renderdocui.exe"))
+			, FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures"))
+			, SocketPort);
 		});
 }
 
 void FRenderDocPluginModule::OpenSettingsEditorWindow()
 {
-	UE_LOG(RenderDocPlugin, Log, TEXT("COOOMBOOO"));
+	UE_LOG(RenderDocPlugin, Log, TEXT("Opening settings window"));
 
-	// Init settings UI
-	/*FGlobalTabmanager::Get()->RegisterTabSpawner(SettingsUITabName, FOnSpawnTab::CreateRaw(this, &FRenderDocPluginModule::CreateSettingsWindow))
-	.SetDisplayName(LOCTEXT("SettingsEditorTabTitle", "Settings Editor"))
-	.SetTooltipText(LOCTEXT("SettingsEditorTooltipText", "Open the renderdoc settings editor."));
+	POINT CursorPos;
+	GetCursorPos(&CursorPos);
 
-	auto DockTab = FGlobalTabmanager::Get()->InvokeTab(SettingsUITabName);
-	DockTab->GetParentWindow()->Resize(FVector2D(300, 200));
+	RECT RootWindowRect;
+	GetWindowRect(RootWindow, &RootWindowRect);
 
+	FVector2D OffsetPosition(CursorPos.x - RootWindowRect.left, CursorPos.y - RootWindowRect.top);
 
-	const bool bShowImmediately = false;
-	CursorDecoratorWindow = FSlateApplication::Get().AddWindow( SWindow::MakeCursorDecorator(), bShowImmediately );
-	// Usually cursor decorators figure out their size automatically from content, but we will drive it
-	// here because the window will reshape itself to better reflect what will happen when the user drops the Tab.
-	CursorDecoratorWindow->SetSizingRule( ESizingRule::FixedSize );
-	CursorDecoratorWindow->SetOpacity(0.45f);
-	*/
+	TSharedPtr<SRenderDocPluginSettingsEditorWindow> Window = SNew(SRenderDocPluginSettingsEditorWindow)
+		.Settings(RenderDocSettings)
+		.SetCaptureOptions(RenderDocSetCaptureOptions);
+
+	Window->MoveWindowTo(OffsetPosition);
+	GEditor->EditorAddModalWindow(Window.ToSharedRef());
+
+	RenderDocSettings = Window->GetSettings();
 }
 
 void* FRenderDocPluginModule::GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName)
@@ -217,64 +231,36 @@ void* FRenderDocPluginModule::GetRenderDocFunctionPointer(HINSTANCE ModuleHandle
 	return OutTarget;
 }
 
-
-TSharedRef<SDockTab> FRenderDocPluginModule::CreateSettingsWindow(const FSpawnTabArgs& SpawnTabArgs)
-{
-	const TSharedRef<SDockTab> MajorTab = SNew(SDockTab).TabRole(ETabRole::MajorTab);
-
-	MajorTab->SetContent(SNew(SRenderDocPluginSettingsEditor));
-
-	return MajorTab;
-}
-
 void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder)
 {
 #define LOCTEXT_NAMESPACE "LevelEditorToolBar"
 
 	UE_LOG(RenderDocPlugin, Log, TEXT("Starting extension..."));
 	ToolbarBuilder.AddSeparator();
-	
+
 	ToolbarBuilder.BeginSection("RenderdocPlugin");
-	
+
 	FSlateIcon IconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.CaptureFrameIcon.Small");
 	ToolbarBuilder.AddToolBarButton(
-		FRenderDocPluginCommands::Get().CaptureFrame, 
-		NAME_None, 
-		LOCTEXT("RenderDocCapture_Override", "Capture Frame"), 
-		LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame and launches the renderdoc UI"), 
-		IconBrush, 
+		FRenderDocPluginCommands::Get().CaptureFrame,
+		NAME_None,
+		LOCTEXT("RenderDocCapture_Override", "Capture Frame"),
+		LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame and launches the renderdoc UI"),
+		IconBrush,
 		NAME_None);
-	
-	FUIAction RenderDocSettingsMenuAction;
-	RenderDocSettingsMenuAction.IsActionVisibleDelegate = FIsActionButtonVisible();
 
-	ToolbarBuilder.AddComboButton(
-		RenderDocSettingsMenuAction,
-		FOnGetContent::CreateRaw(this, &FRenderDocPluginModule::GenerateSettingsMenuContent),
+	FSlateIcon SettingsIconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.SettingsIcon.Small");
+	ToolbarBuilder.AddToolBarButton(
+		FRenderDocPluginCommands::Get().OpenSettings,
+		NAME_None,
 		LOCTEXT("RenderDocCaptureSettings_Override", "Settings"),
 		LOCTEXT("RenderDocCaptureSettings_ToolTipOverride", "Edit RenderDoc Settings"),
-		IconBrush,
-		true
-		);
+		SettingsIconBrush,
+		NAME_None);
 
 	ToolbarBuilder.EndSection();
 
 #undef LOCTEXT_NAMESPACE
-}
-
-TSharedRef< SWidget > FRenderDocPluginModule::GenerateSettingsMenuContent()
-{
-	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-	TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
-	FMenuBuilder MenuBuilder(true, CommandBindings);
-
-	MenuBuilder.BeginSection("RenderDocSettings");
-	{
-		MenuBuilder.AddMenuEntry(FRenderDocPluginCommands::Get().OpenSettings);
-	}
-	MenuBuilder.EndSection();
-
-	return MenuBuilder.MakeWidget();
 }
 
 void FRenderDocPluginModule::ShutdownModule()

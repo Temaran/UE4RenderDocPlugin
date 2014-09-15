@@ -25,9 +25,10 @@
 #include "RenderDocPluginPrivatePCH.h"
 #include "RenderDocPluginGUI.h"
 
-FRenderDocPluginGUI::FRenderDocPluginGUI()
+FRenderDocPluginGUI::FRenderDocPluginGUI(pRENDERDOC_GetCapture RenderDocGetCapture)
 {
 	IsRunning = false;
+	GetCapture = RenderDocGetCapture;
 }
 
 FRenderDocPluginGUI::~FRenderDocPluginGUI()
@@ -93,20 +94,10 @@ void FRenderDocPluginGUI::StartRenderDoc(FString PathToRenderDocExecutable, FStr
 
 FString FRenderDocPluginGUI::GetNewestCapture(FString BaseDirectory)
 {
-	TArray<FString> AllCaptures;
-	IFileManager::Get().FindFilesRecursive(AllCaptures, *BaseDirectory, *FString("*.*"), true, false);
-	FString NewestCapture;
-	double ShortestLifeTime = MAXDWORD32;
-	for (int32 i = 0; i < AllCaptures.Num(); i++)
-	{
-		double FileLifeTime = IFileManager::Get().GetFileAgeSeconds(*AllCaptures[i]);
+	wchar_t logFile[512];
+	uint64_t timestamp;
+	uint32 logPathLength = 512;
+	GetCapture(0, logFile, &logPathLength, &timestamp);
 
-		if (FileLifeTime < ShortestLifeTime)
-		{
-			ShortestLifeTime = FileLifeTime;
-			NewestCapture = AllCaptures[i];
-		}
-	}
-
-	return NewestCapture;
+	return FString(logPathLength, logFile);
 }

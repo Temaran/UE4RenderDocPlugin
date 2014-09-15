@@ -53,6 +53,7 @@ void FRenderDocPluginStyle::Initialize()
 
 	StyleSet->Set("RenderDocPlugin.CaptureFrameIcon", new FSlateImageBrush(FRenderDocPluginStyle::InContent("Icon40", ".png"), Icon40x40));
 	StyleSet->Set("RenderDocPlugin.CaptureFrameIcon.Small", new FSlateImageBrush(FRenderDocPluginStyle::InContent("Icon20", ".png"), Icon20x20));
+	StyleSet->Set("RenderDocPlugin.SettingsIcon.Small", new FSlateImageBrush(FRenderDocPluginStyle::InContent("SettingsIcon20", ".png"), Icon20x20));
 	
 	FSlateStyleRegistry::RegisterSlateStyle(*StyleSet.Get());
 };
