@@ -48,8 +48,20 @@ void FRenderDocPluginStyle::Initialize()
 	}
 
 	StyleSet = MakeShareable(new FSlateStyleSet("RenderDocPluginStyle"));
-	StyleSet->SetContentRoot(FPaths::GamePluginsDir() / TEXT("RenderDocPlugin/Resources"));
-	StyleSet->SetCoreContentRoot(FPaths::GamePluginsDir() / TEXT("RenderDocPlugin/Resources"));
+
+	FString ProjectResourceDir = FPaths::GamePluginsDir() / TEXT("RenderDocPlugin/Resources");
+	FString EngineResourceDir = FPaths::EnginePluginsDir() / TEXT("RenderDocPlugin/Resources");
+
+	if (IFileManager::Get().DirectoryExists(*ProjectResourceDir)) //Is the plugin in the project? In that case, use those resources
+	{
+		StyleSet->SetContentRoot(ProjectResourceDir);
+		StyleSet->SetCoreContentRoot(ProjectResourceDir);
+	}
+	else //Otherwise, use the global ones
+	{
+		StyleSet->SetContentRoot(EngineResourceDir);
+		StyleSet->SetCoreContentRoot(EngineResourceDir);
+	}
 
 	StyleSet->Set("RenderDocPlugin.CaptureFrameIcon", new FSlateImageBrush(FRenderDocPluginStyle::InContent("Icon40", ".png"), Icon40x40));
 	StyleSet->Set("RenderDocPlugin.CaptureFrameIcon.Small", new FSlateImageBrush(FRenderDocPluginStyle::InContent("Icon20", ".png"), Icon20x20));
