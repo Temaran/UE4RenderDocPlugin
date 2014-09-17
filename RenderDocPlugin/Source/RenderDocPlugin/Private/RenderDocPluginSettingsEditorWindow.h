@@ -48,12 +48,12 @@ public:
 private:
 	FRenderDocPluginSettings RenderDocSettings;
 	pRENDERDOC_SetCaptureOptions SetOptions;
-	bool bOriginalStripDebugDataSetting;
+	bool bOriginalShaderDebugData;
 
 	void OnCaptureCallStacksChanged(ESlateCheckBoxState::Type NewState);
 	void OnRefAllResourcesChanged(ESlateCheckBoxState::Type NewState);
 	void OnSaveAllInitialsChanged(ESlateCheckBoxState::Type NewState);
-	void OnDoNotStripShaderDebugDataChanged(ESlateCheckBoxState::Type NewState);
+	void OnShaderDebugDataChanged(ESlateCheckBoxState::Type NewState);
 		
 	FReply SaveAndClose();
 	FReply Close();

@@ -1,4 +1,22 @@
-Add support to run as engine plugin
+Prompt user on first startup and explain shader stuff
+
+Prompt user if he is sure he wants to recompile all shaders
+Explain that this will rebuild all shaders, and it will lock the editor while the shaders are building
+
+Set Global input variable
+D:\My Projects\UnrealEngine\Engine\Config\ConsoleVariables  DumpShaderDebugInfo
+GDumpShaderDebugInfo
+
+Force recompile all shaders
+
+
+
+
+
+Amend forum post with info on how to set the shader debug info manually
+Create branch that contains the UI and other code to set the render flag automatically
+
+
 
 Engine:
 Release buffers in correct spot
@@ -11,3 +29,6 @@ Post in wiki
 Tests:
 Spam capture button
 See that tests are loaded correctly on: Startup, after set.
+
+Backlog:
+Maybe remove irrelevant tabs in renderdoc UI when launched from UE4? Like Launch process etc.

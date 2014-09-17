@@ -120,14 +120,16 @@ void FRenderDocPluginModule::StartupModule()
 
 	_isInitialized = false;
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
-	SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::Initialize);
+	SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
 
 	int32 RenderDocVersion = RenderDocGetAPIVersion();
 	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin started! Your renderdoc installation is v%i"), RenderDocVersion);
 }
 
-void FRenderDocPluginModule::Initialize(SWindow& SlateWindow, void* ViewportRHIPtr)
+void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr)
 {
+	//TODO: REMOVE THIS WHEN WE GET PULL REQUEST ACCEPTED
+	
 	if (_isInitialized)
 		return;
 
@@ -154,6 +156,8 @@ void FRenderDocPluginModule::Initialize(SWindow& SlateWindow, void* ViewportRHIP
 		});
 
 	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin initialized!"));
+
+	//TODO: END OF REMOVE THIS
 }
 
 void FRenderDocPluginModule::CaptureCurrentViewport()
@@ -215,6 +219,14 @@ void FRenderDocPluginModule::OpenSettingsEditorWindow()
 	GEditor->EditorAddModalWindow(Window.ToSharedRef());
 
 	RenderDocSettings = Window->GetSettings();
+	
+	if (RenderDocSettings.bRequestRecompile)
+	{
+		GEditor->Tick(1, false);
+		RenderDocSettings.bRequestRecompile = false;
+		GEngine->Exec(GEditor->PlayWorld, *FString("RecompileShaders All"));
+		FUnrealEdMisc::Get().RestartEditor(true);
+	}
 }
 
 void* FRenderDocPluginModule::GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName)

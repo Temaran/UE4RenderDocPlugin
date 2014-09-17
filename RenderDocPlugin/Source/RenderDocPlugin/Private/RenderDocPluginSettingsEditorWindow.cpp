@@ -24,6 +24,7 @@
 
 #include "RenderDocPluginPrivatePCH.h"
 #include "Engine.h"
+#include "GlobalShader.h"
 #include "Editor.h"
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginSettingsEditorWindow.h"
@@ -34,7 +35,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 {
 	SetOptions = InArgs._SetCaptureOptions;
 	RenderDocSettings = InArgs._Settings;
-	bOriginalStripDebugDataSetting = RenderDocSettings.bDoNotStripShaderDebugData;
+	bOriginalShaderDebugData = RenderDocSettings.bShaderDebugData;
 
 	SWindow::Construct(SWindow::FArguments()
 		.SupportsMaximize(false)
@@ -120,7 +121,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 					.VAlign(EVerticalAlignment::VAlign_Center)
 					[
 						SNew(STextBlock)
-						.Text(LOCTEXT("DoNotStripShaderDebugData", "Do not strip shader debug data"))
+						.Text(LOCTEXT("ShaderDebugData", "Shader debug data"))
 						.ToolTipText(FString("Unreal Engine 4 strips debug data from its shaders by default. While this takes less space, it also makes it very hard to debug the shaders in question. We recommend that you turn this on as it will make debugging a lot easier. Do not forget to turn this back off before building for release though."))
 					]
 
@@ -129,8 +130,8 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 						.HAlign(HAlign_Right)
 						[
 							SNew(SCheckBox)
-							.IsChecked(RenderDocSettings.bDoNotStripShaderDebugData ? ESlateCheckBoxState::Checked : ESlateCheckBoxState::Unchecked)
-							.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnDoNotStripShaderDebugDataChanged)
+							.IsChecked(RenderDocSettings.bShaderDebugData ? ESlateCheckBoxState::Checked : ESlateCheckBoxState::Unchecked)
+							.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnShaderDebugDataChanged)
 						]
 				]
 
@@ -175,9 +176,9 @@ void SRenderDocPluginSettingsEditorWindow::OnSaveAllInitialsChanged(ESlateCheckB
 	RenderDocSettings.bSaveAllInitials = NewState == ESlateCheckBoxState::Checked ? true : false;
 }
 
-void SRenderDocPluginSettingsEditorWindow::OnDoNotStripShaderDebugDataChanged(ESlateCheckBoxState::Type NewState)
+void SRenderDocPluginSettingsEditorWindow::OnShaderDebugDataChanged(ESlateCheckBoxState::Type NewState)
 {
-	RenderDocSettings.bDoNotStripShaderDebugData = NewState == ESlateCheckBoxState::Checked ? true : false;
+	RenderDocSettings.bShaderDebugData = NewState == ESlateCheckBoxState::Checked ? true : false;
 }
 
 FReply SRenderDocPluginSettingsEditorWindow::SaveAndClose()
@@ -186,13 +187,45 @@ FReply SRenderDocPluginSettingsEditorWindow::SaveAndClose()
 	CaptureOptions Options = RenderDocSettings.CreateOptions();
 	SetOptions(&Options);
 	
-	if (RenderDocSettings.bDoNotStripShaderDebugData != bOriginalStripDebugDataSetting)
+	if (RenderDocSettings.bShaderDebugData != bOriginalShaderDebugData)
 	{
-		GEngine->Exec(GEditor->PlayWorld, *FString("RecompileShaders"));
+		FShaderCompilerEnvironment Environment;
+
+		if (RenderDocSettings.bShaderDebugData)
+		{
+			FGlobalShader::ModifyCompilationEnvironment(SP_OPENGL_SM4, Environment);
+			Environment.CompilerFlags.Add(CFLAG_Debug);
+			FGlobalShader::ModifyCompilationEnvironment(SP_OPENGL_SM5, Environment);
+			Environment.CompilerFlags.Add(CFLAG_Debug);
+			FGlobalShader::ModifyCompilationEnvironment(SP_OPENGL_ES2, Environment);
+			Environment.CompilerFlags.Add(CFLAG_Debug);
+			FGlobalShader::ModifyCompilationEnvironment(SP_PCD3D_ES2, Environment);
+			Environment.CompilerFlags.Add(CFLAG_Debug);
+			FGlobalShader::ModifyCompilationEnvironment(SP_PCD3D_SM4, Environment);
+			Environment.CompilerFlags.Add(CFLAG_Debug);
+			FGlobalShader::ModifyCompilationEnvironment(SP_PCD3D_SM5, Environment);
+			Environment.CompilerFlags.Add(CFLAG_Debug);
+		}
+		else
+		{
+			FGlobalShader::ModifyCompilationEnvironment(SP_OPENGL_SM4, Environment);
+			Environment.CompilerFlags.Remove(CFLAG_Debug);
+			FGlobalShader::ModifyCompilationEnvironment(SP_OPENGL_SM5, Environment);
+			Environment.CompilerFlags.Remove(CFLAG_Debug);
+			FGlobalShader::ModifyCompilationEnvironment(SP_OPENGL_ES2, Environment);
+			Environment.CompilerFlags.Remove(CFLAG_Debug);
+			FGlobalShader::ModifyCompilationEnvironment(SP_PCD3D_ES2, Environment);
+			Environment.CompilerFlags.Remove(CFLAG_Debug);
+			FGlobalShader::ModifyCompilationEnvironment(SP_PCD3D_SM4, Environment);
+			Environment.CompilerFlags.Remove(CFLAG_Debug);
+			FGlobalShader::ModifyCompilationEnvironment(SP_PCD3D_SM5, Environment);
+			Environment.CompilerFlags.Remove(CFLAG_Debug);
+		}
+
+		RenderDocSettings.bRequestRecompile = true;
 	}
 
-	Close();
-	return FReply::Handled();
+	return Close();
 }
 
 FReply SRenderDocPluginSettingsEditorWindow::Close()
