@@ -25,37 +25,20 @@
 #pragma once
 
 #include "Slate.h"
-#include "RenderDocPluginSettings.h"
 
-class SRenderDocPluginSettingsEditorWindow : public SWindow
+class SRenderDocPluginAboutWindow : public SWindow
 {
 public:
-	SLATE_BEGIN_ARGS(SRenderDocPluginSettingsEditorWindow)
+	SLATE_BEGIN_ARGS(SRenderDocPluginAboutWindow)
 	{
 	}
-	SLATE_ARGUMENT(FRenderDocPluginSettings, Settings)
-		SLATE_ARGUMENT(pRENDERDOC_SetCaptureOptions, SetCaptureOptions)
+	SLATE_END_ARGS()
 
-		SLATE_END_ARGS()
-
-		SRenderDocPluginSettingsEditorWindow() {}
+		SRenderDocPluginAboutWindow() {}
 
 	/** Widget constructor */
 	void Construct(const FArguments& Args);
 
-	FRenderDocPluginSettings GetSettings() { return RenderDocSettings; }
-
 private:
-	FRenderDocPluginSettings RenderDocSettings;
-	pRENDERDOC_SetCaptureOptions SetOptions;
-	bool bOriginalShaderDebugData;
-
-	void OnCaptureCallStacksChanged(ESlateCheckBoxState::Type NewState);
-	void OnRefAllResourcesChanged(ESlateCheckBoxState::Type NewState);
-	void OnSaveAllInitialsChanged(ESlateCheckBoxState::Type NewState);
-	void OnShaderDebugDataChanged(ESlateCheckBoxState::Type NewState);
-		
-	FReply SaveAndClose();
-	FReply ShowAboutWindow();
 	FReply Close();
 };

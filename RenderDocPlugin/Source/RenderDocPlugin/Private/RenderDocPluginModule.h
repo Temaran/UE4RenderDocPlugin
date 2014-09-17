@@ -36,6 +36,7 @@
 #include "RenderDocPluginGUI.h"
 #include "RenderDocPluginSettings.h"
 #include "RenderDocPluginSettingsEditorWindow.h"
+#include "RenderDocPluginAboutWindow.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
 DEFINE_LOG_CATEGORY(RenderDocPlugin);
@@ -62,7 +63,7 @@ private:
 	uint32 SocketPort;
 	bool _isInitialized;
 
-	void Initialize(SWindow& SlateWindow, void* ViewportRHIPtr);
+	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
 
 	void CaptureCurrentViewport();	
 	void OpenSettingsEditorWindow();

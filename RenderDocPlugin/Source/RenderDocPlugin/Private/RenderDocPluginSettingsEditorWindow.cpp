@@ -28,6 +28,7 @@
 #include "Editor.h"
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginSettingsEditorWindow.h"
+#include "RenderDocPluginAboutWindow.h"
 
 #define LOCTEXT_NAMESPACE "RenderDocPluginSettingsEditor"
 
@@ -140,7 +141,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 					SNew(SHorizontalBox)
 					+ SHorizontalBox::Slot()
 					.VAlign(EVerticalAlignment::VAlign_Center)
-					.HAlign(EHorizontalAlignment::HAlign_Left)
+					.Padding(5)
 					[
 						SNew(SButton)
 						.OnClicked(this, &SRenderDocPluginSettingsEditorWindow::SaveAndClose)
@@ -149,7 +150,16 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 
 					+ SHorizontalBox::Slot()
 						.VAlign(EVerticalAlignment::VAlign_Center)
-						.HAlign(EHorizontalAlignment::HAlign_Right)
+						.Padding(5)
+						[
+							SNew(SButton)
+							.OnClicked(this, &SRenderDocPluginSettingsEditorWindow::ShowAboutWindow)
+							.Text(LOCTEXT("AboutButton", "About"))
+						]
+
+					+ SHorizontalBox::Slot()
+						.VAlign(EVerticalAlignment::VAlign_Center)
+						.Padding(5)
 						[
 							SNew(SButton)
 							.OnClicked(this, &SRenderDocPluginSettingsEditorWindow::Close)
@@ -186,7 +196,7 @@ FReply SRenderDocPluginSettingsEditorWindow::SaveAndClose()
 	RenderDocSettings.Save();
 	CaptureOptions Options = RenderDocSettings.CreateOptions();
 	SetOptions(&Options);
-	
+
 	if (RenderDocSettings.bShaderDebugData != bOriginalShaderDebugData)
 	{
 		FShaderCompilerEnvironment Environment;
@@ -225,6 +235,12 @@ FReply SRenderDocPluginSettingsEditorWindow::SaveAndClose()
 		RenderDocSettings.bRequestRecompile = true;
 	}
 
+	return Close();
+}
+
+FReply SRenderDocPluginSettingsEditorWindow::ShowAboutWindow()
+{
+	GEditor->EditorAddModalWindow(SNew(SRenderDocPluginAboutWindow));
 	return Close();
 }
 

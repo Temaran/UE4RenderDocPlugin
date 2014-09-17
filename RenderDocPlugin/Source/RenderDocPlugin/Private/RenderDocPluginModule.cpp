@@ -128,15 +128,25 @@ void FRenderDocPluginModule::StartupModule()
 
 void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr)
 {
-	//TODO: REMOVE THIS WHEN WE GET PULL REQUEST ACCEPTED
-	
 	if (_isInitialized)
 		return;
-
 	_isInitialized = true;
 
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
-	SlateRenderer->OnSlateWindowRendered().RemoveRaw(this, &FRenderDocPluginModule::Initialize);
+	SlateRenderer->OnSlateWindowRendered().RemoveRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
+	
+	if (GConfig)
+	{
+		bool bGreetingHasBeenShown;
+		GConfig->GetBool(TEXT("RenderDoc"), TEXT("GreetingHasBeenShown"), bGreetingHasBeenShown, GGameIni);
+		if (!bGreetingHasBeenShown)
+		{
+			GEditor->EditorAddModalWindow(SNew(SRenderDocPluginAboutWindow));
+			GConfig->SetBool(TEXT("RenderDoc"), TEXT("GreetingHasBeenShown"), true, GGameIni);
+		}
+	}
+
+	//TODO: REMOVE THIS WHEN WE GET PULL REQUEST ACCEPTED
 
 	HWND WindowHandle = GetActiveWindow();
 
