@@ -1,5 +1,3 @@
-Add possibility to open about window from options
-
 Release branch r/AlphaOne
 
 Prompt user if he is sure he wants to recompile all shaders
