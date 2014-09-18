@@ -48,12 +48,10 @@ public:
 private:
 	FRenderDocPluginSettings RenderDocSettings;
 	pRENDERDOC_SetCaptureOptions SetOptions;
-	bool bOriginalShaderDebugData;
 
 	void OnCaptureCallStacksChanged(ESlateCheckBoxState::Type NewState);
 	void OnRefAllResourcesChanged(ESlateCheckBoxState::Type NewState);
 	void OnSaveAllInitialsChanged(ESlateCheckBoxState::Type NewState);
-	void OnShaderDebugDataChanged(ESlateCheckBoxState::Type NewState);
 		
 	FReply SaveAndClose();
 	FReply ShowAboutWindow();

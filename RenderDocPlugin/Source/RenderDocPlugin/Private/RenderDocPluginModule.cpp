@@ -229,14 +229,6 @@ void FRenderDocPluginModule::OpenSettingsEditorWindow()
 	GEditor->EditorAddModalWindow(Window.ToSharedRef());
 
 	RenderDocSettings = Window->GetSettings();
-	
-	if (RenderDocSettings.bRequestRecompile)
-	{
-		GEditor->Tick(1, false);
-		RenderDocSettings.bRequestRecompile = false;
-		GEngine->Exec(GEditor->PlayWorld, *FString("RecompileShaders All"));
-		FUnrealEdMisc::Get().RestartEditor(true);
-	}
 }
 
 void* FRenderDocPluginModule::GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName)

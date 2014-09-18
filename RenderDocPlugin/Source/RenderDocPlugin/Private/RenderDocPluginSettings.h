@@ -33,9 +33,6 @@ public:
 	bool bCaptureCallStacks;
 	bool bRefAllResources;
 	bool bSaveAllInitials;
-	bool bShaderDebugData;
-
-	bool bRequestRecompile;
 
 	FRenderDocPluginSettings()
 	{
@@ -47,11 +44,6 @@ public:
 
 		if (!GConfig->GetBool(TEXT("RenderDoc"), TEXT("SaveAllInitials"), bSaveAllInitials, GGameIni))
 			bSaveAllInitials = false;
-
-		if (!GConfig->GetBool(TEXT("RenderDoc"), TEXT("ShaderDebugData"), bShaderDebugData, GGameIni))
-			bShaderDebugData = false;
-
-		bRequestRecompile = false;
 	}
 
 	void Save()
@@ -59,7 +51,6 @@ public:
 		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureCallStacks"), bCaptureCallStacks, GGameIni);
 		GConfig->SetBool(TEXT("RenderDoc"), TEXT("RefAllResources"), bRefAllResources, GGameIni);
 		GConfig->SetBool(TEXT("RenderDoc"), TEXT("SaveAllInitials"), bSaveAllInitials, GGameIni);
-		GConfig->SetBool(TEXT("RenderDoc"), TEXT("ShaderDebugData"), bShaderDebugData, GGameIni);
 		GConfig->Flush(false, GGameIni);
 	}
 
