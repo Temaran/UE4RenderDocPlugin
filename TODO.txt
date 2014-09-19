@@ -1,5 +1,3 @@
-Release branch r/AlphaOne
-
 Prompt user if he is sure he wants to recompile all shaders
 Explain that this will rebuild all shaders, and it will lock the editor while the shaders are building
 

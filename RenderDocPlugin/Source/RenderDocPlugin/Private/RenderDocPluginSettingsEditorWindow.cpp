@@ -49,7 +49,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 		.FocusWhenFirstShown(true)
 		.bDragAnywhere(false)
 		.ActivateWhenFirstShown(true)
-		.ClientSize(FVector2D(250, 150))
+		.ClientSize(FVector2D(325, 150))
 		[
 			SNew(SVerticalBox)
 			+ SVerticalBox::Slot()
