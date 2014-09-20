@@ -29,6 +29,7 @@
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginSettingsEditorWindow.h"
 #include "RenderDocPluginAboutWindow.h"
+#include "RenderDocPluginAreYouSureWindow.h"
 
 #define LOCTEXT_NAMESPACE "RenderDocPluginSettingsEditor"
 
@@ -193,48 +194,44 @@ void SRenderDocPluginSettingsEditorWindow::OnShaderDebugDataChanged(ESlateCheckB
 
 FReply SRenderDocPluginSettingsEditorWindow::SaveAndClose()
 {
-	RenderDocSettings.Save();
 	CaptureOptions Options = RenderDocSettings.CreateOptions();
 	SetOptions(&Options);
 
 	if (RenderDocSettings.bShaderDebugData != bOriginalShaderDebugData)
 	{
-		FShaderCompilerEnvironment Environment;
+		FString ContentText = FString("Warning!\n\n" \
+			"Changing the shader debug data setting requires\n" \
+			"a full shader recompile in order to be effective!\n\n" \
+			"During recompilation, the editor might become completely\n" \
+			"unresponsive and appear to hang. Do not turn the editor\n" \
+			"off or cancel the recompile before it has completed or\n" \
+			"you will not get any meta data.\n\n\n" \
+			"Press OK to recompile");
 
-		if (RenderDocSettings.bShaderDebugData)
+		TSharedRef<SRenderDocPluginAreYouSureWindow> AreYouSure = SNew(SRenderDocPluginAreYouSureWindow)
+			.ContentText(ContentText);
+		GEditor->EditorAddModalWindow(AreYouSure);
+
+		if (AreYouSure->bUserStillWantsToGoAhead)
 		{
-			FGlobalShader::ModifyCompilationEnvironment(SP_OPENGL_SM4, Environment);
-			Environment.CompilerFlags.Add(CFLAG_Debug);
-			FGlobalShader::ModifyCompilationEnvironment(SP_OPENGL_SM5, Environment);
-			Environment.CompilerFlags.Add(CFLAG_Debug);
-			FGlobalShader::ModifyCompilationEnvironment(SP_OPENGL_ES2, Environment);
-			Environment.CompilerFlags.Add(CFLAG_Debug);
-			FGlobalShader::ModifyCompilationEnvironment(SP_PCD3D_ES2, Environment);
-			Environment.CompilerFlags.Add(CFLAG_Debug);
-			FGlobalShader::ModifyCompilationEnvironment(SP_PCD3D_SM4, Environment);
-			Environment.CompilerFlags.Add(CFLAG_Debug);
-			FGlobalShader::ModifyCompilationEnvironment(SP_PCD3D_SM5, Environment);
-			Environment.CompilerFlags.Add(CFLAG_Debug);
+			FShaderCompilerEnvironment Environment;
+							
+			if (GConfig)
+			{
+				FString ConsoleVariablesIni = FPaths::Combine(*FPaths::EngineConfigDir(), *FString("ConsoleVariables.ini"));
+				GConfig->SetInt(TEXT("Startup"), TEXT("r.DoNotStripShaderMetaData"), RenderDocSettings.bShaderDebugData ? 1 : 0, ConsoleVariablesIni);
+				GConfig->Flush(false, ConsoleVariablesIni);
+			}
+
+			RenderDocSettings.bRequestRecompile = true;
 		}
 		else
 		{
-			FGlobalShader::ModifyCompilationEnvironment(SP_OPENGL_SM4, Environment);
-			Environment.CompilerFlags.Remove(CFLAG_Debug);
-			FGlobalShader::ModifyCompilationEnvironment(SP_OPENGL_SM5, Environment);
-			Environment.CompilerFlags.Remove(CFLAG_Debug);
-			FGlobalShader::ModifyCompilationEnvironment(SP_OPENGL_ES2, Environment);
-			Environment.CompilerFlags.Remove(CFLAG_Debug);
-			FGlobalShader::ModifyCompilationEnvironment(SP_PCD3D_ES2, Environment);
-			Environment.CompilerFlags.Remove(CFLAG_Debug);
-			FGlobalShader::ModifyCompilationEnvironment(SP_PCD3D_SM4, Environment);
-			Environment.CompilerFlags.Remove(CFLAG_Debug);
-			FGlobalShader::ModifyCompilationEnvironment(SP_PCD3D_SM5, Environment);
-			Environment.CompilerFlags.Remove(CFLAG_Debug);
+			RenderDocSettings.bShaderDebugData = bOriginalShaderDebugData;
 		}
-
-		RenderDocSettings.bRequestRecompile = true;
 	}
 
+	RenderDocSettings.Save();
 	return Close();
 }
 

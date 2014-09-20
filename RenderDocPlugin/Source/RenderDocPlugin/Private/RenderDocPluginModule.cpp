@@ -145,29 +145,6 @@ void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* Viewport
 			GConfig->SetBool(TEXT("RenderDoc"), TEXT("GreetingHasBeenShown"), true, GGameIni);
 		}
 	}
-
-	//TODO: REMOVE THIS WHEN WE GET PULL REQUEST ACCEPTED
-
-	HWND WindowHandle = GetActiveWindow();
-
-	//Trigger a capture just to make sure we are set up correctly. This should prevent us from crashing on exit.
-	ENQUEUE_UNIQUE_RENDER_COMMAND_FOURPARAMETER(
-		InitializeRenderDoc,
-		HWND, WindowHandle, WindowHandle,
-		FRenderDocPluginGUI*, RenderDocGUI, RenderDocGUI,
-		pRENDERDOC_StartFrameCapture, RenderDocStartFrameCapture, RenderDocStartFrameCapture,
-		pRENDERDOC_EndFrameCapture, RenderDocEndFrameCapture, RenderDocEndFrameCapture,
-		{
-		RenderDocStartFrameCapture(WindowHandle);
-		RenderDocEndFrameCapture(WindowHandle);
-
-		FString NewestCapture = RenderDocGUI->GetNewestCapture(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
-		IFileManager::Get().Delete(*NewestCapture);
-		});
-
-	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin initialized!"));
-
-	//TODO: END OF REMOVE THIS
 }
 
 void FRenderDocPluginModule::CaptureCurrentViewport()
@@ -235,7 +212,6 @@ void FRenderDocPluginModule::OpenSettingsEditorWindow()
 		GEditor->Tick(1, false);
 		RenderDocSettings.bRequestRecompile = false;
 		GEngine->Exec(GEditor->PlayWorld, *FString("RecompileShaders All"));
-		FUnrealEdMisc::Get().RestartEditor(true);
 	}
 }
 

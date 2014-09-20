@@ -25,27 +25,14 @@
 #include "RenderDocPluginPrivatePCH.h"
 #include "Editor.h"
 #include "RenderDocPluginStyle.h"
-#include "RenderDocPluginAboutWindow.h"
+#include "RenderDocPluginAreYouSureWindow.h"
 
-#define LOCTEXT_NAMESPACE "RenderDocPluginAboutWindow"
+#define LOCTEXT_NAMESPACE "RenderDocPluginAreYouSureWindow"
 
-void SRenderDocPluginAboutWindow::Construct(const FArguments& InArgs)
+void SRenderDocPluginAreYouSureWindow::Construct(const FArguments& InArgs)
 {
-	FString Message = FString("Hello and thank you for trying out this plug-in!\n\n" \
-		"You are currently using the experimental version that supports shader\n" \
-		"meta data. For this to work however, you need to pull the unreal engine\n" \
-		"fork located at:\n" \
-		"https://github.com/Temaran/UnrealEngine \n" \
-		"and check out the RenderDocPluginChanges branch.\n\n" \
-		"To capture a frame, press the green capture button on the top\n" \
-		"right of any view port. If you cannot see the button, you might\n" \
-		"have to adjust your view port width until all buttons fit the screen.\n" \
-		"You can also use the assigned hot key (default is Alt+F12).\n\n" \
-		"If you have any questions or suggestions I'll try to answer them \n" \
-		"as best I can at:\ntemaran(at) gmail(dot) com.\n\n" \
-		"You can find my fork and updates to the plug-ins at this github repo:\n" \
-		"https://github.com/Temaran/UE4RenderDocPlugin\n");
-	
+	bUserStillWantsToGoAhead = false;
+
 	SWindow::Construct(SWindow::FArguments()
 		.SupportsMaximize(false)
 		.SupportsMinimize(false)
@@ -57,7 +44,7 @@ void SRenderDocPluginAboutWindow::Construct(const FArguments& InArgs)
 		.FocusWhenFirstShown(true)
 		.bDragAnywhere(false)
 		.ActivateWhenFirstShown(true)
-		.ClientSize(FVector2D(400, 400))
+		.ClientSize(FVector2D(400, 300))
 		.ScreenPosition(FVector2D((float)(GEditor->GetActiveViewport()->GetSizeXY().X) / 2.0,
 		(float)(GEditor->GetActiveViewport()->GetSizeXY().Y) / 2.0))
 		[
@@ -67,16 +54,32 @@ void SRenderDocPluginAboutWindow::Construct(const FArguments& InArgs)
 			.Padding(5)
 			[
 				SNew(STextBlock)
-				.Text(FText::FromString(Message))
+				.Text(FText::FromString(InArgs._ContentText))
 			]
 
 			+ SVerticalBox::Slot()
 				.FillHeight(0.1f)
 				[
-					SNew(SButton)
-					.VAlign(VAlign_Center)
-					.OnClicked(this, &SRenderDocPluginAboutWindow::Close)
-					.Text(LOCTEXT("OkButton", "Ok"))
+					SNew(SHorizontalBox)
+					+ SHorizontalBox::Slot()
+					.Padding(5)
+					[
+						SNew(SButton)
+						.VAlign(VAlign_Center)
+						.HAlign(HAlign_Left)
+						.OnClicked(this, &SRenderDocPluginAreYouSureWindow::Ok)
+						.Text(LOCTEXT("OkButton", "Ok"))
+					]
+
+					+ SHorizontalBox::Slot()
+						.Padding(5)
+						[
+							SNew(SButton)
+							.VAlign(VAlign_Center)
+							.HAlign(HAlign_Right)
+							.OnClicked(this, &SRenderDocPluginAreYouSureWindow::Cancel)
+							.Text(LOCTEXT("OkButton", "Cancel"))
+						]
 				]
 		]);
 
@@ -84,8 +87,16 @@ void SRenderDocPluginAboutWindow::Construct(const FArguments& InArgs)
 	FlashWindow();
 }
 
-FReply SRenderDocPluginAboutWindow::Close()
+FReply SRenderDocPluginAreYouSureWindow::Ok()
 {
+	bUserStillWantsToGoAhead = true;
+	RequestDestroyWindow();
+	return FReply::Handled();
+}
+
+FReply SRenderDocPluginAreYouSureWindow::Cancel()
+{
+	bUserStillWantsToGoAhead = false;
 	RequestDestroyWindow();
 	return FReply::Handled();
 }
