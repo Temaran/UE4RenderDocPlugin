@@ -48,9 +48,7 @@ void FRenderDocPluginModule::StartupModule()
 		UE_LOG(RenderDocPlugin, Error, TEXT("Could not find the renderdoc DLL, have you loaded the RenderDocLoaderPlugin?"));
 		return;
 	}
-
-	RootWindow = GetActiveWindow();
-
+	
 	//Init function pointers
 	RenderDocGetAPIVersion = (pRENDERDOC_GetAPIVersion)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_GetAPIVersion");
 	RenderDocSetLogFile = (pRENDERDOC_SetLogFile)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_SetLogFile");
@@ -220,19 +218,11 @@ void FRenderDocPluginModule::OpenSettingsEditorWindow()
 {
 	UE_LOG(RenderDocPlugin, Log, TEXT("Opening settings window"));
 
-	POINT CursorPos;
-	GetCursorPos(&CursorPos);
-
-	RECT RootWindowRect;
-	GetWindowRect(RootWindow, &RootWindowRect);
-
-	FVector2D OffsetPosition(CursorPos.x - RootWindowRect.left, CursorPos.y - RootWindowRect.top);
-
 	TSharedPtr<SRenderDocPluginSettingsEditorWindow> Window = SNew(SRenderDocPluginSettingsEditorWindow)
 		.Settings(RenderDocSettings)
 		.SetCaptureOptions(RenderDocSetCaptureOptions);
 
-	Window->MoveWindowTo(OffsetPosition);
+	Window->MoveWindowTo(FSlateApplication::Get().GetCursorPos());
 	GEditor->EditorAddModalWindow(Window.ToSharedRef());
 
 	RenderDocSettings = Window->GetSettings();

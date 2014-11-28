@@ -56,8 +56,6 @@ private:
 	TSharedPtr<FExtender> ToolbarExtender;
 	TSharedPtr<const FExtensionBase> ToolbarExtension;
 
-	HWND RootWindow;
-
 	FRenderDocPluginSettings RenderDocSettings;
 	HINSTANCE RenderDocDLL;
 	uint32 SocketPort;

@@ -1,5 +1,4 @@
 4.6:
-Need to focus render doc window on launch
 Need to make config window ontop
 Need to clean up the code and adapt to the UE4 coding style... it is very much c# style atm
 
