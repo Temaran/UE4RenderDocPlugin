@@ -24,6 +24,8 @@
 
 #include "RenderDocPluginPrivatePCH.h" 
 #include "RenderDocPluginNotification.h"
+#include "SNotificationList.h"
+#include "NotificationManager.h"
 
 void FRenderDocPluginNotification::ShowNotification(bool bIsRenderDocGUIOpen)
 {

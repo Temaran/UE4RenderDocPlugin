@@ -30,7 +30,7 @@
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginCommands.h"
 #include "Internationalization.h"
-#include "Slate.h"
+#include "SlateBasics.h"
 #include "MultiBoxExtender.h"
 #include "renderdoc_app.h"
 #include "RenderDocPluginGUI.h"

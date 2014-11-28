@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "Slate.h"
+#include "SlateBasics.h"
 #include "RenderDocPluginSettings.h"
 
 class SRenderDocPluginSettingsEditorWindow : public SWindow

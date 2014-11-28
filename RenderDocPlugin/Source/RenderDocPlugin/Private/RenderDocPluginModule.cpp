@@ -128,13 +128,20 @@ void FRenderDocPluginModule::StartupModule()
 
 void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr)
 {
+	// --> YAGER by SKrysanov 6/11/2014 : fixed crash on removing this callback in render thread.
+	if (IsInGameThread())
+	{
+		FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
+		SlateRenderer->OnSlateWindowRendered().RemoveRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
+	}
+	// <-- YAGER by SKrysanov 6/11/2014
+
 	if (_isInitialized)
+	{
 		return;
+	}
 	_isInitialized = true;
 
-	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
-	SlateRenderer->OnSlateWindowRendered().RemoveRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
-	
 	if (GConfig)
 	{
 		bool bGreetingHasBeenShown;

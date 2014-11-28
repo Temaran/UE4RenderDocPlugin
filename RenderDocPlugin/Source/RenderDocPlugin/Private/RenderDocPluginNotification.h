@@ -26,6 +26,7 @@
 
 #include "UnrealEd.h"
 #include "Editor/MainFrame/Public/MainFrame.h"
+#include "NotificationManager.h"
 
 class FRenderDocPluginNotification : public FTickableEditorObject
 {

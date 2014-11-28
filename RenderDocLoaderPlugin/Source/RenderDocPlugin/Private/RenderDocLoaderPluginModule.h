@@ -28,7 +28,7 @@
 #include "Editor/LevelEditor/Public/LevelEditor.h"
 #include "SharedPointer.h"
 #include "Internationalization.h"
-#include "Slate.h"
+#include "SlateBasics.h"
 #include "MultiBoxExtender.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocLoaderPlugin, Log, All);
