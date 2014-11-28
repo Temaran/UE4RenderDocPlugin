@@ -1,5 +1,0 @@
-Hello!
-
-Start by installing the latest version of renderdoc from: http://renderdoc.org/builds.
-Then just copy all the content of this repo into your Project/Plugins/ folder and you should be good to go!
-After you've loaded the plugins you should have a new button in the editor UI that lets you capture and it launches Renderdoc for you with the fresh capture. :)
