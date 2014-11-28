@@ -1,9 +1,3 @@
-4.6:
-Need to make config window ontop
-Need to clean up the code and adapt to the UE4 coding style... it is very much c# style atm
-
-
-
 Prompt user if he is sure he wants to recompile all shaders
 Explain that this will rebuild all shaders, and it will lock the editor while the shaders are building
 
