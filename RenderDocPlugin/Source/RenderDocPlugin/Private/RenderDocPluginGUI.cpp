@@ -94,15 +94,16 @@ void FRenderDocPluginGUI::StartRenderDoc(FString PathToRenderDocExecutable, FStr
 
 FString FRenderDocPluginGUI::GetNewestCapture(FString BaseDirectory)
 {
-	wchar_t logFile[512];
-	uint64_t timestamp;
-	uint32 logPathLength = 512;
-	int32 index = 0;
+	wchar_t LogFile[512];
+	uint64_t Timestamp;
+	uint32 LogPathLength = 512;
+	int32 Index = 0;
 	FString OutString;
-	while (GetCapture(index, logFile, &logPathLength, &timestamp))
+
+	while (GetCapture(Index, LogFile, &LogPathLength, &Timestamp))
 	{
-		OutString = FString(logPathLength, logFile);
-		index++;
+		OutString = FString(LogPathLength, LogFile);
+		Index++;
 	}
 	
 	return OutString;

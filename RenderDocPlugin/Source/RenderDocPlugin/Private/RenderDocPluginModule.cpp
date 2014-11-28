@@ -116,7 +116,7 @@ void FRenderDocPluginModule::StartupModule()
 
 	RenderDocGUI = new FRenderDocPluginGUI(RenderDocGetCapture);
 
-	_isInitialized = false;
+	IsInitialized = false;
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
 	SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
 
@@ -134,11 +134,11 @@ void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* Viewport
 	}
 	// <-- YAGER by SKrysanov 6/11/2014
 
-	if (_isInitialized)
+	if (IsInitialized)
 	{
 		return;
 	}
-	_isInitialized = true;
+	IsInitialized = true;
 
 	if (GConfig)
 	{
