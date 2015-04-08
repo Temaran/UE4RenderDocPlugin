@@ -67,7 +67,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 					.HAlign(HAlign_Right)
 					[
 						SNew(SCheckBox)
-						.IsChecked(RenderDocSettings.bCaptureCallStacks ? ESlateCheckBoxState::Checked : ESlateCheckBoxState::Unchecked)
+						.IsChecked(RenderDocSettings.bCaptureCallStacks ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
 						.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnCaptureCallStacksChanged)
 					]
 			]
@@ -88,7 +88,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 						.HAlign(HAlign_Right)
 						[
 							SNew(SCheckBox)
-							.IsChecked(RenderDocSettings.bRefAllResources ? ESlateCheckBoxState::Checked : ESlateCheckBoxState::Unchecked)
+							.IsChecked(RenderDocSettings.bRefAllResources ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
 							.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnRefAllResourcesChanged)
 						]
 				]
@@ -109,7 +109,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 						.HAlign(HAlign_Right)
 						[
 							SNew(SCheckBox)
-							.IsChecked(RenderDocSettings.bSaveAllInitials ? ESlateCheckBoxState::Checked : ESlateCheckBoxState::Unchecked)
+							.IsChecked(RenderDocSettings.bSaveAllInitials ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
 							.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnSaveAllInitialsChanged)
 						]
 				]
@@ -149,19 +149,19 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 	bIsTopmostWindow = true;
 }
 
-void SRenderDocPluginSettingsEditorWindow::OnCaptureCallStacksChanged(ESlateCheckBoxState::Type NewState)
+void SRenderDocPluginSettingsEditorWindow::OnCaptureCallStacksChanged(ECheckBoxState NewState)
 {
-	RenderDocSettings.bCaptureCallStacks = NewState == ESlateCheckBoxState::Checked ? true : false;
+	RenderDocSettings.bCaptureCallStacks = NewState == ECheckBoxState::Checked ? true : false;
 }
 
-void SRenderDocPluginSettingsEditorWindow::OnRefAllResourcesChanged(ESlateCheckBoxState::Type NewState)
+void SRenderDocPluginSettingsEditorWindow::OnRefAllResourcesChanged(ECheckBoxState NewState)
 {
-	RenderDocSettings.bRefAllResources = NewState == ESlateCheckBoxState::Checked ? true : false;
+	RenderDocSettings.bRefAllResources = NewState == ECheckBoxState::Checked ? true : false;
 }
 
-void SRenderDocPluginSettingsEditorWindow::OnSaveAllInitialsChanged(ESlateCheckBoxState::Type NewState)
+void SRenderDocPluginSettingsEditorWindow::OnSaveAllInitialsChanged(ECheckBoxState NewState)
 {
-	RenderDocSettings.bSaveAllInitials = NewState == ESlateCheckBoxState::Checked ? true : false;
+	RenderDocSettings.bSaveAllInitials = NewState == ECheckBoxState::Checked ? true : false;
 }
 
 FReply SRenderDocPluginSettingsEditorWindow::SaveAndClose()

@@ -49,9 +49,9 @@ private:
 	FRenderDocPluginSettings RenderDocSettings;
 	pRENDERDOC_SetCaptureOptions SetOptions;
 
-	void OnCaptureCallStacksChanged(ESlateCheckBoxState::Type NewState);
-	void OnRefAllResourcesChanged(ESlateCheckBoxState::Type NewState);
-	void OnSaveAllInitialsChanged(ESlateCheckBoxState::Type NewState);
+	void OnCaptureCallStacksChanged(ECheckBoxState NewState);
+	void OnRefAllResourcesChanged(ECheckBoxState NewState);
+	void OnSaveAllInitialsChanged(ECheckBoxState NewState);
 		
 	FReply SaveAndClose();
 	FReply ShowAboutWindow();

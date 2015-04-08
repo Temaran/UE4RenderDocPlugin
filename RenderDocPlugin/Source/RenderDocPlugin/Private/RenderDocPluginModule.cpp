@@ -78,7 +78,19 @@ void FRenderDocPluginModule::StartupModule()
 	FString CapturePath = FPaths::Combine(*RenderDocCapturePath, *FDateTime::Now().ToString());
 	CapturePath = FPaths::ConvertRelativePathToFull(CapturePath);
 	FPaths::NormalizeDirectoryName(CapturePath);
-	RenderDocSetLogFile(*CapturePath);
+	
+	if (sizeof(TCHAR) == sizeof(char))
+	{
+		RenderDocSetLogFile((char*)*CapturePath);
+	}
+	else
+	{
+		char CapturePathShort[1024];
+		ZeroMemory(CapturePathShort, 1024);
+		size_t NumCharsConverted;
+		wcstombs_s(&NumCharsConverted, CapturePathShort, *CapturePath, CapturePath.Len());
+		RenderDocSetLogFile(CapturePathShort);
+	}
 
 	RenderDocSetFocusToggleKeys(NULL, 0);
 	RenderDocSetCaptureKeys(NULL, 0);
@@ -118,7 +130,7 @@ void FRenderDocPluginModule::StartupModule()
 
 	IsInitialized = false;
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
-	SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
+	LoadedDelegateHandle = SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
 
 	int32 RenderDocVersion = RenderDocGetAPIVersion();
 	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin started! Your renderdoc installation is v%i"), RenderDocVersion);
@@ -130,7 +142,7 @@ void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* Viewport
 	if (IsInGameThread())
 	{
 		FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
-		SlateRenderer->OnSlateWindowRendered().RemoveRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
+		SlateRenderer->OnSlateWindowRendered().Remove(LoadedDelegateHandle);
 	}
 	// <-- YAGER by SKrysanov 6/11/2014
 

@@ -51,6 +51,7 @@ private:
 	static const FName SettingsUITabName;
 
 	FRenderDocPluginGUI* RenderDocGUI;
+	FDelegateHandle LoadedDelegateHandle;
 
 	TSharedPtr<FExtensibilityManager> ExtensionManager;
 	TSharedPtr<FExtender> ToolbarExtender;
