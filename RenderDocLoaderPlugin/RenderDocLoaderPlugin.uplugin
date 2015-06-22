@@ -15,7 +15,8 @@
 		{
 			"Name" : "RenderDocLoaderPlugin",
 			"Type" : "Developer",
-			"LoadingPhase" : "PostConfigInit"
+			"LoadingPhase" : "PostConfigInit",
+			"WhitelistPlatforms": [ "Win32", "Win64" ]
 		}
 	]
 }
