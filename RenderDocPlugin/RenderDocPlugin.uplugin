@@ -14,7 +14,8 @@
 	[
 		{
 			"Name" : "RenderDocPlugin",
-			"Type" : "Developer"
+			"Type" : "Developer",
+			"WhitelistPlatforms": [ "Win32", "Win64" ]
 		}
 	]
 }
