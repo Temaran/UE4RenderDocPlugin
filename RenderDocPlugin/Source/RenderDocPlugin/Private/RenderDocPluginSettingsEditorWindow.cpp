@@ -43,7 +43,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 		.IsPopupWindow(false)
 		.CreateTitleBar(false)
 		.SizingRule(ESizingRule::FixedSize)
-		.SupportsTransparency(false)
+		.SupportsTransparency(EWindowTransparency::None)
 		.InitialOpacity(1.0f)
 		.FocusWhenFirstShown(true)
 		.bDragAnywhere(false)
@@ -59,7 +59,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 				[
 					SNew(STextBlock)
 					.Text(LOCTEXT("CaptureCallstacks", "Capture callstacks"))
-					.ToolTipText(FString("Save the call stack for every draw event in addition to the event itself. This is useful when you need additional information to solve your particular problem."))
+					.ToolTipText(LOCTEXT("CaptureCallstacksToolTip", "Save the call stack for every draw event in addition to the event itself. This is useful when you need additional information to solve your particular problem."))
 				]
 
 				+ SHorizontalBox::Slot()
@@ -80,7 +80,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 					[
 						SNew(STextBlock)
 						.Text(LOCTEXT("RefAllResources", "Capture all resources"))
-						.ToolTipText(FString("Capture all resources, including those that are not referenced by the current frame."))
+						.ToolTipText(LOCTEXT("RefAllResourcesToolTip", "Capture all resources, including those that are not referenced by the current frame."))
 					]
 
 					+ SHorizontalBox::Slot()
@@ -101,7 +101,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 					[
 						SNew(STextBlock)
 						.Text(LOCTEXT("SaveAllInitials", "Save all initial states"))
-						.ToolTipText(FString("Save the initial status of all resources, even if we think that they will be overwritten in this frame."))
+						.ToolTipText(LOCTEXT("SaveAllInitialsToolTip", "Save the initial status of all resources, even if we think that they will be overwritten in this frame."))
 					]
 
 					+ SHorizontalBox::Slot()

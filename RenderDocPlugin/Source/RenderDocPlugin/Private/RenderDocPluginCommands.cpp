@@ -24,6 +24,8 @@
 
 #include "RenderDocPluginPrivatePCH.h"
 #include "RenderDocPluginCommands.h"
+
+#define LOCTEXT_NAMESPACE "RenderDocPluginSettingsEditor"
  
 PRAGMA_DISABLE_OPTIMIZATION
 void FRenderDocPluginCommands::RegisterCommands()
@@ -32,3 +34,5 @@ void FRenderDocPluginCommands::RegisterCommands()
 	UI_COMMAND(OpenSettings, "Open Settings", "Opens the RenderDoc Plugin Settings Editor", EUserInterfaceActionType::Button, FInputGesture());
 }
 PRAGMA_ENABLE_OPTIMIZATION
+
+#undef LOCTEXT_NAMESPACE 
