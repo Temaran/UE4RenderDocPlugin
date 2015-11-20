@@ -33,6 +33,12 @@ const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"
 
 void FRenderDocPluginModule::StartupModule()
 {
+	if (GUsingNullRHI)
+	{
+		UE_LOG(RenderDocPlugin, Warning, TEXT("RenderDoc Plugin will not be loaded because a Null RHI (Cook Server, perhaps) is being used."));
+		return;
+	}
+
 	//Load DLL
 	FString BinaryPath;
 	if (GConfig)
@@ -288,6 +294,9 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
 
 void FRenderDocPluginModule::ShutdownModule()
 {
+	if (GUsingNullRHI)
+		return;
+
 	if (ExtensionManager.IsValid())
 	{
 		FRenderDocPluginStyle::Shutdown();
