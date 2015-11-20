@@ -167,8 +167,10 @@ void SRenderDocPluginSettingsEditorWindow::OnSaveAllInitialsChanged(ECheckBoxSta
 FReply SRenderDocPluginSettingsEditorWindow::SaveAndClose()
 {
 	RenderDocSettings.Save();
-	CaptureOptions Options = RenderDocSettings.CreateOptions();
-	SetOptions(&Options);
+
+	SetOptions(eRENDERDOC_Option_CaptureCallstacks, RenderDocSettings.bCaptureCallStacks  ? 1 : 0);
+	SetOptions(eRENDERDOC_Option_RefAllResources,   RenderDocSettings.bRefAllResources    ? 1 : 0);
+	SetOptions(eRENDERDOC_Option_SaveAllInitials,   RenderDocSettings.bSaveAllInitials    ? 1 : 0);
 
 	return Close();
 }

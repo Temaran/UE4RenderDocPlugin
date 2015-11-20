@@ -71,26 +71,7 @@ private:
 
 	void* GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName);
 	
-	//General
-	pRENDERDOC_GetAPIVersion RenderDocGetAPIVersion;
-	pRENDERDOC_SetLogFile RenderDocSetLogFile;
-
-	//Capture
-	pRENDERDOC_SetCaptureOptions RenderDocSetCaptureOptions;
-	pRENDERDOC_GetCapture RenderDocGetCapture;
-	pRENDERDOC_SetActiveWindow RenderDocSetActiveWindow;
-	pRENDERDOC_TriggerCapture RenderDocTriggerCapture;
-	pRENDERDOC_StartFrameCapture RenderDocStartFrameCapture;
-	pRENDERDOC_EndFrameCapture RenderDocEndFrameCapture;
-
-	//Overlay
-	pRENDERDOC_GetOverlayBits RenderDocGetOverlayBits;
-	pRENDERDOC_MaskOverlayBits RenderDocMaskOverlayBits;
-
-	//Hotkeys
-	pRENDERDOC_SetFocusToggleKeys RenderDocSetFocusToggleKeys;
-	pRENDERDOC_SetCaptureKeys RenderDocSetCaptureKeys;
-
-	//Remote access
-	pRENDERDOC_InitRemoteAccess RenderDocInitRemoteAccess;
+	// RenderDoc API context
+	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
+	RENDERDOC_API_CONTEXT* RENDERDOC;
 };

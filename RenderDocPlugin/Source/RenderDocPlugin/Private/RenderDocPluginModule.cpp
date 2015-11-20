@@ -55,24 +55,17 @@ void FRenderDocPluginModule::StartupModule()
 		return;
 	}
 	
-	//Init function pointers
-	RenderDocGetAPIVersion = (pRENDERDOC_GetAPIVersion)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_GetAPIVersion");
-	RenderDocSetLogFile = (pRENDERDOC_SetLogFile)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_SetLogFile");
-	
-	RenderDocSetCaptureOptions = (pRENDERDOC_SetCaptureOptions)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_SetCaptureOptions");
-	RenderDocGetCapture = (pRENDERDOC_GetCapture)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_GetCapture");
-	RenderDocSetActiveWindow = (pRENDERDOC_SetActiveWindow)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_SetActiveWindow");
-	RenderDocTriggerCapture = (pRENDERDOC_TriggerCapture)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_TriggerCapture");
-	RenderDocStartFrameCapture = (pRENDERDOC_StartFrameCapture)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_StartFrameCapture");
-	RenderDocEndFrameCapture = (pRENDERDOC_EndFrameCapture)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_EndFrameCapture");
-	
-	RenderDocGetOverlayBits = (pRENDERDOC_GetOverlayBits)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_GetOverlayBits");
-	RenderDocMaskOverlayBits = (pRENDERDOC_MaskOverlayBits)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_MaskOverlayBits");
-
-	RenderDocSetFocusToggleKeys = (pRENDERDOC_SetFocusToggleKeys)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_SetFocusToggleKeys");
-	RenderDocSetCaptureKeys = (pRENDERDOC_SetCaptureKeys)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_SetCaptureKeys");
-
-	RenderDocInitRemoteAccess = (pRENDERDOC_InitRemoteAccess)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_InitRemoteAccess");
+	// Initialize the RenderDoc API
+	pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_GetAPI");
+	if (0 == RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_0_0, (void**)&RENDERDOC))
+	{
+		UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc initialization failed."));
+		return;
+	}
+	// Version checking
+	int major(0), minor(0), patch(0);
+	RENDERDOC->GetAPIVersion(&major, &minor, &patch);
+	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc v%i.%i.%i has been loaded."), major, minor, patch);
 
 	//Set capture settings
 	FString RenderDocCapturePath = FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures"));
@@ -87,7 +80,7 @@ void FRenderDocPluginModule::StartupModule()
 	
 	if (sizeof(TCHAR) == sizeof(char))
 	{
-		RenderDocSetLogFile((char*)*CapturePath);
+		RENDERDOC->SetLogFilePathTemplate((const char*)*CapturePath);
 	}
 	else
 	{
@@ -95,18 +88,20 @@ void FRenderDocPluginModule::StartupModule()
 		ZeroMemory(CapturePathShort, 1024);
 		size_t NumCharsConverted;
 		wcstombs_s(&NumCharsConverted, CapturePathShort, *CapturePath, CapturePath.Len());
-		RenderDocSetLogFile(CapturePathShort);
+		RENDERDOC->SetLogFilePathTemplate(CapturePathShort);
 	}
 
-	RenderDocSetFocusToggleKeys(NULL, 0);
-	RenderDocSetCaptureKeys(NULL, 0);
+	RENDERDOC->SetFocusToggleKeys(NULL, 0);
+	RENDERDOC->SetCaptureKeys(NULL, 0);
 
-	CaptureOptions Options = RenderDocSettings.CreateOptions();
-	RenderDocSetCaptureOptions(&Options);
+	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_CaptureCallstacks, RenderDocSettings.bCaptureCallStacks  ? 1 : 0);
+	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_RefAllResources,   RenderDocSettings.bRefAllResources    ? 1 : 0);
+	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_SaveAllInitials,   RenderDocSettings.bSaveAllInitials    ? 1 : 0);
 
-	//Init remote access
-	SocketPort = 0;
-	RenderDocInitRemoteAccess(&SocketPort);
+	//Init remote access (no longer necessary?!)
+	//RenderDocInitRemoteAccess = (pRENDERDOC_InitRemoteAccess)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_InitRemoteAccess");
+	//SocketPort = 0;
+	//RenderDocInitRemoteAccess(&SocketPort);
 
 	//Init UI
 	FRenderDocPluginStyle::Initialize();
@@ -130,16 +125,15 @@ void FRenderDocPluginModule::StartupModule()
 	LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
 
 	//Init renderdoc
-	RenderDocMaskOverlayBits(eOverlay_None, eOverlay_None);
+	RENDERDOC->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
 
-	RenderDocGUI = new FRenderDocPluginGUI(RenderDocGetCapture);
+	RenderDocGUI = new FRenderDocPluginGUI(RENDERDOC->GetCapture);
 
 	IsInitialized = false;
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
 	LoadedDelegateHandle = SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
 
-	int32 RenderDocVersion = RenderDocGetAPIVersion();
-	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin started! Your renderdoc installation is v%i"), RenderDocVersion);
+	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin is ready!"));
 }
 
 void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr)
@@ -174,18 +168,18 @@ void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* Viewport
 	HWND WindowHandle = GetActiveWindow();
 
 	//Trigger a capture just to make sure we are set up correctly. This should prevent us from crashing on exit.
-	ENQUEUE_UNIQUE_RENDER_COMMAND_FOURPARAMETER(
+	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
 		InitializeRenderDoc,
 		HWND, WindowHandle, WindowHandle,
 		FRenderDocPluginGUI*, RenderDocGUI, RenderDocGUI,
-		pRENDERDOC_StartFrameCapture, RenderDocStartFrameCapture, RenderDocStartFrameCapture,
-		pRENDERDOC_EndFrameCapture, RenderDocEndFrameCapture, RenderDocEndFrameCapture,
+		RENDERDOC_API_CONTEXT*, RENDERDOC, RENDERDOC,
 		{
-		RenderDocStartFrameCapture(WindowHandle);
-		RenderDocEndFrameCapture(WindowHandle);
+			RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
+			RENDERDOC->StartFrameCapture(Device, WindowHandle);
+			RENDERDOC->EndFrameCapture(Device, WindowHandle);
 
-		FString NewestCapture = RenderDocGUI->GetNewestCapture(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
-		IFileManager::Get().Delete(*NewestCapture);
+			FString NewestCapture = RenderDocGUI->GetNewestCapture(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
+			IFileManager::Get().Delete(*NewestCapture);
 		});
 
 	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin initialized!"));
@@ -201,34 +195,38 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 
 	HWND WindowHandle = GetActiveWindow();
 
-	ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
+	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
 		StartRenderDocCapture,
 		HWND, WindowHandle, WindowHandle,
-		pRENDERDOC_StartFrameCapture, RenderDocStartFrameCapture, RenderDocStartFrameCapture,
+		RENDERDOC_API_CONTEXT*, RENDERDOC, RENDERDOC,
+		FRenderDocPluginModule*, Plugin, this,
 		{
-		RenderDocStartFrameCapture(WindowHandle);
+			RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
+			RENDERDOC->StartFrameCapture(Device, WindowHandle);
 		});
 
 	GEditor->GetActiveViewport()->Draw(true);
 
-	ENQUEUE_UNIQUE_RENDER_COMMAND_FOURPARAMETER(
+	ENQUEUE_UNIQUE_RENDER_COMMAND_FIVEPARAMETER(
 		EndRenderDocCapture,
 		HWND, WindowHandle, WindowHandle,
 		uint32, SocketPort, SocketPort,
 		FRenderDocPluginGUI*, RenderDocGUI, RenderDocGUI,
-		pRENDERDOC_EndFrameCapture, RenderDocEndFrameCapture, RenderDocEndFrameCapture,
+		RENDERDOC_API_CONTEXT*, RENDERDOC, RENDERDOC,
+		FRenderDocPluginModule*, Plugin, this,
 		{
-		RenderDocEndFrameCapture(WindowHandle);
+			RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
+			RENDERDOC->EndFrameCapture(Device, WindowHandle);
 
-		FString BinaryPath;
-		if (GConfig)
-		{
-			GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), BinaryPath, GGameIni);
-		}
+			FString BinaryPath;
+			if (GConfig)
+			{
+			  GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), BinaryPath, GGameIni);
+			}
 
-		RenderDocGUI->StartRenderDoc(FPaths::Combine(*BinaryPath, *FString("renderdocui.exe"))
-			, FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures"))
-			, SocketPort);
+			RenderDocGUI->StartRenderDoc(FPaths::Combine(*BinaryPath, *FString("renderdocui.exe"))
+			  , FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures"))
+			  , SocketPort);
 		});
 }
 
@@ -238,7 +236,7 @@ void FRenderDocPluginModule::OpenSettingsEditorWindow()
 
 	TSharedPtr<SRenderDocPluginSettingsEditorWindow> Window = SNew(SRenderDocPluginSettingsEditorWindow)
 		.Settings(RenderDocSettings)
-		.SetCaptureOptions(RenderDocSetCaptureOptions);
+		.SetCaptureOptions(RENDERDOC->SetCaptureOptionU32);
 
 	Window->MoveWindowTo(FSlateApplication::Get().GetCursorPos());
 	GEditor->EditorAddModalWindow(Window.ToSharedRef());
@@ -314,6 +312,7 @@ void FRenderDocPluginModule::ShutdownModule()
 	// Unregister the tab spawner
 	FGlobalTabmanager::Get()->UnregisterTabSpawner(SettingsUITabName);
 }
+
 
 #undef LOCTEXT_NAMESPACE
 

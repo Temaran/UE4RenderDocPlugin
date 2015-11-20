@@ -53,14 +53,4 @@ public:
 		GConfig->SetBool(TEXT("RenderDoc"), TEXT("SaveAllInitials"), bSaveAllInitials, GGameIni);
 		GConfig->Flush(false, GGameIni);
 	}
-
-	CaptureOptions CreateOptions()
-	{
-		CaptureOptions Options;
-		Options.CaptureCallstacks = bCaptureCallStacks;
-		Options.RefAllResources = bRefAllResources;
-		Options.SaveAllInitials = bSaveAllInitials;
-
-		return Options;
-	}
 };
