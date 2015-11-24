@@ -30,6 +30,12 @@
 
 void FRenderDocLoaderPluginModule::StartupModule()
 {
+	if (GUsingNullRHI)
+	{
+		UE_LOG(RenderDocLoaderPlugin, Warning, TEXT("RenderDoc Plugin will not be loaded because a Null RHI (Cook Server, perhaps) is being used."));
+		return;
+	}
+	
 	FString BinaryPath;
 	if (GConfig)
 	{
@@ -94,6 +100,9 @@ void FRenderDocLoaderPluginModule::StartupModule()
 
 void FRenderDocLoaderPluginModule::ShutdownModule()
 {
+	if (GUsingNullRHI)
+		return;
+
 	/*if (RenderDocDLL)
 		FreeLibrary(RenderDocDLL);*/
 
