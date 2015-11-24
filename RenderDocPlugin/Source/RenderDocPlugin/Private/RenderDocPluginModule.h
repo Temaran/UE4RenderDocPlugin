@@ -74,4 +74,9 @@ private:
 	// RenderDoc API context
 	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
 	RENDERDOC_API_CONTEXT* RENDERDOC;
+
+	// UE4-related: enable DrawEvents during captures, if necessary:
+	bool UE4_GEmitDrawEvents_BeforeCapture;
+	void UE4_OverrideDrawEventsFlag(const bool flag=true);
+	void UE4_RestoreDrawEventsFlag();
 };

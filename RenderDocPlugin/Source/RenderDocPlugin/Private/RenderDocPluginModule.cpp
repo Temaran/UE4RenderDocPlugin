@@ -178,6 +178,7 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 		RENDERDOC_API_CONTEXT*, RENDERDOC, RENDERDOC,
 		FRenderDocPluginModule*, Plugin, this,
 		{
+			Plugin->UE4_OverrideDrawEventsFlag();
 			RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
 			RENDERDOC->StartFrameCapture(Device, WindowHandle);
 		});
@@ -194,6 +195,7 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 		{
 			RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
 			RENDERDOC->EndFrameCapture(Device, WindowHandle);
+			Plugin->UE4_RestoreDrawEventsFlag();
 
 			FString BinaryPath;
 			if (GConfig)
@@ -290,6 +292,22 @@ void FRenderDocPluginModule::ShutdownModule()
 	FGlobalTabmanager::Get()->UnregisterTabSpawner(SettingsUITabName);
 }
 
+void FRenderDocPluginModule::UE4_OverrideDrawEventsFlag(const bool flag)
+{
+  //UE_LOG(RenderDocPlugin, Log, TEXT("Overriding GEmitDrawEvents flag"));
+  //UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
+  UE4_GEmitDrawEvents_BeforeCapture = GEmitDrawEvents;
+  GEmitDrawEvents = flag;
+  //UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
+}
+
+void FRenderDocPluginModule::UE4_RestoreDrawEventsFlag()
+{
+  //UE_LOG(RenderDocPlugin, Log, TEXT("Restoring GEmitDrawEvents flag"));
+  //UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
+  GEmitDrawEvents = UE4_GEmitDrawEvents_BeforeCapture;
+  //UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
+}
 
 #undef LOCTEXT_NAMESPACE
 
