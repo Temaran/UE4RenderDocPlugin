@@ -25,10 +25,10 @@
 #include "RenderDocPluginPrivatePCH.h"
 #include "RenderDocPluginGUI.h"
 
-FRenderDocPluginGUI::FRenderDocPluginGUI(pRENDERDOC_GetCapture RenderDocGetCapture)
+FRenderDocPluginGUI::FRenderDocPluginGUI(RENDERDOC_API_CONTEXT* pRENDERDOC)
 {
+  RENDERDOC = pRENDERDOC;
 	IsRunning = false;
-	GetCapture = RenderDocGetCapture;
 }
 
 FRenderDocPluginGUI::~FRenderDocPluginGUI()
@@ -53,17 +53,16 @@ uint32 FRenderDocPluginGUI::Run()
 
 	if (!NewestCapture.IsEmpty())
 	{
-		int32 ReturnCode;
+    // This is the new, recommended way of launching the RenderDoc GUI:
+    if (!RENDERDOC->IsRemoteAccessConnected())
+    {
+      uint32 PID = (sizeof(TCHAR) == sizeof(char)) ?
+          RENDERDOC->LaunchReplayUI(false, (const char*)(*ArgumentString))
+        : RENDERDOC->LaunchReplayUI(false, TCHAR_TO_ANSI(*ArgumentString));
 
-		if (!FPlatformProcess::ExecProcess(
-			*ExecutablePathInQuotes,
-			*ArgumentString,
-			&ReturnCode,
-			/*OutStdOut =*/nullptr,
-			/*OutStdErr =*/nullptr))
-		{
-			UE_LOG(LogTemp, Error, TEXT("Could not launch RenderDoc!!"));
-		}
+      if (0 == PID)
+        UE_LOG(LogTemp, Error, TEXT("Could not launch RenderDoc!!"));
+    }
 	}
 
 	IsRunning = false;
@@ -100,7 +99,7 @@ FString FRenderDocPluginGUI::GetNewestCapture(FString BaseDirectory)
 	uint32_t Index = 0;
 	FString OutString;
 	
-	while (GetCapture(Index, LogFile, &LogPathLength, &Timestamp))
+	while (RENDERDOC->GetCapture(Index, LogFile, &LogPathLength, &Timestamp))
 	{
 		if (sizeof(TCHAR) == sizeof(char))
 		{

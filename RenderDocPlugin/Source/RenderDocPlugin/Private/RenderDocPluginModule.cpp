@@ -125,7 +125,7 @@ void FRenderDocPluginModule::StartupModule()
 	//Init renderdoc
 	RENDERDOC->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
 
-	RenderDocGUI = new FRenderDocPluginGUI(RENDERDOC->GetCapture);
+	RenderDocGUI = new FRenderDocPluginGUI(RENDERDOC);
 
 	IsInitialized = false;
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();

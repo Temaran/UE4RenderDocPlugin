@@ -30,8 +30,11 @@
 
 class FRenderDocPluginGUI : public FRunnable
 {	
+private:
+  typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
+
 public: 
-	FRenderDocPluginGUI(pRENDERDOC_GetCapture RenderDocGetCapture);
+  FRenderDocPluginGUI(RENDERDOC_API_CONTEXT* pRENDERDOC);
 	virtual ~FRenderDocPluginGUI();
  
 	// Begin FRunnable interface.
@@ -45,7 +48,7 @@ public:
 	FString GetNewestCapture(FString BaseDirectory);
 
 private:
-	pRENDERDOC_GetCapture GetCapture;
+  RENDERDOC_API_CONTEXT* RENDERDOC;
 	FRunnableThread* Thread;
 
 	bool IsRunning;
