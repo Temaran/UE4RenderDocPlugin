@@ -48,8 +48,7 @@ uint32 FRenderDocPluginGUI::Run()
 	FPlatformProcess::Sleep(1);
 
 	FString NewestCapture = GetNewestCapture(CaptureBaseDirectory);
-	FString ExecutablePathInQuotes = FString::Printf(TEXT("\"%s\""), *ExecutablePath);
-	FString ArgumentString = FString::Printf(TEXT("--remoteaccess localhost:%u \"%s\""), SocketPort, *FPaths::ConvertRelativePathToFull(NewestCapture));
+  FString ArgumentString = FString::Printf(TEXT("\"%s\""), *FPaths::ConvertRelativePathToFull(NewestCapture).Append(TEXT(".log")));
 
 	if (!NewestCapture.IsEmpty())
 	{
@@ -57,8 +56,8 @@ uint32 FRenderDocPluginGUI::Run()
     if (!RENDERDOC->IsRemoteAccessConnected())
     {
       uint32 PID = (sizeof(TCHAR) == sizeof(char)) ?
-          RENDERDOC->LaunchReplayUI(false, (const char*)(*ArgumentString))
-        : RENDERDOC->LaunchReplayUI(false, TCHAR_TO_ANSI(*ArgumentString));
+          RENDERDOC->LaunchReplayUI(true, (const char*)(*ArgumentString))
+        : RENDERDOC->LaunchReplayUI(true, TCHAR_TO_ANSI(*ArgumentString));
 
       if (0 == PID)
         UE_LOG(LogTemp, Error, TEXT("Could not launch RenderDoc!!"));
@@ -80,14 +79,12 @@ void FRenderDocPluginGUI::Stop()
 	IsRunning = false;
 }
 
-void FRenderDocPluginGUI::StartRenderDoc(FString PathToRenderDocExecutable, FString FrameCaptureBaseDirectory, uint32 Port)
+void FRenderDocPluginGUI::StartRenderDoc(FString FrameCaptureBaseDirectory)
 {
 	if (IsRunning)
 		return;
 	
-	ExecutablePath = PathToRenderDocExecutable;
 	CaptureBaseDirectory = FrameCaptureBaseDirectory;
-	SocketPort = Port;
 	Thread = FRunnableThread::Create(this, TEXT("FRenderDocRunner"), 0, TPri_BelowNormal);
 }
 
