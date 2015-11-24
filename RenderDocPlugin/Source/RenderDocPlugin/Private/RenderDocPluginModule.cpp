@@ -98,10 +98,8 @@ void FRenderDocPluginModule::StartupModule()
 	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_RefAllResources,   RenderDocSettings.bRefAllResources    ? 1 : 0);
 	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_SaveAllInitials,   RenderDocSettings.bSaveAllInitials    ? 1 : 0);
 
-	//Init remote access (no longer necessary?!)
-	//RenderDocInitRemoteAccess = (pRENDERDOC_InitRemoteAccess)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_InitRemoteAccess");
-	//SocketPort = 0;
-	//RenderDocInitRemoteAccess(&SocketPort);
+	//Init remote access
+	SocketPort = 0;
 
 	//Init UI
 	FRenderDocPluginStyle::Initialize();
@@ -163,28 +161,7 @@ void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* Viewport
 		}
 	}
 
-	//TODO: REMOVE THIS WHEN WE GET PULL REQUEST ACCEPTED
-
-	HWND WindowHandle = GetActiveWindow();
-
-	//Trigger a capture just to make sure we are set up correctly. This should prevent us from crashing on exit.
-	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
-		InitializeRenderDoc,
-		HWND, WindowHandle, WindowHandle,
-		FRenderDocPluginGUI*, RenderDocGUI, RenderDocGUI,
-		RENDERDOC_API_CONTEXT*, RENDERDOC, RENDERDOC,
-		{
-			RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
-			RENDERDOC->StartFrameCapture(Device, WindowHandle);
-			RENDERDOC->EndFrameCapture(Device, WindowHandle);
-
-			FString NewestCapture = RenderDocGUI->GetNewestCapture(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
-			IFileManager::Get().Delete(*NewestCapture);
-		});
-
-	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin initialized!"));
-
-	//TODO: END OF REMOVE THIS
+  UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin initialized!"));
 }
 
 void FRenderDocPluginModule::CaptureCurrentViewport()
