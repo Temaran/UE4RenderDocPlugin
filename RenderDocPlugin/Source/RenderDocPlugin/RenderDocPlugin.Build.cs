@@ -45,7 +45,6 @@ namespace UnrealBuildTool.Rules
                                                     "Slate", 
                                                     "SlateCore",
                                                     "EditorStyle",
-                                                    "LevelEditor",
                                                     "UnrealEd",
 					                                "Projects",
 					                                "GameProjectGeneration",

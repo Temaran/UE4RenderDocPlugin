@@ -45,7 +45,6 @@ namespace UnrealBuildTool.Rules
                                                     "Slate", 
                                                     "SlateCore",
                                                     "EditorStyle",
-                                                    "LevelEditor",
                                                     "DesktopPlatform",
 													"RHI"				// RHI module: required for accessing the UE4 flag GUsingNullRHI.
 				                                });
