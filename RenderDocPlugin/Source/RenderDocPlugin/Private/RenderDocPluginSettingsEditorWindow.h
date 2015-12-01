@@ -34,7 +34,7 @@ public:
 	{
 	}
 	SLATE_ARGUMENT(FRenderDocPluginSettings, Settings)
-		SLATE_ARGUMENT(pRENDERDOC_SetCaptureOptions, SetCaptureOptions)
+		SLATE_ARGUMENT(pRENDERDOC_SetCaptureOptionU32, SetCaptureOptions)
 
 		SLATE_END_ARGS()
 
@@ -47,7 +47,7 @@ public:
 
 private:
 	FRenderDocPluginSettings RenderDocSettings;
-	pRENDERDOC_SetCaptureOptions SetOptions;
+	pRENDERDOC_SetCaptureOptionU32 SetOptions;
 
 	void OnCaptureCallStacksChanged(ECheckBoxState NewState);
 	void OnRefAllResourcesChanged(ECheckBoxState NewState);
