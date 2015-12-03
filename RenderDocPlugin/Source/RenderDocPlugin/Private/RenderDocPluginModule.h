@@ -59,7 +59,6 @@ private:
 
 	FRenderDocPluginSettings RenderDocSettings;
 	HINSTANCE RenderDocDLL;
-	uint32 SocketPort;
 	bool IsInitialized;
 
 	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);

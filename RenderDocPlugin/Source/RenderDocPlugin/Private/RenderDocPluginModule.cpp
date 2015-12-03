@@ -98,9 +98,6 @@ void FRenderDocPluginModule::StartupModule()
 	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_RefAllResources,   RenderDocSettings.bRefAllResources    ? 1 : 0);
 	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_SaveAllInitials,   RenderDocSettings.bSaveAllInitials    ? 1 : 0);
 
-	//Init remote access
-	SocketPort = 0;
-
 	//Init UI
 	FRenderDocPluginStyle::Initialize();
 	FRenderDocPluginCommands::Register();
@@ -185,10 +182,9 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 
 	GEditor->GetActiveViewport()->Draw(true);
 
-	ENQUEUE_UNIQUE_RENDER_COMMAND_FIVEPARAMETER(
+	ENQUEUE_UNIQUE_RENDER_COMMAND_FOURPARAMETER(
 		EndRenderDocCapture,
 		HWND, WindowHandle, WindowHandle,
-		uint32, SocketPort, SocketPort,
 		FRenderDocPluginGUI*, RenderDocGUI, RenderDocGUI,
 		RENDERDOC_API_CONTEXT*, RENDERDOC, RENDERDOC,
 		FRenderDocPluginModule*, Plugin, this,
@@ -203,9 +199,7 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 			  GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), BinaryPath, GGameIni);
 			}
 
-			RenderDocGUI->StartRenderDoc(FPaths::Combine(*BinaryPath, *FString("renderdocui.exe"))
-			  , FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures"))
-			  , SocketPort);
+			RenderDocGUI->StartRenderDoc( FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")) );
 		});
 }
 

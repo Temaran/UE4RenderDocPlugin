@@ -44,7 +44,7 @@ public:
 	// End FRunnable interface
  
 	bool IsGUIOpen() { return IsRunning; }
-	void StartRenderDoc(FString PathToRenderDocExecutable, FString FrameCaptureBaseDirectory, uint32 Port);
+	void StartRenderDoc(FString FrameCaptureBaseDirectory);
 	FString GetNewestCapture(FString BaseDirectory);
 
 private:
@@ -52,7 +52,5 @@ private:
 	FRunnableThread* Thread;
 
 	bool IsRunning;
-	uint32 SocketPort;
-	FString ExecutablePath;
 	FString CaptureBaseDirectory;
 };
