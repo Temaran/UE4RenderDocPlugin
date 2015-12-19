@@ -169,7 +169,7 @@ void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* Viewport
 
 	if (GConfig)
 	{
-		bool bGreetingHasBeenShown;
+		bool bGreetingHasBeenShown (false);
 		GConfig->GetBool(TEXT("RenderDoc"), TEXT("GreetingHasBeenShown"), bGreetingHasBeenShown, GGameIni);
 		if (!bGreetingHasBeenShown)
 		{
