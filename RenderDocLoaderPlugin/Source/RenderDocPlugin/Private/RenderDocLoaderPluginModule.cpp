@@ -26,7 +26,47 @@
 #include "RenderDocLoaderPluginModule.h"
 #include "Developer/DesktopPlatform/public/DesktopPlatformModule.h"
 
+#include "../../../../RenderDocAPI/renderdoc_app.h"
+
 #define LOCTEXT_NAMESPACE "RenderDocLoaderPluginNamespace" 
+
+static HINSTANCE LoadAndCheckRenderDocLibrary(const FString& RenderdocPath)
+{
+  if (RenderdocPath.IsEmpty())
+    return(nullptr);
+
+  FString PathToRenderDocDLL = FPaths::Combine(*RenderdocPath, *FString("renderdoc.dll"));
+  HINSTANCE RenderDocDLL = LoadLibrary(*PathToRenderDocDLL);
+  if (!RenderDocDLL)
+    return(nullptr);
+
+  pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)(void*)GetProcAddress(RenderDocDLL, "RENDERDOC_GetAPI");
+  if (!RENDERDOC_GetAPI)
+  {
+    UE_LOG(RenderDocLoaderPlugin, Warning, TEXT("'%s' : Could not load renderdoc function 'RENDERDOC_GetAPI'. You are most likely using an incompatible version of Renderdoc."), *PathToRenderDocDLL);
+    FreeLibrary(RenderDocDLL);
+    return(nullptr);
+  }
+
+  RENDERDOC_API_1_0_0* RENDERDOC (nullptr);
+  if (0 == RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_0_0, (void**)&RENDERDOC))
+  {
+    UE_LOG(RenderDocLoaderPlugin, Warning, TEXT("'%s' : RenderDoc initialization failed due to API incompatibility with eRENDERDOC_API_Version_1_0_0."), *PathToRenderDocDLL);
+    FreeLibrary(RenderDocDLL);
+    return(nullptr);
+  }
+
+  return(RenderDocDLL);
+}
+
+static void UpdateConfigFiles(const FString& RenderdocPath)
+{
+  if (GConfig)
+  {
+    GConfig->SetString(TEXT("RenderDoc"), TEXT("BinaryPath"), *RenderdocPath, GGameIni);
+    GConfig->Flush(false, GGameIni);
+  }
+}
 
 void FRenderDocLoaderPluginModule::StartupModule()
 {
@@ -36,64 +76,62 @@ void FRenderDocLoaderPluginModule::StartupModule()
 		return;
 	}
 	
-	FString BinaryPath;
+  // Look for a renderdoc.dll somewhere in the system:
+  RenderDocDLL = NULL;
+
+  // 1) Check the configuration files first:
 	if (GConfig)
 	{
-		GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), BinaryPath, GGameIni);
+    // 1.1) The Game configuration:
+    FString RenderdocPath;
+		GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GGameIni);
+    RenderDocDLL = LoadAndCheckRenderDocLibrary(RenderdocPath);
+    if (!RenderDocDLL)
+    {
+      // 1.2) The Engine configuration:
+      FString RenderdocPath;
+      GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GEngineIni);
+      RenderDocDLL = LoadAndCheckRenderDocLibrary(RenderdocPath);
+    }
 	}
 
-	if (BinaryPath.IsEmpty())
-	{
-		//Try to localize the installation path and update the BinaryPath
-		if (!(FWindowsPlatformMisc::QueryRegKey(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Classes\\RenderDoc.RDCCapture.1\\DefaultIcon\\"), TEXT(""), BinaryPath) && (BinaryPath.Len() > 0)))
-		{
-			//Renderdoc does not seem to be installed, but it might be built from source or downloaded by archive, 
-			//so prompt the user to navigate to the main exe file
-			UE_LOG(RenderDocLoaderPlugin, Log, TEXT("RenderDoc is not installed! Please provide custom exe path..."));
+  // 2) Check for a RenderDoc system installation in the registry:
+  if (!RenderDocDLL)
+  {
+    FString RenderdocPath;
+    FWindowsPlatformMisc::QueryRegKey(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Classes\\RenderDoc.RDCCapture.1\\DefaultIcon\\"), TEXT(""), RenderdocPath);
+    RenderDocDLL = LoadAndCheckRenderDocLibrary(RenderdocPath);
+    if (RenderDocDLL)
+      UpdateConfigFiles(RenderdocPath);
+  }
 
-			IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
-			if (DesktopPlatform)
-			{
-				FString Filter = TEXT("Renderdoc executable|renderdocui.exe");
+  // 3) Check for a RenderDoc custom installation by prompting the user:
+  if (!RenderDocDLL)
+  {
+    //Renderdoc does not seem to be installed, but it might be built from source or downloaded by archive, 
+    //so prompt the user to navigate to the main exe file
+    UE_LOG(RenderDocLoaderPlugin, Log, TEXT("RenderDoc is not installed! Please provide custom exe path..."));
+    FString RenderdocPath;
+    IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
+    if (DesktopPlatform)
+    {
+      FString Filter = TEXT("Renderdoc executable|renderdocui.exe");
+      TArray<FString> OutFiles;
+      if (DesktopPlatform->OpenFileDialog(NULL, TEXT("Locate main Renderdoc executable..."), TEXT(""), TEXT(""), Filter, EFileDialogFlags::None, OutFiles))
+        RenderdocPath = OutFiles[0];
+    }
+    RenderdocPath = FPaths::GetPath(RenderdocPath);
+    RenderDocDLL = LoadAndCheckRenderDocLibrary(RenderdocPath);
+    if (RenderDocDLL)
+      UpdateConfigFiles(RenderdocPath);
+  }
 
-				TArray<FString> OutFiles;
-
-				if (DesktopPlatform->OpenFileDialog(NULL, TEXT("Locate main Renderdoc executable..."), TEXT(""), TEXT(""), Filter, EFileDialogFlags::None, OutFiles))
-				{
-					BinaryPath = OutFiles[0];
-				}
-			}
-		}
-
-		if (!BinaryPath.IsEmpty())
-		{			
-			BinaryPath = FPaths::GetPath(BinaryPath);
-
-			if (GConfig)
-			{
-				GConfig->SetString(TEXT("RenderDoc"), TEXT("BinaryPath"), *BinaryPath, GGameIni);
-				GConfig->Flush(false, GGameIni);
-			}
-		}
-	}
-
-	if (BinaryPath.IsEmpty())
-	{
-		UE_LOG(RenderDocLoaderPlugin, Error, TEXT("Could not locate Renderdoc! Aborting module load..."));
-		return;
-	}
-
-	RenderDocDLL = NULL;
-
-	FString PathToRenderDocDLL = FPaths::Combine(*BinaryPath, *FString("renderdoc.dll"));
-	RenderDocDLL = LoadLibrary(*PathToRenderDocDLL);
-
-	if (!RenderDocDLL)
-	{
-		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(LOCTEXT("CouldNotLoadDLLDialog", "Could not load renderdoc DLL, if you have moved your renderdoc installation, please amend the path declaration in your Game.ini file. The path that was searched for the module was {0}"), FText::FromString(PathToRenderDocDLL)));
-		UE_LOG(RenderDocLoaderPlugin, Error, TEXT("Could not load renderdoc DLL! Aborting module load..."));
-		return;
-	}
+  // 4) All bets are off; aborting...
+  if (!RenderDocDLL)
+  {
+    UE_LOG(RenderDocLoaderPlugin, Error, TEXT("Could not locate RenderDoc! Aborting module load..."));
+    return;
+  }
 
 	UE_LOG(RenderDocLoaderPlugin, Log, TEXT("RenderDoc Loader Plugin loaded!"));
 }
@@ -103,8 +141,8 @@ void FRenderDocLoaderPluginModule::ShutdownModule()
 	if (GUsingNullRHI)
 		return;
 
-	/*if (RenderDocDLL)
-		FreeLibrary(RenderDocDLL);*/
+	if (RenderDocDLL)
+		FreeLibrary(RenderDocDLL);
 
 	UE_LOG(RenderDocLoaderPlugin, Log, TEXT("RenderDoc Loader Plugin unloaded!"));
 }

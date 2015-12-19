@@ -31,6 +31,13 @@ const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"
 
 #define LOCTEXT_NAMESPACE "RenderDocPlugin"
 
+HINSTANCE GetRenderDocLibrary(const FString& RenderdocPath)
+{
+  FString PathToRenderDocDLL = FPaths::Combine(*RenderdocPath, *FString("renderdoc.dll"));
+  HINSTANCE RenderDocDLL = GetModuleHandle(*PathToRenderDocDLL);
+  return(RenderDocDLL);
+}
+
 void FRenderDocPluginModule::StartupModule()
 {
 	if (GUsingNullRHI)
@@ -39,22 +46,27 @@ void FRenderDocPluginModule::StartupModule()
 		return;
 	}
 
-	//Load DLL
-	FString BinaryPath;
-	if (GConfig)
-	{
-		GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), BinaryPath, GGameIni);
-	}
-	FString PathToRenderDocDLL = FPaths::Combine(*BinaryPath, *FString("renderdoc.dll"));
+	// Grab a handle to the RenderDoc DLL that has been loaded by the RenderDocLoaderPlugin:
+  RenderDocDLL = NULL;
+  if (GConfig)
+  {
+    FString RenderdocPath;
+    GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GGameIni);
+    RenderDocDLL = GetRenderDocLibrary(RenderdocPath);
+    if (!RenderDocDLL)
+    {
+      FString RenderdocPath;
+      GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GEngineIni);
+      RenderDocDLL = GetRenderDocLibrary(RenderdocPath);
+    }
+  }
 
-	RenderDocDLL = NULL;
-	RenderDocDLL = GetModuleHandle(*PathToRenderDocDLL);
-	if (BinaryPath.IsEmpty() || !RenderDocDLL)
-	{
-		UE_LOG(RenderDocPlugin, Error, TEXT("Could not find the renderdoc DLL, have you loaded the RenderDocLoaderPlugin?"));
-		return;
-	}
-	
+  if (!RenderDocDLL)
+  {
+    UE_LOG(RenderDocPlugin, Error, TEXT("Could not find the renderdoc DLL: have you loaded the RenderDocLoaderPlugin?"));
+    return;
+  }
+
 	// Initialize the RenderDoc API
 	pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_GetAPI");
 	if (0 == RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_0_0, (void**)&RENDERDOC))
@@ -133,6 +145,9 @@ void FRenderDocPluginModule::StartupModule()
 
 void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr)
 {
+  if (!GEditor)
+    return;
+
 	// --> YAGER by SKrysanov 6/11/2014 : fixed crash on removing this callback in render thread.
 	if (IsInGameThread())
 	{
@@ -180,7 +195,10 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 			RENDERDOC->StartFrameCapture(Device, WindowHandle);
 		});
 
-	GEditor->GetActiveViewport()->Draw(true);
+  if (GEditor)
+    GEditor->GetActiveViewport()->Draw(true);
+  else
+    GEngine->GameViewport->Viewport->Draw(true);
 
 	ENQUEUE_UNIQUE_RENDER_COMMAND_FOURPARAMETER(
 		EndRenderDocCapture,
@@ -205,6 +223,9 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 
 void FRenderDocPluginModule::OpenSettingsEditorWindow()
 {
+  if (!GEditor)
+    return;
+
 	UE_LOG(RenderDocPlugin, Log, TEXT("Opening settings window"));
 
 	TSharedPtr<SRenderDocPluginSettingsEditorWindow> Window = SNew(SRenderDocPluginSettingsEditorWindow)
