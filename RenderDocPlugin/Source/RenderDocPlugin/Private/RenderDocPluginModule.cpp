@@ -140,6 +140,11 @@ void FRenderDocPluginModule::StartupModule()
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
 	LoadedDelegateHandle = SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
 
+	static FAutoConsoleCommand CCmdRenderDocCaptureFrame = FAutoConsoleCommand(
+		TEXT("RenderDoc.CaptureFrame"),
+		TEXT("Captures the rendering commands of the next frame and launches RenderDoc"),
+		FConsoleCommandDelegate::CreateRaw(this, &FRenderDocPluginModule::CaptureCurrentViewport));
+
 	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin is ready!"));
 }
 
@@ -195,6 +200,8 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 			RENDERDOC->StartFrameCapture(Device, WindowHandle);
 		});
 
+	// branch here to allow frame captures when the Editor is not around
+	// (like during a standalone launch)
 	if (GEditor)
 		GEditor->GetActiveViewport()->Draw(true);
 	else
