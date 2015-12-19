@@ -25,7 +25,8 @@
 #pragma once
 
 #include "SlateBasics.h"
-#include "renderdoc_app.h"
+
+#include "../../../../RenderDocAPI/renderdoc_app.h"
 
 struct FRenderDocPluginSettings
 {

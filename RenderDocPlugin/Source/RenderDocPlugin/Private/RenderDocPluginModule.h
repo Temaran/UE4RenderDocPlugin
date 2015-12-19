@@ -27,16 +27,18 @@
 #include "ModuleManager.h"
 #include "Editor/LevelEditor/Public/LevelEditor.h"
 #include "SharedPointer.h"
-#include "RenderDocPluginStyle.h"
-#include "RenderDocPluginCommands.h"
 #include "Internationalization.h"
 #include "SlateBasics.h"
 #include "MultiBoxExtender.h"
-#include "renderdoc_app.h"
+
+#include "RenderDocPluginStyle.h"
+#include "RenderDocPluginCommands.h"
 #include "RenderDocPluginGUI.h"
 #include "RenderDocPluginSettings.h"
 #include "RenderDocPluginSettingsEditorWindow.h"
 #include "RenderDocPluginAboutWindow.h"
+
+#include "../../../../RenderDocAPI/renderdoc_app.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
 DEFINE_LOG_CATEGORY(RenderDocPlugin);
