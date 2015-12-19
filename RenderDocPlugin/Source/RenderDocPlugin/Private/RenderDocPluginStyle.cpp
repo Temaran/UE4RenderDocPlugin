@@ -25,10 +25,13 @@
 #include "RenderDocPluginPrivatePCH.h"
 #include "RenderDocPluginStyle.h"
 #include "SlateStyle.h"
+#include "IPluginManager.h"
 
 FString FRenderDocPluginStyle::InContent(const FString& RelativePath, const ANSICHAR* Extension)
 {
-	static FString ContentDir = FPaths::GamePluginsDir() / TEXT("RenderDocPlugin/Resources");
+  auto myself = IPluginManager::Get().FindPlugin(TEXT("RenderDocPlugin"));
+  check(myself.IsValid());
+  static FString ContentDir = myself->GetBaseDir() / TEXT("Resources");
 	return (ContentDir / RelativePath) + Extension;
 }
 
