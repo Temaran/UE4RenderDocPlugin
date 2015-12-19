@@ -33,9 +33,9 @@ const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"
 
 HINSTANCE GetRenderDocLibrary(const FString& RenderdocPath)
 {
-  FString PathToRenderDocDLL = FPaths::Combine(*RenderdocPath, *FString("renderdoc.dll"));
-  HINSTANCE RenderDocDLL = GetModuleHandle(*PathToRenderDocDLL);
-  return(RenderDocDLL);
+	FString PathToRenderDocDLL = FPaths::Combine(*RenderdocPath, *FString("renderdoc.dll"));
+	HINSTANCE RenderDocDLL = GetModuleHandle(*PathToRenderDocDLL);
+	return(RenderDocDLL);
 }
 
 void FRenderDocPluginModule::StartupModule()
@@ -47,25 +47,25 @@ void FRenderDocPluginModule::StartupModule()
 	}
 
 	// Grab a handle to the RenderDoc DLL that has been loaded by the RenderDocLoaderPlugin:
-  RenderDocDLL = NULL;
-  if (GConfig)
-  {
-    FString RenderdocPath;
-    GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GGameIni);
-    RenderDocDLL = GetRenderDocLibrary(RenderdocPath);
-    if (!RenderDocDLL)
-    {
-      FString RenderdocPath;
-      GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GEngineIni);
-      RenderDocDLL = GetRenderDocLibrary(RenderdocPath);
-    }
-  }
+	RenderDocDLL = NULL;
+	if (GConfig)
+	{
+		FString RenderdocPath;
+		GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GGameIni);
+		RenderDocDLL = GetRenderDocLibrary(RenderdocPath);
+		if (!RenderDocDLL)
+		{
+			FString RenderdocPath;
+			GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GEngineIni);
+			RenderDocDLL = GetRenderDocLibrary(RenderdocPath);
+		}
+	}
 
-  if (!RenderDocDLL)
-  {
-    UE_LOG(RenderDocPlugin, Error, TEXT("Could not find the renderdoc DLL: have you loaded the RenderDocLoaderPlugin?"));
-    return;
-  }
+	if (!RenderDocDLL)
+	{
+		UE_LOG(RenderDocPlugin, Error, TEXT("Could not find the renderdoc DLL: have you loaded the RenderDocLoaderPlugin?"));
+		return;
+	}
 
 	// Initialize the RenderDoc API
 	pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_GetAPI");
@@ -145,8 +145,8 @@ void FRenderDocPluginModule::StartupModule()
 
 void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr)
 {
-  if (!GEditor)
-    return;
+	if (!GEditor)
+		return;
 
 	// --> YAGER by SKrysanov 6/11/2014 : fixed crash on removing this callback in render thread.
 	if (IsInGameThread())
@@ -173,7 +173,7 @@ void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* Viewport
 		}
 	}
 
-  UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin initialized!"));
+	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin initialized!"));
 }
 
 void FRenderDocPluginModule::CaptureCurrentViewport()
@@ -195,10 +195,10 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 			RENDERDOC->StartFrameCapture(Device, WindowHandle);
 		});
 
-  if (GEditor)
-    GEditor->GetActiveViewport()->Draw(true);
-  else
-    GEngine->GameViewport->Viewport->Draw(true);
+	if (GEditor)
+		GEditor->GetActiveViewport()->Draw(true);
+	else
+		GEngine->GameViewport->Viewport->Draw(true);
 
 	ENQUEUE_UNIQUE_RENDER_COMMAND_FOURPARAMETER(
 		EndRenderDocCapture,
@@ -211,20 +211,14 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 			RENDERDOC->EndFrameCapture(Device, WindowHandle);
 			Plugin->UE4_RestoreDrawEventsFlag();
 
-			FString BinaryPath;
-			if (GConfig)
-			{
-			  GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), BinaryPath, GGameIni);
-			}
-
 			RenderDocGUI->StartRenderDoc( FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")) );
 		});
 }
 
 void FRenderDocPluginModule::OpenSettingsEditorWindow()
 {
-  if (!GEditor)
-    return;
+	if (!GEditor)
+		return;
 
 	UE_LOG(RenderDocPlugin, Log, TEXT("Opening settings window"));
 
@@ -309,19 +303,19 @@ void FRenderDocPluginModule::ShutdownModule()
 
 void FRenderDocPluginModule::UE4_OverrideDrawEventsFlag(const bool flag)
 {
-  //UE_LOG(RenderDocPlugin, Log, TEXT("Overriding GEmitDrawEvents flag"));
-  //UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
-  UE4_GEmitDrawEvents_BeforeCapture = GEmitDrawEvents;
-  GEmitDrawEvents = flag;
-  //UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
+	//UE_LOG(RenderDocPlugin, Log, TEXT("Overriding GEmitDrawEvents flag"));
+	//UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
+	UE4_GEmitDrawEvents_BeforeCapture = GEmitDrawEvents;
+	GEmitDrawEvents = flag;
+	//UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
 }
 
 void FRenderDocPluginModule::UE4_RestoreDrawEventsFlag()
 {
-  //UE_LOG(RenderDocPlugin, Log, TEXT("Restoring GEmitDrawEvents flag"));
-  //UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
-  GEmitDrawEvents = UE4_GEmitDrawEvents_BeforeCapture;
-  //UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
+	//UE_LOG(RenderDocPlugin, Log, TEXT("Restoring GEmitDrawEvents flag"));
+	//UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
+	GEmitDrawEvents = UE4_GEmitDrawEvents_BeforeCapture;
+	//UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
 }
 
 #undef LOCTEXT_NAMESPACE
