@@ -26,7 +26,8 @@
 
 #include "SlateBasics.h"
 #include "ThreadingBase.h"
-#include "renderdoc_app.h"
+
+#include "../../../../RenderDocAPI/renderdoc_app.h"
 
 class FRenderDocPluginGUI : public FRunnable
 {	
