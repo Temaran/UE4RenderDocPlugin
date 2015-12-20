@@ -1,3 +1,16 @@
+* Make the Plugin HUD buttons available on Play In Editor (PIE) Viewport
+	(for the time being, Eject from the PIE viewport to get access to the HUD buttons)
+
+* Make the Plugin HUD buttons available on Standalone Viewport launched via the Editor	
+	(for the time being, use the console command 'RenderDoc.CaptureFrame')
+
+* Make the Plugin HUD buttons available on Standalone Game builds
+	(this might be tricky since the plugin has Type=Developer, and Standalone executables
+	 require Type=Runtime so that the plugin code is linked statically against the .exe)
+
+
+
+
 Prompt user if he is sure he wants to recompile all shaders
 Explain that this will rebuild all shaders, and it will lock the editor while the shaders are building
 
