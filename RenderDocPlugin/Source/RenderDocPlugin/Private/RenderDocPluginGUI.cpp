@@ -27,65 +27,27 @@
 
 FRenderDocPluginGUI::FRenderDocPluginGUI(RENDERDOC_API_CONTEXT* pRENDERDOC)
 {
-  RENDERDOC = pRENDERDOC;
-	IsRunning = false;
-}
-
-FRenderDocPluginGUI::~FRenderDocPluginGUI()
-{
-	Stop();
-}
-
-bool FRenderDocPluginGUI::Init()
-{
-	return true;
-}
-
-uint32 FRenderDocPluginGUI::Run()
-{
-	IsRunning = true;
-
-	FPlatformProcess::Sleep(1);
-
-	FString NewestCapture = GetNewestCapture(CaptureBaseDirectory);
-  FString ArgumentString = FString::Printf(TEXT("\"%s\""), *FPaths::ConvertRelativePathToFull(NewestCapture).Append(TEXT(".log")));
-
-	if (!NewestCapture.IsEmpty())
-	{
-    // This is the new, recommended way of launching the RenderDoc GUI:
-    if (!RENDERDOC->IsRemoteAccessConnected())
-    {
-      uint32 PID = (sizeof(TCHAR) == sizeof(char)) ?
-          RENDERDOC->LaunchReplayUI(true, (const char*)(*ArgumentString))
-        : RENDERDOC->LaunchReplayUI(true, TCHAR_TO_ANSI(*ArgumentString));
-
-      if (0 == PID)
-        UE_LOG(LogTemp, Error, TEXT("Could not launch RenderDoc!!"));
-    }
-	}
-
-	IsRunning = false;
-	return 0;
-}
-
-void FRenderDocPluginGUI::Stop()
-{
-	if (Thread)
-	{
-		delete Thread;
-	}
-
-	Thread = NULL;
-	IsRunning = false;
+	RENDERDOC = pRENDERDOC;
 }
 
 void FRenderDocPluginGUI::StartRenderDoc(FString FrameCaptureBaseDirectory)
 {
-	if (IsRunning)
-		return;
-	
-	CaptureBaseDirectory = FrameCaptureBaseDirectory;
-	Thread = FRunnableThread::Create(this, TEXT("FRenderDocRunner"), 0, TPri_BelowNormal);
+	FString NewestCapture = GetNewestCapture(FrameCaptureBaseDirectory);
+	FString ArgumentString = FString::Printf(TEXT("\"%s\""), *FPaths::ConvertRelativePathToFull(NewestCapture).Append(TEXT(".log")));
+
+	if (!NewestCapture.IsEmpty())
+	{
+		// This is the new, recommended way of launching the RenderDoc GUI:
+		if (!RENDERDOC->IsRemoteAccessConnected())
+		{
+		  uint32 PID = (sizeof(TCHAR) == sizeof(char)) ?
+			  RENDERDOC->LaunchReplayUI(true, (const char*)(*ArgumentString))
+			: RENDERDOC->LaunchReplayUI(true, TCHAR_TO_ANSI(*ArgumentString));
+
+		  if (0 == PID)
+			UE_LOG(LogTemp, Error, TEXT("Could not launch RenderDoc!!"));
+		}
+	}
 }
 
 FString FRenderDocPluginGUI::GetNewestCapture(FString BaseDirectory)
@@ -99,17 +61,9 @@ FString FRenderDocPluginGUI::GetNewestCapture(FString BaseDirectory)
 	while (RENDERDOC->GetCapture(Index, LogFile, &LogPathLength, &Timestamp))
 	{
 		if (sizeof(TCHAR) == sizeof(char))
-		{
 			OutString = FString(LogPathLength, (TCHAR*)LogFile);
-		}
 		else
-		{
-			TCHAR LogFileWide[512];
-			ZeroMemory(LogFileWide, 512);
-			size_t NumCharsConverted;
-			mbstowcs_s(&NumCharsConverted, LogFileWide, LogFile, LogPathLength);
-			OutString = FString(LogPathLength, LogFileWide);
-		}
+			OutString = FString(LogPathLength, ANSI_TO_TCHAR(LogFile));
 
 		Index++;
 	}

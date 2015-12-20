@@ -91,17 +91,9 @@ void FRenderDocPluginModule::StartupModule()
 	FPaths::NormalizeDirectoryName(CapturePath);
 	
 	if (sizeof(TCHAR) == sizeof(char))
-	{
 		RENDERDOC->SetLogFilePathTemplate((const char*)*CapturePath);
-	}
 	else
-	{
-		char CapturePathShort[1024];
-		ZeroMemory(CapturePathShort, 1024);
-		size_t NumCharsConverted;
-		wcstombs_s(&NumCharsConverted, CapturePathShort, *CapturePath, CapturePath.Len());
-		RENDERDOC->SetLogFilePathTemplate(CapturePathShort);
-	}
+		RENDERDOC->SetLogFilePathTemplate(TCHAR_TO_ANSI(*CapturePath));
 
 	RENDERDOC->SetFocusToggleKeys(NULL, 0);
 	RENDERDOC->SetCaptureKeys(NULL, 0);
@@ -111,28 +103,28 @@ void FRenderDocPluginModule::StartupModule()
 	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_SaveAllInitials,   RenderDocSettings.bSaveAllInitials    ? 1 : 0);
 
 	//Init UI
-  FRenderDocPluginStyle::Initialize();
-  FRenderDocPluginCommands::Register();
+	FRenderDocPluginStyle::Initialize();
+	FRenderDocPluginCommands::Register();
 
-  // The LoadModule request below will crash if running as an editor commandlet!
-  // ( the GUsingNullRHI check above should prevent this code from executing, but I am
-  //   re-emphasizing it here since many plugins appear to be ignoring this condition... )
-  check(!IsRunningCommandlet());
-  FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+	// The LoadModule request below will crash if running as an editor commandlet!
+	// ( the GUsingNullRHI check above should prevent this code from executing, but I am
+	//   re-emphasizing it here since many plugins appear to be ignoring this condition... )
+	check(!IsRunningCommandlet());
+	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 
-  TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
-  CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureFrame,
-    FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureCurrentViewport),
-    FCanExecuteAction());
-  CommandBindings->MapAction(FRenderDocPluginCommands::Get().OpenSettings,
-    FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::OpenSettingsEditorWindow),
-    FCanExecuteAction());
+	TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
+	CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureFrame,
+		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureCurrentViewport),
+		FCanExecuteAction());
+	CommandBindings->MapAction(FRenderDocPluginCommands::Get().OpenSettings,
+		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::OpenSettingsEditorWindow),
+		FCanExecuteAction());
 
-  ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
-  ToolbarExtender = MakeShareable(new FExtender);
-  ToolbarExtension = ToolbarExtender->AddToolBarExtension("CameraSpeed", EExtensionHook::After, CommandBindings,
-    FToolBarExtensionDelegate::CreateRaw(this, &FRenderDocPluginModule::AddToolbarExtension));
-  ExtensionManager->AddExtender(ToolbarExtender);
+	ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
+	ToolbarExtender = MakeShareable(new FExtender);
+	ToolbarExtension = ToolbarExtender->AddToolBarExtension("CameraSpeed", EExtensionHook::After, CommandBindings,
+		FToolBarExtensionDelegate::CreateRaw(this, &FRenderDocPluginModule::AddToolbarExtension));
+	ExtensionManager->AddExtender(ToolbarExtender);
 
 	//Init renderdoc
 	RENDERDOC->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);

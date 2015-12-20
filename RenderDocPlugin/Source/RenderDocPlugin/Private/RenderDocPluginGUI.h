@@ -24,34 +24,23 @@
 
 #pragma once
 
-#include "SlateBasics.h"
-#include "ThreadingBase.h"
+#include <UnrealString.h>
 
 #include "../../../../RenderDocAPI/renderdoc_app.h"
 
-class FRenderDocPluginGUI : public FRunnable
+class FRenderDocPluginGUI
 {	
 private:
-  typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
+	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
 
 public: 
-  FRenderDocPluginGUI(RENDERDOC_API_CONTEXT* pRENDERDOC);
-	virtual ~FRenderDocPluginGUI();
+	FRenderDocPluginGUI(RENDERDOC_API_CONTEXT* pRENDERDOC);
  
-	// Begin FRunnable interface.
-	virtual bool Init();
-	virtual uint32 Run();
-	virtual void Stop();
-	// End FRunnable interface
- 
-	bool IsGUIOpen() { return IsRunning; }
+	bool IsGUIOpen() { return(false); }
 	void StartRenderDoc(FString FrameCaptureBaseDirectory);
 	FString GetNewestCapture(FString BaseDirectory);
 
 private:
-  RENDERDOC_API_CONTEXT* RENDERDOC;
-	FRunnableThread* Thread;
+	RENDERDOC_API_CONTEXT* RENDERDOC;
 
-	bool IsRunning;
-	FString CaptureBaseDirectory;
 };
