@@ -79,7 +79,7 @@ void FRenderDocPluginModule::StartupModule()
 	RENDERDOC->GetAPIVersion(&major, &minor, &patch);
 	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc v%i.%i.%i has been loaded."), major, minor, patch);
 
-	//Set capture settings
+	// Setup RenderDoc settings
 	FString RenderDocCapturePath = FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures"));
 	if (!IFileManager::Get().DirectoryExists(*RenderDocCapturePath))
 	{
@@ -101,6 +101,8 @@ void FRenderDocPluginModule::StartupModule()
 	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_CaptureCallstacks, RenderDocSettings.bCaptureCallStacks  ? 1 : 0);
 	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_RefAllResources,   RenderDocSettings.bRefAllResources    ? 1 : 0);
 	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_SaveAllInitials,   RenderDocSettings.bSaveAllInitials    ? 1 : 0);
+
+  RENDERDOC->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
 
 	//Init UI
 	FRenderDocPluginStyle::Initialize();
@@ -125,11 +127,6 @@ void FRenderDocPluginModule::StartupModule()
 	ToolbarExtension = ToolbarExtender->AddToolBarExtension("CameraSpeed", EExtensionHook::After, CommandBindings,
 		FToolBarExtensionDelegate::CreateRaw(this, &FRenderDocPluginModule::AddToolbarExtension));
 	ExtensionManager->AddExtender(ToolbarExtender);
-
-	//Init renderdoc
-	RENDERDOC->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
-
-	RenderDocGUI = new FRenderDocPluginGUI(RENDERDOC);
 
 	IsInitialized = false;
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
@@ -180,7 +177,7 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 {
 	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
 
-	FRenderDocPluginNotification::Get().ShowNotification(RenderDocGUI->IsGUIOpen());
+	FRenderDocPluginNotification::Get().ShowNotification(true);
 
 	HWND WindowHandle = GetActiveWindow();
 
@@ -202,10 +199,9 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 	else
 		GEngine->GameViewport->Viewport->Draw(true);
 
-	ENQUEUE_UNIQUE_RENDER_COMMAND_FOURPARAMETER(
+	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
 		EndRenderDocCapture,
 		HWND, WindowHandle, WindowHandle,
-		FRenderDocPluginGUI*, RenderDocGUI, RenderDocGUI,
 		RENDERDOC_API_CONTEXT*, RENDERDOC, RENDERDOC,
 		FRenderDocPluginModule*, Plugin, this,
 		{
@@ -213,7 +209,7 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 			RENDERDOC->EndFrameCapture(Device, WindowHandle);
 			Plugin->UE4_RestoreDrawEventsFlag();
 
-			RenderDocGUI->StartRenderDoc( FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")) );
+      Plugin->StartRenderDoc( FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")) );
 		});
 }
 
@@ -232,6 +228,47 @@ void FRenderDocPluginModule::OpenSettingsEditorWindow()
 	GEditor->EditorAddModalWindow(Window.ToSharedRef());
 
 	RenderDocSettings = Window->GetSettings();
+}
+
+void FRenderDocPluginModule::StartRenderDoc(FString FrameCaptureBaseDirectory)
+{
+	FString NewestCapture = GetNewestCapture(FrameCaptureBaseDirectory);
+	FString ArgumentString = FString::Printf(TEXT("\"%s\""), *FPaths::ConvertRelativePathToFull(NewestCapture).Append(TEXT(".log")));
+
+	if (!NewestCapture.IsEmpty())
+	{
+		// This is the new, recommended way of launching the RenderDoc GUI:
+		if (!RENDERDOC->IsRemoteAccessConnected())
+		{
+		  uint32 PID = (sizeof(TCHAR) == sizeof(char)) ?
+			  RENDERDOC->LaunchReplayUI(true, (const char*)(*ArgumentString))
+			: RENDERDOC->LaunchReplayUI(true, TCHAR_TO_ANSI(*ArgumentString));
+
+		  if (0 == PID)
+			UE_LOG(LogTemp, Error, TEXT("Could not launch RenderDoc!!"));
+		}
+	}
+}
+
+FString FRenderDocPluginModule::GetNewestCapture(FString BaseDirectory)
+{
+	char LogFile[512];
+	uint64_t Timestamp;
+	uint32_t LogPathLength = 512;
+	uint32_t Index = 0;
+	FString OutString;
+	
+	while (RENDERDOC->GetCapture(Index, LogFile, &LogPathLength, &Timestamp))
+	{
+		if (sizeof(TCHAR) == sizeof(char))
+			OutString = FString(LogPathLength, (TCHAR*)LogFile);
+		else
+			OutString = FString(LogPathLength, ANSI_TO_TCHAR(LogFile));
+
+		Index++;
+	}
+	
+	return OutString;
 }
 
 void* FRenderDocPluginModule::GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName)

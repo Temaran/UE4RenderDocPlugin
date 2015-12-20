@@ -33,7 +33,6 @@
 
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginCommands.h"
-#include "RenderDocPluginGUI.h"
 #include "RenderDocPluginSettings.h"
 #include "RenderDocPluginSettingsEditorWindow.h"
 #include "RenderDocPluginAboutWindow.h"
@@ -52,7 +51,6 @@ public:
 private:
 	static const FName SettingsUITabName;
 
-	FRenderDocPluginGUI* RenderDocGUI;
 	FDelegateHandle LoadedDelegateHandle;
 
 	TSharedPtr<FExtensibilityManager> ExtensionManager;
@@ -67,6 +65,9 @@ private:
 
 	void CaptureCurrentViewport();	
 	void OpenSettingsEditorWindow();
+
+  void StartRenderDoc(FString FrameCaptureBaseDirectory);
+  FString GetNewestCapture(FString BaseDirectory);
 
 	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder); 
 
