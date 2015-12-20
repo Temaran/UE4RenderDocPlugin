@@ -72,6 +72,8 @@ private:
 	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder); 
 
 	void* GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName);
+
+  static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
 	
 	// RenderDoc API context
 	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;

@@ -177,8 +177,7 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 {
 	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
 
-	FRenderDocPluginNotification::Get().ShowNotification(true);
-
+	FRenderDocPluginNotification::Get().ShowNotification( NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIShow", "Capturing frame") );
 	HWND WindowHandle = GetActiveWindow();
 
 	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
@@ -209,7 +208,10 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 			RENDERDOC->EndFrameCapture(Device, WindowHandle);
 			Plugin->UE4_RestoreDrawEventsFlag();
 
-      Plugin->StartRenderDoc( FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")) );
+      RunAsyncTask(ENamedThreads::GameThread, [this]()
+      {
+        Plugin->StartRenderDoc(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
+      });
 		});
 }
 
@@ -232,6 +234,8 @@ void FRenderDocPluginModule::OpenSettingsEditorWindow()
 
 void FRenderDocPluginModule::StartRenderDoc(FString FrameCaptureBaseDirectory)
 {
+  FRenderDocPluginNotification::Get().ShowNotification( NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIShow", "Launching RenderDoc GUI") );
+
 	FString NewestCapture = GetNewestCapture(FrameCaptureBaseDirectory);
 	FString ArgumentString = FString::Printf(TEXT("\"%s\""), *FPaths::ConvertRelativePathToFull(NewestCapture).Append(TEXT(".log")));
 
@@ -248,6 +252,8 @@ void FRenderDocPluginModule::StartRenderDoc(FString FrameCaptureBaseDirectory)
 			UE_LOG(LogTemp, Error, TEXT("Could not launch RenderDoc!!"));
 		}
 	}
+
+  FRenderDocPluginNotification::Get().ShowNotification( NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIHide", "RenderDoc GUI Launched!") );
 }
 
 FString FRenderDocPluginModule::GetNewestCapture(FString BaseDirectory)
@@ -355,6 +361,22 @@ void FRenderDocPluginModule::UE4_RestoreDrawEventsFlag()
 	//UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
 	GEmitDrawEvents = UE4_GEmitDrawEvents_BeforeCapture;
 	//UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
+}
+
+
+void FRenderDocPluginModule::RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What)
+{
+  struct FAsyncGraphTask : public FAsyncGraphTaskBase
+  {
+    ENamedThreads::Type TargetThread;
+    TFunction<void()> TheTask;
+
+    FAsyncGraphTask(ENamedThreads::Type Thread, TFunction<void()>&& Task) : TargetThread(Thread), TheTask(MoveTemp(Task)) { }
+    void DoTask(ENamedThreads::Type CurrentThread, const FGraphEventRef& MyCompletionGraphEvent) { TheTask(); }
+    ENamedThreads::Type GetDesiredThread() { return(TargetThread); }
+  };
+
+  TGraphTask<FAsyncGraphTask>::CreateTask().ConstructAndDispatchWhenReady(Where, MoveTemp(What));
 }
 
 #undef LOCTEXT_NAMESPACE
