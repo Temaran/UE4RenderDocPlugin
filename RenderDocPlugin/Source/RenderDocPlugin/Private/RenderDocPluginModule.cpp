@@ -111,25 +111,28 @@ void FRenderDocPluginModule::StartupModule()
 	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_SaveAllInitials,   RenderDocSettings.bSaveAllInitials    ? 1 : 0);
 
 	//Init UI
-	FRenderDocPluginStyle::Initialize();
-	FRenderDocPluginCommands::Register();
+  FRenderDocPluginStyle::Initialize();
+  FRenderDocPluginCommands::Register();
 
-	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-	TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
-	ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
+  // The LoadModule request below will crash if running as an editor commandlet!
+  // ( the GUsingNullRHI check above should prevent this code from executing, but I am
+  //   re-emphasizing it here since many plugins appear to be ignoring this condition... )
+  check(!IsRunningCommandlet());
+  FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 
-	CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureFrame,
-		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureCurrentViewport),
-		FCanExecuteAction());
-	CommandBindings->MapAction(FRenderDocPluginCommands::Get().OpenSettings,
-		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::OpenSettingsEditorWindow),
-		FCanExecuteAction());
+  TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
+  CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureFrame,
+    FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureCurrentViewport),
+    FCanExecuteAction());
+  CommandBindings->MapAction(FRenderDocPluginCommands::Get().OpenSettings,
+    FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::OpenSettingsEditorWindow),
+    FCanExecuteAction());
 
-	ToolbarExtender = MakeShareable(new FExtender);
-	ToolbarExtension = ToolbarExtender->AddToolBarExtension("CameraSpeed", EExtensionHook::After, CommandBindings,
-		FToolBarExtensionDelegate::CreateRaw(this, &FRenderDocPluginModule::AddToolbarExtension));
-
-	LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(ToolbarExtender);
+  ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
+  ToolbarExtender = MakeShareable(new FExtender);
+  ToolbarExtension = ToolbarExtender->AddToolBarExtension("CameraSpeed", EExtensionHook::After, CommandBindings,
+    FToolBarExtensionDelegate::CreateRaw(this, &FRenderDocPluginModule::AddToolbarExtension));
+  ExtensionManager->AddExtender(ToolbarExtender);
 
 	//Init renderdoc
 	RENDERDOC->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
