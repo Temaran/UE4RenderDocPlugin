@@ -8,7 +8,14 @@
 	(this might be tricky since the plugin has Type=Developer, and Standalone executables
 	 require Type=Runtime so that the plugin code is linked statically against the .exe)
 
+* It would be nice to make have both plugins merged together... Is there a way for the
+  Loader plugin to register a callback for when the Editor UI extensions are initialized?
 
+* It would also be nice to have the 'BinaryPath' configuration understand and parse
+  a RenderDoc installation location rleative to the Engine or Game by using the same
+  syntax of content/asset reference paths like '/Engine/...' and '/Game/...' (at the
+  moment, it is necessary to use ../.. before /Engine and /Game).
+  
 
 
 Prompt user if he is sure he wants to recompile all shaders
