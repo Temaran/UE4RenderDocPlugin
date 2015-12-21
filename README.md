@@ -23,8 +23,10 @@ How to use
    > More specifically, it will save the RenderDoc location to the `<Game>/Saved/Config/Windows/Game.ini` configuration file.
    >
    > **NOTE for advanced users:** alternatively, you can manually point the plugin to a RenderDoc location by editing the `Engine/Config/Windows/WindowsEngine.ini` configuration file with the following:
-   > 	[RenderDoc]
-   > 	BinaryPath=<path-to-your-RenderDoc-folder>
+   > ````
+   > [RenderDoc]
+   > BinaryPath=<path-to-your-RenderDoc-folder>
+   > ````
    > This can be useful if you wish to deploy RenderDoc into a repository that is shared by a team, as the path can be relative to some Engine or Game directory.
 
 6. After the plugin has been loaded successfully, you should have two new buttons in the top-right corner of your viewport. The left-most button will capture the next frame and launch the RenderDoc UI to inspect the captured frame. The right-most button has some configuration options for capturing.

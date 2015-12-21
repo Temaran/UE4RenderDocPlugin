@@ -30,21 +30,21 @@
 
 #define LOCTEXT_NAMESPACE "RenderDocLoaderPluginNamespace" 
 
-static HINSTANCE LoadAndCheckRenderDocLibrary(const FString& RenderdocPath)
+static void* LoadAndCheckRenderDocLibrary(const FString& RenderdocPath)
 {
 	if (RenderdocPath.IsEmpty())
 		return(nullptr);
 
 	FString PathToRenderDocDLL = FPaths::Combine(*RenderdocPath, *FString("renderdoc.dll"));
-	HINSTANCE RenderDocDLL = LoadLibrary(*PathToRenderDocDLL);
+	void* RenderDocDLL = FPlatformProcess::GetDllHandle(*PathToRenderDocDLL);
 	if (!RenderDocDLL)
 		return(nullptr);
 
-	pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)(void*)GetProcAddress(RenderDocDLL, "RENDERDOC_GetAPI");
+	pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)FPlatformProcess::GetDllExport(RenderDocDLL, TEXT("RENDERDOC_GetAPI"));
 	if (!RENDERDOC_GetAPI)
 	{
 		UE_LOG(RenderDocLoaderPlugin, Warning, TEXT("'%s' : Could not load renderdoc function 'RENDERDOC_GetAPI'. You are most likely using an incompatible version of Renderdoc."), *PathToRenderDocDLL);
-		FreeLibrary(RenderDocDLL);
+    FPlatformProcess::FreeDllHandle(RenderDocDLL);
 		return(nullptr);
 	}
 
@@ -52,7 +52,7 @@ static HINSTANCE LoadAndCheckRenderDocLibrary(const FString& RenderdocPath)
 	if (0 == RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_0_0, (void**)&RENDERDOC))
 	{
 		UE_LOG(RenderDocLoaderPlugin, Warning, TEXT("'%s' : RenderDoc initialization failed due to API incompatibility with eRENDERDOC_API_Version_1_0_0."), *PathToRenderDocDLL);
-		FreeLibrary(RenderDocDLL);
+    FPlatformProcess::FreeDllHandle(RenderDocDLL);
 		return(nullptr);
 	}
 
@@ -142,7 +142,7 @@ void FRenderDocLoaderPluginModule::ShutdownModule()
 		return;
 
 	if (RenderDocDLL)
-		FreeLibrary(RenderDocDLL);
+    FPlatformProcess::FreeDllHandle(RenderDocDLL);
 
 	UE_LOG(RenderDocLoaderPlugin, Log, TEXT("RenderDoc Loader Plugin unloaded!"));
 }

@@ -33,7 +33,6 @@
 
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginCommands.h"
-#include "RenderDocPluginGUI.h"
 #include "RenderDocPluginSettings.h"
 #include "RenderDocPluginSettingsEditorWindow.h"
 #include "RenderDocPluginAboutWindow.h"
@@ -52,7 +51,6 @@ public:
 private:
 	static const FName SettingsUITabName;
 
-	FRenderDocPluginGUI* RenderDocGUI;
 	FDelegateHandle LoadedDelegateHandle;
 
 	TSharedPtr<FExtensibilityManager> ExtensionManager;
@@ -60,7 +58,7 @@ private:
 	TSharedPtr<const FExtensionBase> ToolbarExtension;
 
 	FRenderDocPluginSettings RenderDocSettings;
-	HINSTANCE RenderDocDLL;
+	void* RenderDocDLL;
 	bool IsInitialized;
 
 	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
@@ -68,9 +66,14 @@ private:
 	void CaptureCurrentViewport();	
 	void OpenSettingsEditorWindow();
 
+  void StartRenderDoc(FString FrameCaptureBaseDirectory);
+  FString GetNewestCapture(FString BaseDirectory);
+
 	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder); 
 
-	void* GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName);
+	void* GetRenderDocFunctionPointer(void* ModuleHandle, const TCHAR* FunctionName);
+
+  static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
 	
 	// RenderDoc API context
 	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;

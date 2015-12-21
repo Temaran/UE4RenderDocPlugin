@@ -27,9 +27,8 @@
 #include "SNotificationList.h"
 #include "NotificationManager.h"
 
-void FRenderDocPluginNotification::ShowNotification(bool bIsRenderDocGUIOpen)
+void FRenderDocPluginNotification::ShowNotification(const FText& Message)
 {
-	bIsGUIOpen = bIsRenderDocGUIOpen;
 	LastEnableTime = FPlatformTime::Seconds();
 
 	// Starting a new request! Notify the UI.
@@ -38,11 +37,7 @@ void FRenderDocPluginNotification::ShowNotification(bool bIsRenderDocGUIOpen)
 		RenderDocNotificationPtr.Pin()->ExpireAndFadeout();
 	}
 
-	FText InfoText = NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIShow", "Launching RenderDoc GUI");
-	if (bIsGUIOpen)
-		InfoText = NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIShow", "Capturing frame");
-
-	FNotificationInfo Info(InfoText);
+	FNotificationInfo Info (Message);
 	Info.bFireAndForget = false;
 
 	// Setting fade out and expire time to 0 as the expire message is currently very obnoxious
@@ -64,8 +59,6 @@ void FRenderDocPluginNotification::HideNotification()
 
 	if (NotificationItem.IsValid())
 	{
-		if (!bIsGUIOpen)
-			NotificationItem->SetText(NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIHide", "RenderDoc GUI Launched!"));
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
 		NotificationItem->ExpireAndFadeout();
 
@@ -76,8 +69,8 @@ void FRenderDocPluginNotification::HideNotification()
 void FRenderDocPluginNotification::Tick(float DeltaTime)
 {
 	double OpenTime = 5.0;
-	if (bIsGUIOpen)
-		OpenTime = 0.5;
+	//if (bIsGUIOpen)
+	//	OpenTime = 0.5;
 
 	if (RenderDocNotificationPtr.IsValid() && (FPlatformTime::Seconds() - LastEnableTime) > OpenTime)
 	{
