@@ -41,6 +41,6 @@ public:
 	virtual void ShutdownModule() override;
 
 private: 
-	HINSTANCE RenderDocDLL;
+	void* RenderDocDLL;
 };
 

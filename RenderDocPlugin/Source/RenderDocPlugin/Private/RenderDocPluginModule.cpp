@@ -31,10 +31,10 @@ const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"
 
 #define LOCTEXT_NAMESPACE "RenderDocPlugin"
 
-HINSTANCE GetRenderDocLibrary(const FString& RenderdocPath)
+void* GetRenderDocLibrary(const FString& RenderdocPath)
 {
 	FString PathToRenderDocDLL = FPaths::Combine(*RenderdocPath, *FString("renderdoc.dll"));
-	HINSTANCE RenderDocDLL = GetModuleHandle(*PathToRenderDocDLL);
+	void* RenderDocDLL = FPlatformProcess::GetDllHandle(*PathToRenderDocDLL);
 	return(RenderDocDLL);
 }
 
@@ -68,7 +68,7 @@ void FRenderDocPluginModule::StartupModule()
 	}
 
 	// Initialize the RenderDoc API
-	pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetRenderDocFunctionPointer(RenderDocDLL, "RENDERDOC_GetAPI");
+	pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetRenderDocFunctionPointer(RenderDocDLL, TEXT("RENDERDOC_GetAPI"));
 	if (0 == RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_0_0, (void**)&RENDERDOC))
 	{
 		UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc initialization failed."));
@@ -281,10 +281,9 @@ FString FRenderDocPluginModule::GetNewestCapture(FString BaseDirectory)
 	return OutString;
 }
 
-void* FRenderDocPluginModule::GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName)
+void* FRenderDocPluginModule::GetRenderDocFunctionPointer(void* ModuleHandle, const TCHAR* FunctionName)
 {
-	void* OutTarget = NULL;
-	OutTarget = (void*)GetProcAddress(ModuleHandle, FunctionName);
+	void* OutTarget = FPlatformProcess::GetDllExport(ModuleHandle, FunctionName);
 
 	if (!OutTarget)
 	{
@@ -348,6 +347,9 @@ void FRenderDocPluginModule::ShutdownModule()
 
 	// Unregister the tab spawner
 	FGlobalTabmanager::Get()->UnregisterTabSpawner(SettingsUITabName);
+
+  if (RenderDocDLL)
+    FPlatformProcess::FreeDllHandle(RenderDocDLL);
 }
 
 void FRenderDocPluginModule::UE4_OverrideDrawEventsFlag(const bool flag)

@@ -58,7 +58,7 @@ private:
 	TSharedPtr<const FExtensionBase> ToolbarExtension;
 
 	FRenderDocPluginSettings RenderDocSettings;
-	HINSTANCE RenderDocDLL;
+	void* RenderDocDLL;
 	bool IsInitialized;
 
 	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
@@ -71,7 +71,7 @@ private:
 
 	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder); 
 
-	void* GetRenderDocFunctionPointer(HINSTANCE ModuleHandle, LPCSTR FunctionName);
+	void* GetRenderDocFunctionPointer(void* ModuleHandle, const TCHAR* FunctionName);
 
   static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
 	
