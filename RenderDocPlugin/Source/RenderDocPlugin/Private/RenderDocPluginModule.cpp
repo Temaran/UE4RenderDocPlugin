@@ -102,7 +102,7 @@ void FRenderDocPluginModule::StartupModule()
 	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_RefAllResources,   RenderDocSettings.bRefAllResources    ? 1 : 0);
 	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_SaveAllInitials,   RenderDocSettings.bSaveAllInitials    ? 1 : 0);
 
-  RENDERDOC->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
+	RENDERDOC->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
 
 	//Init UI
 	FRenderDocPluginStyle::Initialize();
@@ -132,16 +132,20 @@ void FRenderDocPluginModule::StartupModule()
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
 	LoadedDelegateHandle = SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
 
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
 	static FAutoConsoleCommand CCmdRenderDocCaptureFrame = FAutoConsoleCommand(
 		TEXT("RenderDoc.CaptureFrame"),
 		TEXT("Captures the rendering commands of the next frame and launches RenderDoc"),
 		FConsoleCommandDelegate::CreateRaw(this, &FRenderDocPluginModule::CaptureCurrentViewport));
+#endif
 
 	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin is ready!"));
 }
 
 void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr)
 {
+	// would be nice to use the preprocessor definition WITH_EDITOR instead,
+	// but the user may launch a standalone the game through the editor...
 	if (!GEditor)
 		return;
 
