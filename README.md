@@ -56,3 +56,20 @@ The plugin will then keep track of this RenderDoc location by adding an entry to
   BinaryPath=<path-to-your-RenderDoc-folder>
   ````
   This method can be very useful if you wish to deploy RenderDoc into repositories that are shared by entire teams, as the RenderDoc path can be relative to some Game or Engine directory.
+
+* You may force plugin compilation by adding the following to the `.uplugin` files:
+  ```json
+  "EnabledByDefault" : true,
+  ```
+  Note that this will not only force-build the plugin, but will also keep the plugin activated at all times.  
+  You can then selectively disable the plugin by inserting the following into your `<Game>.uproject` file:
+  ```json
+  {
+    "Name": "RenderDocLoaderPlugin",
+    "Enabled": false
+  },
+  {
+    "Name": "RenderDocPlugin",
+    "Enabled": false
+  },
+  ```
