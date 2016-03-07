@@ -79,20 +79,12 @@ void FRenderDocLoaderPluginModule::StartupModule()
 	// Look for a renderdoc.dll somewhere in the system:
 	RenderDocDLL = NULL;
 
-	// 1) Check the configuration files first:
+	// 1) Check the Game configuration files:
 	if (GConfig)
 	{
-		// 1.1) The Game configuration:
 		FString RenderdocPath;
 		GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GGameIni);
 		RenderDocDLL = LoadAndCheckRenderDocLibrary(RenderdocPath);
-		if (!RenderDocDLL)
-		{
-			// 1.2) The Engine configuration:
-			FString RenderdocPath;
-			GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GEngineIni);
-			RenderDocDLL = LoadAndCheckRenderDocLibrary(RenderdocPath);
-		}
 	}
 
 	// 2) Check for a RenderDoc system installation in the registry:

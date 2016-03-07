@@ -40,20 +40,19 @@ For Advanced Users
 * This version of the plugin relies upon a `renderdoc.dll` compatible with the RenderDoc v0.26 API.  
   Other RenderDoc builds that retain API compatibility with RenderDoc v0.26 should also work with this version of the plugin.
 
-* The very first time the plugin runs, a valid RenderDoc installation will be inferred by inspecting the following Windows registry key:
-  `HKEY_LOCAL_MACHINE\SOFTWARE\Classes\RenderDoc.RDCCapture.1\DefaultIcon\`
-If RenderDoc can not be located in this registry key (perhaps because you wish to use a portable version of RenderDoc, or decided to build RenderDoc from source), you will be asked to locate `renderdocui.exe` manually through a dialog window.
-The plugin will then keep track of this RenderDoc location by adding an entry to the following UE4 configuration file:
+* The very first time the plugin runs, a valid RenderDoc installation will be inferred by inspecting the following Windows registry key:  
+  `HKEY_LOCAL_MACHINE\SOFTWARE\Classes\RenderDoc.RDCCapture.1\DefaultIcon\`  
+If RenderDoc can not be located in this registry key (perhaps because you wish to use a portable version of RenderDoc, or decided to build RenderDoc from source), you will be asked to locate `renderdocui.exe` manually through a dialog window.  
+The plugin will then keep track of this RenderDoc location by adding an entry to the following UE4 configuration file:  
   `<Game>/Saved/Config/Windows/Game.ini`
 
-* You may also explicitly direct the plugin to a RenderDoc location by editing one of the following configuration file:
-  `<Game>/Config/Windows/WindowsEngine.ini`
-  or
-  `Engine/Config/Windows/WindowsEngine.ini`
-  Add the following entry to either configuration file in order to specify the RenderDoc location:
+* You may also explicitly direct the plugin to a RenderDoc location by editing the following configuration file  
+  `Engine/Config/BaseGame.ini`  
+  and adding the following entry to it:  
   ````ini
   [RenderDoc]
   BinaryPath=<path-to-your-RenderDoc-folder>
+  GreetingHasBeenShown=True
   ````
   This method can be very useful if you wish to deploy RenderDoc into repositories that are shared by entire teams, as the RenderDoc path can be relative to some Game or Engine directory.
 
