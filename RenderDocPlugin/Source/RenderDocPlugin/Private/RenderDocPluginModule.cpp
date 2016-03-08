@@ -53,12 +53,6 @@ void FRenderDocPluginModule::StartupModule()
 		FString RenderdocPath;
 		GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GGameIni);
 		RenderDocDLL = GetRenderDocLibrary(RenderdocPath);
-		if (!RenderDocDLL)
-		{
-			FString RenderdocPath;
-			GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GEngineIni);
-			RenderDocDLL = GetRenderDocLibrary(RenderdocPath);
-		}
 	}
 
 	if (!RenderDocDLL)
@@ -167,7 +161,7 @@ void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* Viewport
 	{
 		bool bGreetingHasBeenShown (false);
 		GConfig->GetBool(TEXT("RenderDoc"), TEXT("GreetingHasBeenShown"), bGreetingHasBeenShown, GGameIni);
-		if (!bGreetingHasBeenShown)
+		if (!bGreetingHasBeenShown && GEditor)
 		{
 			GEditor->EditorAddModalWindow(SNew(SRenderDocPluginAboutWindow));
 			GConfig->SetBool(TEXT("RenderDoc"), TEXT("GreetingHasBeenShown"), true, GGameIni);
