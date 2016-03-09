@@ -20,7 +20,7 @@ How to Use
 
 4. Download and install RenderDoc from http://renderdoc.org/builds  
    The stable build v0.27 of 2016-02-16 is recommended.
-  
+
 5. From within the UE4 Editor, enable both the RenderDocPlugin and the RenderDocLoaderPlugin, as shown below. Note that you will need to restart the UE4 Editor for these changes to take place.  
    ![](doc/img/howto-plugin_menu.jpg)   ![](doc/img/howto-enable.jpg)
 
@@ -28,10 +28,13 @@ How to Use
    If unable to locate one, you will be prompted to locate RenderDoc manually through a dialog window.  
    The plugin will remember the RenderDoc location until it is no longer valid.
 
-7. After the plugin has been loaded successfully, you should have two new buttons in the top-right corner of your viewport.  
+7. After the plugin has been loaded successfully, you should have two new buttons in the top-right corner of your Level Editor viewport.  
    The left-most button (see below) will capture the next frame and launch the RenderDoc UI to inspect the frame.  
    The right-most button has some configuration options.  
    ![](doc/img/howto-capture.jpg)
+
+8. Alternatively, the console command `RenderDoc.CaptureFrame` can also be used for capturing a frame. This is particularly useful when in PIE (Play-in-Editor) mode or when in Game mode, as the Level Editor viewport UI is omitted during gameplay.
+
 
 
 For Advanced Users
