@@ -189,12 +189,25 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 			RENDERDOC->StartFrameCapture(Device, WindowHandle);
 		});
 
-	// branch here to allow frame captures when the Editor is not around
-	// (like during a standalone launch)
-	if (GEditor)
-		GEditor->GetActiveViewport()->Draw(true);
-	else
-		GEngine->GameViewport->Viewport->Draw(true);
+	// infer the intended viewport to intercept/capture:
+	FViewport* Viewport (NULL);
+	check(GEngine);
+	if (!Viewport && GEngine->GameViewport)
+	{
+		check(GEngine->GameViewport->Viewport);
+		if (GEngine->GameViewport->Viewport->HasFocus())
+			Viewport = GEngine->GameViewport->Viewport;
+	}
+	if (!Viewport && GEditor)
+	{
+		// WARNING: capturing from a "PIE-Eject" Editor viewport will not work as
+		// expected; in such case, capture via the console command
+		// (this has something to do with the 'active' editor viewport when the UI
+		// button is clicked versus the one which the console is attached to)
+		Viewport = GEditor->GetActiveViewport();
+	}
+	check(Viewport);
+	Viewport->Draw(true);
 
 	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
 		EndRenderDocCapture,
