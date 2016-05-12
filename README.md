@@ -28,10 +28,9 @@ How to Use
    If unable to locate one, you will be prompted to locate RenderDoc manually through a dialog window.  
    The plugin will remember the RenderDoc location until it is no longer valid.
 
-7. After the plugin has been loaded successfully, you should have two new buttons in the top-right corner of your Level Editor viewport.  
-   The left-most button (see below) will capture the next frame and launch the RenderDoc UI to inspect the frame.  
-   The right-most button has some configuration options.  
-   ![](doc/img/howto-capture.jpg)
+7. After the plugin has been loaded successfully, you should have two new buttons in the top-right corner of your Level Editor viewport. The left-most button (see below) will capture the next frame and automatically launch RenderDoc to inspect the frame, while the right-most button exposes some configuration options.  
+   ![](doc/img/howto-capture.jpg)  
+**NOTE:** if RenderDoc has already been launched and remains open, newly captured frames will not be automatically opened for inspection, but will be enqueued instead; the user must then select in the RenderDoc application the frame capture intended for inspection.
 
 8. Alternatively, the console command `RenderDoc.CaptureFrame` can also be used for capturing a frame. This is particularly useful when in PIE (Play-in-Editor) mode or when in Game mode, as the Level Editor viewport UI is omitted during gameplay.
 
