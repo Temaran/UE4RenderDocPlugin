@@ -27,6 +27,9 @@
 #include "RenderDocPluginModule.h"
 #include "RenderDocPluginNotification.h"
 
+static uint32 FrameNumber (0);
+static FRenderDocPluginModule* ThePlugin (nullptr);
+
 const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"));
 
 #define LOCTEXT_NAMESPACE "RenderDocPlugin"
@@ -65,9 +68,13 @@ void FRenderDocPluginModule::StartupModule()
 	pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetRenderDocFunctionPointer(RenderDocDLL, TEXT("RENDERDOC_GetAPI"));
 	if (0 == RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_0_0, (void**)&RENDERDOC))
 	{
-		UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc initialization failed."));
+		UE_LOG(RenderDocPlugin, Error, TEXT("RenderDoc initialization failed."));
 		return;
 	}
+
+  IModularFeatures::Get().RegisterModularFeature(GetModularFeatureName(), this);
+  ThePlugin = this;
+
 	// Version checking
 	int major(0), minor(0), patch(0);
 	RENDERDOC->GetAPIVersion(&major, &minor, &patch);
@@ -109,9 +116,12 @@ void FRenderDocPluginModule::StartupModule()
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 
 	TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
-	CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureFrame,
+	CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureViewportFrame,
 		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureCurrentViewport),
 		FCanExecuteAction());
+  CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureEntireFrame,
+    FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureEntireFrame),
+    FCanExecuteAction());
 	CommandBindings->MapAction(FRenderDocPluginCommands::Get().OpenSettings,
 		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::OpenSettingsEditorWindow),
 		FCanExecuteAction());
@@ -171,11 +181,8 @@ void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* Viewport
 	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin initialized!"));
 }
 
-void FRenderDocPluginModule::CaptureCurrentViewport()
+void FRenderDocPluginModule::BeginCapture()
 {
-	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
-
-	FRenderDocPluginNotification::Get().ShowNotification( NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIShow", "Capturing frame") );
 	HWND WindowHandle = GetActiveWindow();
 
 	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
@@ -188,6 +195,36 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 			RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
 			RENDERDOC->StartFrameCapture(Device, WindowHandle);
 		});
+}
+
+void FRenderDocPluginModule::EndCapture()
+{
+  HWND WindowHandle = GetActiveWindow();
+
+	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
+		EndRenderDocCapture,
+		HWND, WindowHandle, WindowHandle,
+		RENDERDOC_API_CONTEXT*, RENDERDOC, RENDERDOC,
+		FRenderDocPluginModule*, Plugin, this,
+		{
+			RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
+			RENDERDOC->EndFrameCapture(Device, WindowHandle);
+			Plugin->UE4_RestoreDrawEventsFlag();
+
+      RunAsyncTask(ENamedThreads::GameThread, [this]()
+      {
+        Plugin->StartRenderDoc(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
+      });
+		});
+}
+
+void FRenderDocPluginModule::CaptureCurrentViewport()
+{
+	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
+
+	FRenderDocPluginNotification::Get().ShowNotification( NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIShow", "Capturing frame") );
+
+  BeginCapture();
 
 	// infer the intended viewport to intercept/capture:
 	FViewport* Viewport (NULL);
@@ -209,21 +246,14 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 	check(Viewport);
 	Viewport->Draw(true);
 
-	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
-		EndRenderDocCapture,
-		HWND, WindowHandle, WindowHandle,
-		RENDERDOC_API_CONTEXT*, RENDERDOC, RENDERDOC,
-		FRenderDocPluginModule*, Plugin, this,
-		{
-			RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
-			RENDERDOC->EndFrameCapture(Device, WindowHandle);
-			Plugin->UE4_RestoreDrawEventsFlag();
+  EndCapture();
+}
 
-      RunAsyncTask(ENamedThreads::GameThread, [this]()
-      {
-        Plugin->StartRenderDoc(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
-      });
-		});
+void FRenderDocPluginModule::CaptureEntireFrame()
+{
+  if (FrameNumber != 0)
+    return;
+  FrameNumber = GFrameNumber;
 }
 
 void FRenderDocPluginModule::OpenSettingsEditorWindow()
@@ -312,10 +342,17 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
 
 	FSlateIcon IconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.CaptureFrameIcon.Small");
 	ToolbarBuilder.AddToolBarButton(
-		FRenderDocPluginCommands::Get().CaptureFrame,
+		FRenderDocPluginCommands::Get().CaptureViewportFrame,
 		NAME_None,
-		LOCTEXT("RenderDocCapture_Override", "Capture Frame"),
-		LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame and launches the renderdoc UI"),
+		LOCTEXT("RenderDocCapture_Override", "CaptureViewportFrame"),
+		LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame of this viewport and launches RenderDoc."),
+		IconBrush,
+		NAME_None);
+	ToolbarBuilder.AddToolBarButton(
+		FRenderDocPluginCommands::Get().CaptureEntireFrame,
+		NAME_None,
+		LOCTEXT("RenderDocCapture_Override", "CaptureEntireFrame"),
+		LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame (including Editor Slate UI and SceneCaptures) and launches RenderDoc."),
 		IconBrush,
 		NAME_None);
 
@@ -323,7 +360,7 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
 	ToolbarBuilder.AddToolBarButton(
 		FRenderDocPluginCommands::Get().OpenSettings,
 		NAME_None,
-		LOCTEXT("RenderDocCaptureSettings_Override", "Settings"),
+		LOCTEXT("RenderDocCaptureSettings_Override", "OpenSettings"),
 		LOCTEXT("RenderDocCaptureSettings_ToolTipOverride", "Edit RenderDoc Settings"),
 		SettingsIconBrush,
 		NAME_None);
@@ -390,6 +427,20 @@ void FRenderDocPluginModule::RunAsyncTask(ENamedThreads::Type Where, TFunction<v
   };
 
   TGraphTask<FAsyncGraphTask>::CreateTask().ConstructAndDispatchWhenReady(Where, MoveTemp(What));
+}
+
+
+void FRenderDocDummyInputDevice::Tick(float DeltaTime)
+{
+  if (FrameNumber == 0)
+    return;
+
+  if (GFrameNumber == FrameNumber + 1)
+    ThePlugin->BeginCapture();
+
+  if (GFrameNumber == FrameNumber + 2)
+    ThePlugin->EndCapture(),
+    FrameNumber = 0;
 }
 
 #undef LOCTEXT_NAMESPACE

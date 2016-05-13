@@ -9,8 +9,7 @@ Currently, this plugin only runs on Windows systems.
 How to Use
 ----------
 
-1. Make sure you are using Unreal Engine 4.10.4 or later.  
-   This plugin is also known to work with all UE4 versions from 4.8.2 up to 4.11 (preview 6).  
+1. Make sure you are using Unreal Engine 4 version 4.10.0 or later.  
    There are commit tags in the repository for older versions of the plugin that suit former versions of UE4.
 
 2. Copy the contents of this repository into your `<Game>/Plugins/` folder.  

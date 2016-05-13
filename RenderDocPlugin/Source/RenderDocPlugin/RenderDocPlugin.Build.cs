@@ -50,6 +50,7 @@ namespace UnrealBuildTool.Rules
 					                                "GameProjectGeneration",
                                                     "RenderCore",
                                                     "MainFrame",
+                                                    "InputDevice",
                                                     "RHI"						// RHI module: required for accessing the UE4 flags GUsingNullRHI and GEmitDrawEvents.
 				                                });
         }
