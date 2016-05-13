@@ -24,34 +24,35 @@
 
 namespace UnrealBuildTool.Rules
 {
-    using System.IO;
+	using System.IO;
 
-    public class RenderDocPlugin : ModuleRules
-    {
-        public RenderDocPlugin(TargetInfo Target)
-        {
-            PrivateDependencyModuleNames.AddRange(new string[] { });
-            DynamicallyLoadedModuleNames.AddRange(new string[] { "LevelEditor" });
+	public class RenderDocPlugin : ModuleRules
+	{
+		public RenderDocPlugin(TargetInfo Target)
+		{
+			PrivateDependencyModuleNames.AddRange(new string[] { });
+			DynamicallyLoadedModuleNames.AddRange(new string[] { "LevelEditor" });
 
-            PublicIncludePaths.AddRange(new string[] { "RenderDocPlugin/Public" });
-            PrivateIncludePaths.AddRange(new string[] { "RenderDocPlugin/Private" });
+			PublicIncludePaths.AddRange(new string[] { "RenderDocPlugin/Public" });
+			PrivateIncludePaths.AddRange(new string[] { "RenderDocPlugin/Private" });
 
-            PublicDependencyModuleNames.AddRange(new string[]
-				                                {
-					                                "Core",
-					                                "CoreUObject",
-                                                    "Engine",
-                                                    "InputCore",
-                                                    "Slate", 
-                                                    "SlateCore",
-                                                    "EditorStyle",
-                                                    "UnrealEd",
-					                                "Projects",
-					                                "GameProjectGeneration",
-                                                    "RenderCore",
-                                                    "MainFrame",
-                                                    "RHI"						// RHI module: required for accessing the UE4 flags GUsingNullRHI and GEmitDrawEvents.
-				                                });
-        }
-    }
+			PublicDependencyModuleNames.AddRange(new string[]
+			{
+				"Core",
+				"CoreUObject",
+				"Engine",
+				"InputCore",
+				"Slate", 
+				"SlateCore",
+				"EditorStyle",
+				"UnrealEd",
+				"Projects",
+				"GameProjectGeneration",
+				"RenderCore",
+				"MainFrame",
+				"InputDevice",
+				"RHI"	// RHI module required for accessing the UE4 flags GUsingNullRHI and GEmitDrawEvents.
+			});
+		}
+	}
 }

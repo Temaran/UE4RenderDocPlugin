@@ -31,6 +31,7 @@
 #include "SlateBasics.h"
 #include "MultiBoxExtender.h"
 
+#include "IRenderDocPlugin.h"
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginCommands.h"
 #include "RenderDocPluginSettings.h"
@@ -42,11 +43,18 @@
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
 DEFINE_LOG_CATEGORY(RenderDocPlugin);
 
-class FRenderDocPluginModule : public IModuleInterface
+class FRenderDocPluginModule : public IRenderDocPlugin
 {
 public:	
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
+
+private:
+	// Tick made possible via the dummy input device declared below:
+	void Tick(float DeltaTime);
+	class FRenderDocDummyInputDevice;
+	// Mandatory IInputDeviceModule override that spawns the dummy input device:
+	virtual TSharedPtr< class IInputDevice > CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override;
 
 private:
 	static const FName SettingsUITabName;
@@ -63,17 +71,22 @@ private:
 
 	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
 
+	void BeginCapture();
+	void EndCapture();
+
+	void CaptureFrame();
 	void CaptureCurrentViewport();	
+	void CaptureEntireFrame();
 	void OpenSettingsEditorWindow();
 
-  void StartRenderDoc(FString FrameCaptureBaseDirectory);
-  FString GetNewestCapture(FString BaseDirectory);
+	void StartRenderDoc(FString FrameCaptureBaseDirectory);
+	FString GetNewestCapture(FString BaseDirectory);
 
 	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder); 
 
 	void* GetRenderDocFunctionPointer(void* ModuleHandle, const TCHAR* FunctionName);
 
-  static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
+ 	static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
 	
 	// RenderDoc API context
 	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
@@ -83,4 +96,7 @@ private:
 	bool UE4_GEmitDrawEvents_BeforeCapture;
 	void UE4_OverrideDrawEventsFlag(const bool flag=true);
 	void UE4_RestoreDrawEventsFlag();
+
+	// Tracks the frame count (tick number) for a full frame capture:
+	uint32 TickNumber;
 };

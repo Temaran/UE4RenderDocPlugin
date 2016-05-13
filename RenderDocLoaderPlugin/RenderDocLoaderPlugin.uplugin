@@ -1,16 +1,16 @@
 {
-    "FileVersion" : 1,
-	
+	"FileVersion" : 1,
+
 	"FriendlyName" : "RenderDoc Loader Plugin",
 	"Version" : 2,
-	"VersionName" : "0.0.2 for UE4.8.2",
+	"VersionName" : "0.1.0 for UE4.10",
 	"CreatedBy" : "Temaran",
 	"CreatedByURL" : "https://github.com/Temaran",
 	"EngineVersion" : 1579795,
 	"Description" : "A loader needed to make the RenderDoc plugin work",
 	"Category" : "Debugging.Rendering",
-	
-    "Modules" :
+
+	"Modules" :
 	[
 		{
 			"Name" : "RenderDocLoaderPlugin",
