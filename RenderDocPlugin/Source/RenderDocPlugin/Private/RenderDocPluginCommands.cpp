@@ -30,17 +30,26 @@
 PRAGMA_DISABLE_OPTIMIZATION
 void FRenderDocPluginCommands::RegisterCommands()
 {
-	UI_COMMAND(CaptureViewportFrame,  "CaptureViewportFrame",
-                                    "Captures the next frame of this viewport and launches RenderDoc.",
-                                    EUserInterfaceActionType::Button, FInputGesture(EKeys::F12, EModifierKey::Alt));
+	UI_COMMAND(
+		CaptureViewportFrame,
+		"CaptureViewportFrame",
+		"Captures the next frame of this viewport and launches RenderDoc.",
+		EUserInterfaceActionType::Button, FInputGesture(EKeys::F12, EModifierKey::Alt)
+	);
 
-  UI_COMMAND(CaptureEntireFrame,  "CaptureEntireFrame",
-                                  "Captures the next frame (including Editor Slate UI and SceneCaptures) and launches RenderDoc.",
-                                  EUserInterfaceActionType::Button, FInputGesture(EKeys::F11, EModifierKey::Alt));
+	UI_COMMAND(
+		CaptureEntireFrame,
+		"CaptureEntireFrame",
+		"Captures the next frame (including Editor Slate UI and SceneCaptures) and launches RenderDoc.",
+		EUserInterfaceActionType::Button, FInputGesture(EKeys::F11, EModifierKey::Alt)
+	);
 
-  UI_COMMAND(OpenSettings,  "OpenSettings",
-                            "Opens the RenderDoc Plugin Settings Editor",
-                            EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(
+		OpenSettings,
+		"OpenSettings",
+		"Opens the RenderDoc Plugin Settings Editor",
+		EUserInterfaceActionType::Button, FInputGesture()
+	);
 }
 PRAGMA_ENABLE_OPTIMIZATION
 

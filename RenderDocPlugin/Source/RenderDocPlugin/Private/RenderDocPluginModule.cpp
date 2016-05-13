@@ -27,9 +27,6 @@
 #include "RenderDocPluginModule.h"
 #include "RenderDocPluginNotification.h"
 
-static uint32 FrameNumber (0);
-static FRenderDocPluginModule* ThePlugin (nullptr);
-
 const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"));
 
 #define LOCTEXT_NAMESPACE "RenderDocPlugin"
@@ -72,8 +69,8 @@ void FRenderDocPluginModule::StartupModule()
 		return;
 	}
 
-  IModularFeatures::Get().RegisterModularFeature(GetModularFeatureName(), this);
-  ThePlugin = this;
+	IModularFeatures::Get().RegisterModularFeature(GetModularFeatureName(), this);
+	TickNumber = 0;
 
 	// Version checking
 	int major(0), minor(0), patch(0);
@@ -119,9 +116,9 @@ void FRenderDocPluginModule::StartupModule()
 	CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureViewportFrame,
 		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureCurrentViewport),
 		FCanExecuteAction());
-  CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureEntireFrame,
-    FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureEntireFrame),
-    FCanExecuteAction());
+	CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureEntireFrame,
+		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureEntireFrame),
+		FCanExecuteAction());
 	CommandBindings->MapAction(FRenderDocPluginCommands::Get().OpenSettings,
 		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::OpenSettingsEditorWindow),
 		FCanExecuteAction());
@@ -183,6 +180,9 @@ void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* Viewport
 
 void FRenderDocPluginModule::BeginCapture()
 {
+	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
+	FRenderDocPluginNotification::Get().ShowNotification(NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIShow", "Capturing frame"));
+
 	HWND WindowHandle = GetActiveWindow();
 
 	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
@@ -211,20 +211,16 @@ void FRenderDocPluginModule::EndCapture()
 			RENDERDOC->EndFrameCapture(Device, WindowHandle);
 			Plugin->UE4_RestoreDrawEventsFlag();
 
-      RunAsyncTask(ENamedThreads::GameThread, [this]()
-      {
-        Plugin->StartRenderDoc(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
-      });
+			RunAsyncTask(ENamedThreads::GameThread, [this]()
+			{
+				Plugin->StartRenderDoc(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
+			});
 		});
 }
 
 void FRenderDocPluginModule::CaptureCurrentViewport()
 {
-	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
-
-	FRenderDocPluginNotification::Get().ShowNotification( NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIShow", "Capturing frame") );
-
-  BeginCapture();
+	BeginCapture();
 
 	// infer the intended viewport to intercept/capture:
 	FViewport* Viewport (NULL);
@@ -246,14 +242,45 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 	check(Viewport);
 	Viewport->Draw(true);
 
-  EndCapture();
+	EndCapture();
 }
 
 void FRenderDocPluginModule::CaptureEntireFrame()
 {
-  if (FrameNumber != 0)
-    return;
-  FrameNumber = GFrameNumber;
+	// Are we already in thw workings of capturing an entire engine frame?
+	if (TickNumber != 0)
+		return;
+
+	// Begin tracking the global tick counter so that the Tick() method below can
+	// identify the beginning and end of a complete engine update cycle:
+	TickNumber = GFrameCounter;
+	// NOTE: GFrameCounter counts engine ticks, while GFrameNumber counts render
+	// frames. Multiple frames might get rendered in a single engine update tick.
+	// All active windows are updated, in a round-robin fashion, within a single
+	// engine tick. This includes thumbnail images for material preview, material
+	// editor previews, cascade/persona previes, etc.
+}
+
+void FRenderDocPluginModule::Tick(float DeltaTime)
+{
+	if (TickNumber == 0)
+		return;
+
+	const uint32 TickDiff = GFrameCounter - TickNumber;
+	check(TickDiff <= 2);
+
+	if (TickDiff == 1)
+		BeginCapture();
+
+	if (TickDiff == 2)
+		EndCapture(),
+		TickNumber = 0;
+}
+
+void FRenderDocDummyInputDevice::Tick(float DeltaTime)
+{
+	check(ThePlugin);
+	ThePlugin->Tick(DeltaTime);
 }
 
 void FRenderDocPluginModule::OpenSettingsEditorWindow()
@@ -275,7 +302,7 @@ void FRenderDocPluginModule::OpenSettingsEditorWindow()
 
 void FRenderDocPluginModule::StartRenderDoc(FString FrameCaptureBaseDirectory)
 {
-  FRenderDocPluginNotification::Get().ShowNotification( NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIShow", "Launching RenderDoc GUI") );
+	FRenderDocPluginNotification::Get().ShowNotification( NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIShow", "Launching RenderDoc GUI") );
 
 	FString NewestCapture = GetNewestCapture(FrameCaptureBaseDirectory);
 	FString ArgumentString = FString::Printf(TEXT("\"%s\""), *FPaths::ConvertRelativePathToFull(NewestCapture).Append(TEXT(".log")));
@@ -294,7 +321,7 @@ void FRenderDocPluginModule::StartRenderDoc(FString FrameCaptureBaseDirectory)
 		}
 	}
 
-  FRenderDocPluginNotification::Get().ShowNotification( NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIHide", "RenderDoc GUI Launched!") );
+	FRenderDocPluginNotification::Get().ShowNotification( NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIHide", "RenderDoc GUI Launched!") );
 }
 
 FString FRenderDocPluginModule::GetNewestCapture(FString BaseDirectory)
@@ -392,8 +419,8 @@ void FRenderDocPluginModule::ShutdownModule()
 	// Unregister the tab spawner
 	FGlobalTabmanager::Get()->UnregisterTabSpawner(SettingsUITabName);
 
-  if (RenderDocDLL)
-    FPlatformProcess::FreeDllHandle(RenderDocDLL);
+	if (RenderDocDLL)
+		FPlatformProcess::FreeDllHandle(RenderDocDLL);
 }
 
 void FRenderDocPluginModule::UE4_OverrideDrawEventsFlag(const bool flag)
@@ -413,34 +440,19 @@ void FRenderDocPluginModule::UE4_RestoreDrawEventsFlag()
 	//UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
 }
 
-
 void FRenderDocPluginModule::RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What)
 {
-  struct FAsyncGraphTask : public FAsyncGraphTaskBase
-  {
-    ENamedThreads::Type TargetThread;
-    TFunction<void()> TheTask;
+	struct FAsyncGraphTask : public FAsyncGraphTaskBase
+	{
+		ENamedThreads::Type TargetThread;
+		TFunction<void()> TheTask;
 
-    FAsyncGraphTask(ENamedThreads::Type Thread, TFunction<void()>&& Task) : TargetThread(Thread), TheTask(MoveTemp(Task)) { }
-    void DoTask(ENamedThreads::Type CurrentThread, const FGraphEventRef& MyCompletionGraphEvent) { TheTask(); }
-    ENamedThreads::Type GetDesiredThread() { return(TargetThread); }
-  };
+		FAsyncGraphTask(ENamedThreads::Type Thread, TFunction<void()>&& Task) : TargetThread(Thread), TheTask(MoveTemp(Task)) { }
+		void DoTask(ENamedThreads::Type CurrentThread, const FGraphEventRef& MyCompletionGraphEvent) { TheTask(); }
+		ENamedThreads::Type GetDesiredThread() { return(TargetThread); }
+	};
 
-  TGraphTask<FAsyncGraphTask>::CreateTask().ConstructAndDispatchWhenReady(Where, MoveTemp(What));
-}
-
-
-void FRenderDocDummyInputDevice::Tick(float DeltaTime)
-{
-  if (FrameNumber == 0)
-    return;
-
-  if (GFrameNumber == FrameNumber + 1)
-    ThePlugin->BeginCapture();
-
-  if (GFrameNumber == FrameNumber + 2)
-    ThePlugin->EndCapture(),
-    FrameNumber = 0;
+	TGraphTask<FAsyncGraphTask>::CreateTask().ConstructAndDispatchWhenReady(Where, MoveTemp(What));
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -43,28 +43,31 @@
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
 DEFINE_LOG_CATEGORY(RenderDocPlugin);
 
+/**
+* A dummy input device in order to be able to listen and respond to engine tick
+* events. The whole rendering activity between two engine ticks can be captured
+* including SceneCapture updates, Material Editor previews, Material Thumbnail
+* previews, Editor UI (Slate) widget rendering, etc.
+*/
 class FRenderDocDummyInputDevice : public IInputDevice
 {
 public:
-  FRenderDocDummyInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& MessageHandler) { }
-  virtual ~FRenderDocDummyInputDevice() { }
+	FRenderDocDummyInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& MessageHandler) : ThePlugin(NULL) { }
+	virtual ~FRenderDocDummyInputDevice() { }
 
-  /** Tick the interface (e.g. check for new controllers) */
-  /** (implemented in 'RenderDocPluginModule.cpp') */
-  virtual void Tick(float DeltaTime) override;
+	/** Tick the interface (used for controlling full engine frame captures). */
+	virtual void Tick(float DeltaTime) override;
 
-  /** Poll for controller state and send events if needed */
-  virtual void SendControllerEvents() override { }
+	/** The remaining interfaces are irrelevant for this dummy input device. */
+	virtual void SendControllerEvents() override { }
+	virtual void SetMessageHandler(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override { }
+	virtual bool Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar) override { return(false); }
+	virtual void SetChannelValue(int32 ControllerId, FForceFeedbackChannelType ChannelType, float Value) override { }
+	virtual void SetChannelValues(int32 ControllerId, const FForceFeedbackValues &values) override { }
 
-  /** Set which MessageHandler will get the events from SendControllerEvents. */
-  virtual void SetMessageHandler(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override { }
-
-  /** Exec handler to allow console commands to be passed through for debugging */
-  virtual bool Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar) override { return(false); }
-
-  // IForceFeedbackSystem pass through functions
-  virtual void SetChannelValue(int32 ControllerId, FForceFeedbackChannelType ChannelType, float Value) override { }
-  virtual void SetChannelValues(int32 ControllerId, const FForceFeedbackValues &values) override { }
+private:
+	friend class FRenderDocPluginModule;
+	class FRenderDocPluginModule* ThePlugin;
 
 };
 
@@ -74,14 +77,17 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-  virtual TSharedPtr< class IInputDevice > CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override
-  {
-    UE_LOG(RenderDocPlugin, Log, TEXT("Create Input Device"));
-    return(MakeShareable(new FRenderDocDummyInputDevice(InMessageHandler)));
-  }
+	virtual TSharedPtr< class IInputDevice > CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override
+	{
+		UE_LOG(RenderDocPlugin, Log, TEXT("Create Input Device"));
+		TSharedPtr<FRenderDocDummyInputDevice> InputDev = MakeShareable( new FRenderDocDummyInputDevice(InMessageHandler) );
+		InputDev->ThePlugin = this;
+		return(InputDev);
+	}
 
-  void BeginCapture();
-  void EndCapture();
+private:
+	friend class FRenderDocDummyInputDevice;
+	void Tick(float DeltaTime);
 
 private:
 	static const FName SettingsUITabName;
@@ -98,18 +104,21 @@ private:
 
 	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
 
+	void BeginCapture();
+	void EndCapture();
+
 	void CaptureCurrentViewport();	
-  void CaptureEntireFrame();
+	void CaptureEntireFrame();
 	void OpenSettingsEditorWindow();
 
-  void StartRenderDoc(FString FrameCaptureBaseDirectory);
-  FString GetNewestCapture(FString BaseDirectory);
+	void StartRenderDoc(FString FrameCaptureBaseDirectory);
+	FString GetNewestCapture(FString BaseDirectory);
 
 	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder); 
 
 	void* GetRenderDocFunctionPointer(void* ModuleHandle, const TCHAR* FunctionName);
 
-  static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
+ 	static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
 	
 	// RenderDoc API context
 	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
@@ -119,4 +128,7 @@ private:
 	bool UE4_GEmitDrawEvents_BeforeCapture;
 	void UE4_OverrideDrawEventsFlag(const bool flag=true);
 	void UE4_RestoreDrawEventsFlag();
+
+	// Tracks the frame count (tick number) for a full frame capture:
+	uint32 TickNumber;
 };
