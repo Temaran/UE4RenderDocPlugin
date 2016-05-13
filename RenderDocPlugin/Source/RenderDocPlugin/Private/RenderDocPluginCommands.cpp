@@ -32,21 +32,21 @@ void FRenderDocPluginCommands::RegisterCommands()
 {
 	UI_COMMAND(
 		CaptureViewportFrame,
-		"CaptureViewportFrame",
+		"Capture Viewport Frame",
 		"Captures the next frame of this viewport and launches RenderDoc.",
 		EUserInterfaceActionType::Button, FInputGesture(EKeys::F12, EModifierKey::Alt)
 	);
 
 	UI_COMMAND(
 		CaptureEntireFrame,
-		"CaptureEntireFrame",
-		"Captures the next frame (including Editor Slate UI and SceneCaptures) and launches RenderDoc.",
+		"Capture Entire Frame",
+		"Captures the entire rendering activity of the next tick (including Editor UI, SceneCaptures and Previews) and launches RenderDoc.",
 		EUserInterfaceActionType::Button, FInputGesture(EKeys::F11, EModifierKey::Alt)
 	);
 
 	UI_COMMAND(
 		OpenSettings,
-		"OpenSettings",
+		"Open Settings",
 		"Opens the RenderDoc Plugin Settings Editor",
 		EUserInterfaceActionType::Button, FInputGesture()
 	);

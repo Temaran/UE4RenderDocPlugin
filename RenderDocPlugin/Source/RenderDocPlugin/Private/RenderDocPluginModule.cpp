@@ -412,15 +412,15 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
 	ToolbarBuilder.AddToolBarButton(
 		FRenderDocPluginCommands::Get().CaptureViewportFrame,
 		NAME_None,
-		LOCTEXT("RenderDocCapture_Override", "CaptureViewportFrame"),
-		LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame of this viewport and launches RenderDoc."),
+		LOCTEXT("RenderDocCaptureViewport_Override", "Capture Viewport Frame"),
+		LOCTEXT("RenderDocCaptureViewport_ToolTipOverride", "Captures the next frame of this viewport and launches RenderDoc."),
 		IconBrush,
 		NAME_None);
 	ToolbarBuilder.AddToolBarButton(
 		FRenderDocPluginCommands::Get().CaptureEntireFrame,
 		NAME_None,
-		LOCTEXT("RenderDocCapture_Override", "CaptureEntireFrame"),
-		LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame (including Editor Slate UI and SceneCaptures) and launches RenderDoc."),
+		LOCTEXT("RenderDocCaptureEntire_Override", "Capture Entire Frame"),
+		LOCTEXT("RenderDocCaptureEntire_ToolTipOverride", "Captures the entire rendering activity of the next tick (including Editor UI, SceneCaptures and Previews) and launches RenderDoc."),
 		IconBrush,
 		NAME_None);
 
@@ -428,7 +428,7 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
 	ToolbarBuilder.AddToolBarButton(
 		FRenderDocPluginCommands::Get().OpenSettings,
 		NAME_None,
-		LOCTEXT("RenderDocCaptureSettings_Override", "OpenSettings"),
+		LOCTEXT("RenderDocCaptureSettings_Override", "Open Settings"),
 		LOCTEXT("RenderDocCaptureSettings_ToolTipOverride", "Edit RenderDoc Settings"),
 		SettingsIconBrush,
 		NAME_None);
