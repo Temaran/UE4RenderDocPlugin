@@ -43,51 +43,18 @@
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
 DEFINE_LOG_CATEGORY(RenderDocPlugin);
 
-/**
-* A dummy input device in order to be able to listen and respond to engine tick
-* events. The whole rendering activity between two engine ticks can be captured
-* including SceneCapture updates, Material Editor previews, Material Thumbnail
-* previews, Editor UI (Slate) widget rendering, etc.
-*/
-class FRenderDocDummyInputDevice : public IInputDevice
-{
-public:
-	FRenderDocDummyInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& MessageHandler) : ThePlugin(NULL) { }
-	virtual ~FRenderDocDummyInputDevice() { }
-
-	/** Tick the interface (used for controlling full engine frame captures). */
-	virtual void Tick(float DeltaTime) override;
-
-	/** The remaining interfaces are irrelevant for this dummy input device. */
-	virtual void SendControllerEvents() override { }
-	virtual void SetMessageHandler(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override { }
-	virtual bool Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar) override { return(false); }
-	virtual void SetChannelValue(int32 ControllerId, FForceFeedbackChannelType ChannelType, float Value) override { }
-	virtual void SetChannelValues(int32 ControllerId, const FForceFeedbackValues &values) override { }
-
-private:
-	friend class FRenderDocPluginModule;
-	class FRenderDocPluginModule* ThePlugin;
-
-};
-
 class FRenderDocPluginModule : public IRenderDocPlugin
 {
 public:	
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-	virtual TSharedPtr< class IInputDevice > CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override
-	{
-		UE_LOG(RenderDocPlugin, Log, TEXT("Create Input Device"));
-		TSharedPtr<FRenderDocDummyInputDevice> InputDev = MakeShareable( new FRenderDocDummyInputDevice(InMessageHandler) );
-		InputDev->ThePlugin = this;
-		return(InputDev);
-	}
-
 private:
-	friend class FRenderDocDummyInputDevice;
+	// Tick made possible via the dummy input device declared below:
 	void Tick(float DeltaTime);
+	class FRenderDocDummyInputDevice;
+	// Mandatory IInputDeviceModule override that spawns the dummy input device:
+	virtual TSharedPtr< class IInputDevice > CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override;
 
 private:
 	static const FName SettingsUITabName;

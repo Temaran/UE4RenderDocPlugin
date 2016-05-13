@@ -31,12 +31,59 @@ const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"
 
 #define LOCTEXT_NAMESPACE "RenderDocPlugin"
 
+
+
+/**
+* A dummy input device in order to be able to listen and respond to engine tick
+* events. The whole rendering activity between two engine ticks can be captured
+* including SceneCapture updates, Material Editor previews, Material Thumbnail
+* previews, Editor UI (Slate) widget rendering, etc.
+*/
+class FRenderDocPluginModule::FRenderDocDummyInputDevice : public IInputDevice
+{
+public:
+	//FRenderDocDummyInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& MessageHandler) : ThePlugin(NULL) { }
+	FRenderDocDummyInputDevice() : ThePlugin(NULL) { }
+	virtual ~FRenderDocDummyInputDevice() { }
+
+	/** Tick the interface (used for controlling full engine frame captures). */
+	virtual void Tick(float DeltaTime) override
+	{
+		check(ThePlugin);
+		ThePlugin->Tick(DeltaTime);
+	}
+
+	/** The remaining interfaces are irrelevant for this dummy input device. */
+	virtual void SendControllerEvents() override { }
+	virtual void SetMessageHandler(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override { }
+	virtual bool Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar) override { return(false); }
+	virtual void SetChannelValue(int32 ControllerId, FForceFeedbackChannelType ChannelType, float Value) override { }
+	virtual void SetChannelValues(int32 ControllerId, const FForceFeedbackValues &values) override { }
+
+private:
+	friend class FRenderDocPluginModule;
+	FRenderDocPluginModule* ThePlugin;
+
+};
+
+TSharedPtr< class IInputDevice > FRenderDocPluginModule::CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
+{
+	UE_LOG(RenderDocPlugin, Log, TEXT("Create Input Device"));
+	FRenderDocDummyInputDevice* InputDev = new FRenderDocDummyInputDevice();
+	InputDev->ThePlugin = this;
+	return( MakeShareable(InputDev) );
+}
+
+
+
 void* GetRenderDocLibrary(const FString& RenderdocPath)
 {
 	FString PathToRenderDocDLL = FPaths::Combine(*RenderdocPath, *FString("renderdoc.dll"));
 	void* RenderDocDLL = FPlatformProcess::GetDllHandle(*PathToRenderDocDLL);
 	return(RenderDocDLL);
 }
+
+
 
 void FRenderDocPluginModule::StartupModule()
 {
@@ -275,12 +322,6 @@ void FRenderDocPluginModule::Tick(float DeltaTime)
 	if (TickDiff == 2)
 		EndCapture(),
 		TickNumber = 0;
-}
-
-void FRenderDocDummyInputDevice::Tick(float DeltaTime)
-{
-	check(ThePlugin);
-	ThePlugin->Tick(DeltaTime);
 }
 
 void FRenderDocPluginModule::OpenSettingsEditorWindow()
