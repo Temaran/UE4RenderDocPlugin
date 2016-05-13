@@ -38,7 +38,6 @@ public:
 
 	virtual void RegisterCommands() override;
 
-	TSharedPtr<FUICommandInfo> CaptureViewportFrame;
-	TSharedPtr<FUICommandInfo> CaptureEntireFrame;
+	TSharedPtr<FUICommandInfo> CaptureFrame;
 	TSharedPtr<FUICommandInfo> OpenSettings;
 };

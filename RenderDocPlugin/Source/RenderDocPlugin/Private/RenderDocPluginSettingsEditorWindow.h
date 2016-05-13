@@ -49,6 +49,7 @@ private:
 	FRenderDocPluginSettings RenderDocSettings;
 	pRENDERDOC_SetCaptureOptionU32 SetOptions;
 
+	void OnCaptureAllActivityChanged(ECheckBoxState NewState);
 	void OnCaptureCallStacksChanged(ECheckBoxState NewState);
 	void OnRefAllResourcesChanged(ECheckBoxState NewState);
 	void OnSaveAllInitialsChanged(ECheckBoxState NewState);

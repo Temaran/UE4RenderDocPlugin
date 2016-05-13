@@ -74,6 +74,7 @@ private:
 	void BeginCapture();
 	void EndCapture();
 
+	void CaptureFrame();
 	void CaptureCurrentViewport();	
 	void CaptureEntireFrame();
 	void OpenSettingsEditorWindow();

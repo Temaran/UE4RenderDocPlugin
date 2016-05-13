@@ -31,17 +31,10 @@ PRAGMA_DISABLE_OPTIMIZATION
 void FRenderDocPluginCommands::RegisterCommands()
 {
 	UI_COMMAND(
-		CaptureViewportFrame,
-		"Capture Viewport Frame",
-		"Captures the next frame of this viewport and launches RenderDoc.",
+		CaptureFrame,
+		"Capture Frame",
+		"Captures the next frame and launches RenderDoc.",
 		EUserInterfaceActionType::Button, FInputGesture(EKeys::F12, EModifierKey::Alt)
-	);
-
-	UI_COMMAND(
-		CaptureEntireFrame,
-		"Capture Entire Frame",
-		"Captures the entire rendering activity of the next tick (including Editor UI, SceneCaptures and Previews) and launches RenderDoc.",
-		EUserInterfaceActionType::Button, FInputGesture(EKeys::F11, EModifierKey::Alt)
 	);
 
 	UI_COMMAND(

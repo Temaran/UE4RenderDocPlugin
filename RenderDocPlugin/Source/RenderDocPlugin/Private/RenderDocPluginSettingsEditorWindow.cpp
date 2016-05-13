@@ -48,9 +48,30 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 		.FocusWhenFirstShown(true)
 		.bDragAnywhere(false)
 		.ActivateWhenFirstShown(true)
-		.ClientSize(FVector2D(325, 125))
+		.ClientSize(FVector2D(325, 150))
 		[
 			SNew(SVerticalBox)
+
+			+ SVerticalBox::Slot()
+			[
+				SNew(SHorizontalBox)
+				+ SHorizontalBox::Slot()
+				.VAlign(EVerticalAlignment::VAlign_Center)
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("CaptureAllActivity", "Capture all activity"))
+					.ToolTipText(LOCTEXT("CaptureAllActivityToolTip", "If enabled, capture all rendering activity during the next engine update tick; if disabled, only the rendering activity of the active viewport will be captured."))
+				]
+				+ SHorizontalBox::Slot()
+				.VAlign(EVerticalAlignment::VAlign_Center)
+				.HAlign(HAlign_Right)
+				[
+					SNew(SCheckBox)
+					.IsChecked(RenderDocSettings.bCaptureAllActivity ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+					.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnCaptureAllActivityChanged)
+				]
+			]
+
 			+ SVerticalBox::Slot()
 			[
 				SNew(SHorizontalBox)
@@ -63,90 +84,95 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 				]
 
 				+ SHorizontalBox::Slot()
-					.VAlign(EVerticalAlignment::VAlign_Center)
-					.HAlign(HAlign_Right)
-					[
-						SNew(SCheckBox)
-						.IsChecked(RenderDocSettings.bCaptureCallStacks ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-						.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnCaptureCallStacksChanged)
-					]
+				.VAlign(EVerticalAlignment::VAlign_Center)
+				.HAlign(HAlign_Right)
+				[
+					SNew(SCheckBox)
+					.IsChecked(RenderDocSettings.bCaptureCallStacks ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+					.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnCaptureCallStacksChanged)
+				]
 			]
 
 			+ SVerticalBox::Slot()
+			[
+				SNew(SHorizontalBox)
+				+ SHorizontalBox::Slot()
+				.VAlign(EVerticalAlignment::VAlign_Center)
 				[
-					SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot()
-					.VAlign(EVerticalAlignment::VAlign_Center)
-					[
-						SNew(STextBlock)
-						.Text(LOCTEXT("RefAllResources", "Capture all resources"))
-						.ToolTipText(LOCTEXT("RefAllResourcesToolTip", "Capture all resources, including those that are not referenced by the current frame."))
-					]
-
-					+ SHorizontalBox::Slot()
-						.VAlign(EVerticalAlignment::VAlign_Center)
-						.HAlign(HAlign_Right)
-						[
-							SNew(SCheckBox)
-							.IsChecked(RenderDocSettings.bRefAllResources ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-							.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnRefAllResourcesChanged)
-						]
+					SNew(STextBlock)
+					.Text(LOCTEXT("RefAllResources", "Capture all resources"))
+					.ToolTipText(LOCTEXT("RefAllResourcesToolTip", "Capture all resources, including those that are not referenced by the current frame."))
 				]
+
+				+ SHorizontalBox::Slot()
+				.VAlign(EVerticalAlignment::VAlign_Center)
+				.HAlign(HAlign_Right)
+				[
+					SNew(SCheckBox)
+					.IsChecked(RenderDocSettings.bRefAllResources ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+					.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnRefAllResourcesChanged)
+				]
+			]
 
 			+ SVerticalBox::Slot()
+			[
+				SNew(SHorizontalBox)
+				+ SHorizontalBox::Slot()
+				.VAlign(EVerticalAlignment::VAlign_Center)
 				[
-					SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot()
-					.VAlign(EVerticalAlignment::VAlign_Center)
-					[
-						SNew(STextBlock)
-						.Text(LOCTEXT("SaveAllInitials", "Save all initial states"))
-						.ToolTipText(LOCTEXT("SaveAllInitialsToolTip", "Save the initial status of all resources, even if we think that they will be overwritten in this frame."))
-					]
-
-					+ SHorizontalBox::Slot()
-						.VAlign(EVerticalAlignment::VAlign_Center)
-						.HAlign(HAlign_Right)
-						[
-							SNew(SCheckBox)
-							.IsChecked(RenderDocSettings.bSaveAllInitials ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-							.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnSaveAllInitialsChanged)
-						]
+					SNew(STextBlock)
+					.Text(LOCTEXT("SaveAllInitials", "Save all initial states"))
+					.ToolTipText(LOCTEXT("SaveAllInitialsToolTip", "Save the initial status of all resources, even if we think that they will be overwritten in this frame."))
 				]
+
+				+ SHorizontalBox::Slot()
+				.VAlign(EVerticalAlignment::VAlign_Center)
+				.HAlign(HAlign_Right)
+				[
+					SNew(SCheckBox)
+					.IsChecked(RenderDocSettings.bSaveAllInitials ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+					.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnSaveAllInitialsChanged)
+				]
+			]
 
 			+ SVerticalBox::Slot()
+			[
+				SNew(SHorizontalBox)
+				+ SHorizontalBox::Slot()
+				.VAlign(EVerticalAlignment::VAlign_Center)
+				.Padding(5)
 				[
-					SNew(SHorizontalBox)
-					+ SHorizontalBox::Slot()
-					.VAlign(EVerticalAlignment::VAlign_Center)
-					.Padding(5)
-					[
-						SNew(SButton)
-						.OnClicked(this, &SRenderDocPluginSettingsEditorWindow::SaveAndClose)
-						.Text(LOCTEXT("SaveAndCloseButton", "Save and close"))
-					]
-
-					+ SHorizontalBox::Slot()
-						.VAlign(EVerticalAlignment::VAlign_Center)
-						.Padding(5)
-						[
-							SNew(SButton)
-							.OnClicked(this, &SRenderDocPluginSettingsEditorWindow::ShowAboutWindow)
-							.Text(LOCTEXT("AboutButton", "About"))
-						]
-
-					+ SHorizontalBox::Slot()
-						.VAlign(EVerticalAlignment::VAlign_Center)
-						.Padding(5)
-						[
-							SNew(SButton)
-							.OnClicked(this, &SRenderDocPluginSettingsEditorWindow::Close)
-							.Text(LOCTEXT("CloseButton", "Close"))
-						]
+					SNew(SButton)
+					.OnClicked(this, &SRenderDocPluginSettingsEditorWindow::SaveAndClose)
+					.Text(LOCTEXT("SaveAndCloseButton", "Save and close"))
 				]
+
+				+ SHorizontalBox::Slot()
+				.VAlign(EVerticalAlignment::VAlign_Center)
+				.Padding(5)
+				[
+					SNew(SButton)
+					.OnClicked(this, &SRenderDocPluginSettingsEditorWindow::ShowAboutWindow)
+					.Text(LOCTEXT("AboutButton", "About"))
+				]
+
+				+ SHorizontalBox::Slot()
+				.VAlign(EVerticalAlignment::VAlign_Center)
+				.Padding(5)
+				[
+					SNew(SButton)
+					.OnClicked(this, &SRenderDocPluginSettingsEditorWindow::Close)
+					.Text(LOCTEXT("CloseButton", "Close"))
+				]
+			]
 		]);
 
 	bIsTopmostWindow = true;
+}
+
+void SRenderDocPluginSettingsEditorWindow::OnCaptureAllActivityChanged(ECheckBoxState NewState)
+{
+	RenderDocSettings.bCaptureAllActivity = NewState == ECheckBoxState::Checked ? true : false;
 }
 
 void SRenderDocPluginSettingsEditorWindow::OnCaptureCallStacksChanged(ECheckBoxState NewState)

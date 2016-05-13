@@ -160,11 +160,8 @@ void FRenderDocPluginModule::StartupModule()
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 
 	TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
-	CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureViewportFrame,
-		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureCurrentViewport),
-		FCanExecuteAction());
-	CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureEntireFrame,
-		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureEntireFrame),
+	CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureFrame,
+		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureFrame),
 		FCanExecuteAction());
 	CommandBindings->MapAction(FRenderDocPluginCommands::Get().OpenSettings,
 		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::OpenSettingsEditorWindow),
@@ -263,6 +260,14 @@ void FRenderDocPluginModule::EndCapture()
 				Plugin->StartRenderDoc(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
 			});
 		});
+}
+
+void FRenderDocPluginModule::CaptureFrame()
+{
+  if (RenderDocSettings.bCaptureAllActivity)
+    CaptureEntireFrame();
+  else
+    CaptureCurrentViewport();
 }
 
 void FRenderDocPluginModule::CaptureCurrentViewport()
@@ -410,17 +415,10 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
 
 	FSlateIcon IconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.CaptureFrameIcon.Small");
 	ToolbarBuilder.AddToolBarButton(
-		FRenderDocPluginCommands::Get().CaptureViewportFrame,
+		FRenderDocPluginCommands::Get().CaptureFrame,
 		NAME_None,
-		LOCTEXT("RenderDocCaptureViewport_Override", "Capture Viewport Frame"),
-		LOCTEXT("RenderDocCaptureViewport_ToolTipOverride", "Captures the next frame of this viewport and launches RenderDoc."),
-		IconBrush,
-		NAME_None);
-	ToolbarBuilder.AddToolBarButton(
-		FRenderDocPluginCommands::Get().CaptureEntireFrame,
-		NAME_None,
-		LOCTEXT("RenderDocCaptureEntire_Override", "Capture Entire Frame"),
-		LOCTEXT("RenderDocCaptureEntire_ToolTipOverride", "Captures the entire rendering activity of the next tick (including Editor UI, SceneCaptures and Previews) and launches RenderDoc."),
+		LOCTEXT("RenderDocCapture_Override", "Capture Frame"),
+		LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame and launches RenderDoc."),
 		IconBrush,
 		NAME_None);
 
