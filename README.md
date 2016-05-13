@@ -29,10 +29,14 @@ How to Use
 
 7. After the plugin has been loaded successfully, you should have two new buttons in the top-right corner of your Level Editor viewport. The left-most button (see below) will capture the next frame and automatically launch RenderDoc to inspect the frame, while the right-most button exposes some configuration options.  
    ![](doc/img/howto-capture.jpg)  
-**NOTE:** if RenderDoc has already been launched and remains open, newly captured frames will not be automatically opened for inspection, but will be enqueued instead; the user must then select in the RenderDoc application the frame capture intended for inspection.
+Alternatively, the console command `RenderDoc.CaptureFrame` can also be used for capturing a frame. This is particularly useful when in PIE (Play-in-Editor) mode or when in Game mode, as the Level Editor viewport UI is omitted during gameplay.
+   > **NOTE:** if RenderDoc has already been launched and remains open, newly captured frames will not be automatically opened for inspection, but will be enqueued instead; the user must then select in the RenderDoc application the frame capture intended for inspection.  
 
-8. Alternatively, the console command `RenderDoc.CaptureFrame` can also be used for capturing a frame. This is particularly useful when in PIE (Play-in-Editor) mode or when in Game mode, as the Level Editor viewport UI is omitted during gameplay.
-
+8. The configuration button exposes a few settings that can be tweaked prior to capturing the frame:
+   * _Capture all activity_: by default, the plugin only intercepts the rendering activity of the viewport currently active; by checking this setting, all rendering activity of all Editor windows will be captured (such as the Editor UI itself and Material Editor/Thumbnail previews).
+   * _Capture callstack_: captures the call stack when each rendering API call was issued.
+   * _Capture all resources_: include all rendering resources of the rendering context in the capture, even those that have not been used/referenced during the frame capture.
+   * _Save all initial states_: include the initial state of all rendering resources, even if this initial state is found unlikely to contribute to the final contents of the frame being captured (for example, the initial contents of the GBuffer resources may be stripped from the capture since the whole GBuffer is likely to be rewritten by the frame; this setting prevents such a capture heuristic from occurring).
 
 
 For Advanced Users
