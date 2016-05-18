@@ -87,6 +87,12 @@ void* GetRenderDocLibrary(const FString& RenderdocPath)
 
 void FRenderDocPluginModule::StartupModule()
 {
+	if (!FModuleManager::Get().IsModuleLoaded("RenderDocLoaderPlugin"))
+	{
+		UE_LOG(RenderDocPlugin, Error, TEXT("Unable to initialize RenderDoc Plugin because the 'RenderDoc LOADER Plugin' has not been initialized."));
+		return;
+	}
+
 	if (GUsingNullRHI)
 	{
 		UE_LOG(RenderDocPlugin, Warning, TEXT("RenderDoc Plugin will not be loaded because a Null RHI (Cook Server, perhaps) is being used."));
@@ -104,7 +110,7 @@ void FRenderDocPluginModule::StartupModule()
 
 	if (!RenderDocDLL)
 	{
-		UE_LOG(RenderDocPlugin, Error, TEXT("Could not find the renderdoc DLL: have you loaded the RenderDocLoaderPlugin?"));
+		UE_LOG(RenderDocPlugin, Error, TEXT("Could not find the renderdoc DLL: have you loaded the 'RenderDoc LOADER Plugin'?"));
 		return;
 	}
 
