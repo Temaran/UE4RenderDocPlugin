@@ -68,7 +68,7 @@ private:
 
 TSharedPtr< class IInputDevice > FRenderDocPluginModule::CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
 {
-	UE_LOG(RenderDocPlugin, Log, TEXT("Create Input Device"));
+	UE_LOG(RenderDocPlugin, Log, TEXT("Creating dummy input device (for intercepting engine ticks)"));
 	FRenderDocDummyInputDevice* InputDev = new FRenderDocDummyInputDevice();
 	InputDev->ThePlugin = this;
 	return( MakeShareable(InputDev) );
@@ -76,10 +76,16 @@ TSharedPtr< class IInputDevice > FRenderDocPluginModule::CreateInputDevice(const
 
 
 
-void* GetRenderDocLibrary(const FString& RenderdocPath)
+void* GetRenderDocLibrary()
 {
-	FString PathToRenderDocDLL = FPaths::Combine(*RenderdocPath, *FString("renderdoc.dll"));
-	void* RenderDocDLL = FPlatformProcess::GetDllHandle(*PathToRenderDocDLL);
+	void* RenderDocDLL (NULL);
+	if (GConfig)
+	{
+		FString RenderdocPath;
+		GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GGameIni);
+		FString PathToRenderDocDLL = FPaths::Combine(*RenderdocPath, *FString("renderdoc.dll"));
+		RenderDocDLL = FPlatformProcess::GetDllHandle(*PathToRenderDocDLL);
+	}
 	return(RenderDocDLL);
 }
 
@@ -89,7 +95,7 @@ void FRenderDocPluginModule::StartupModule()
 {
 	if (!FModuleManager::Get().IsModuleLoaded("RenderDocLoaderPlugin"))
 	{
-		UE_LOG(RenderDocPlugin, Error, TEXT("Unable to initialize RenderDoc Plugin because the 'RenderDoc LOADER Plugin' has not been initialized."));
+		UE_LOG(RenderDocPlugin, Error, TEXT("Unable to initialize RenderDoc Plugin because the 'RenderDoc LOADER Plugin' has not been loaded."));
 		return;
 	}
 
@@ -99,36 +105,19 @@ void FRenderDocPluginModule::StartupModule()
 		return;
 	}
 
-	// Grab a handle to the RenderDoc DLL that has been loaded by the RenderDocLoaderPlugin:
-	RenderDocDLL = NULL;
-	if (GConfig)
-	{
-		FString RenderdocPath;
-		GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GGameIni);
-		RenderDocDLL = GetRenderDocLibrary(RenderdocPath);
-	}
-
-	if (!RenderDocDLL)
-	{
-		UE_LOG(RenderDocPlugin, Error, TEXT("Could not find the renderdoc DLL: have you loaded the 'RenderDoc LOADER Plugin'?"));
-		return;
-	}
-
-	// Initialize the RenderDoc API
+	// Obtain a handle to the RenderDoc DLL that has been loaded by the RenderDoc
+	// Loader Plugin; no need for error handling here since the Loader would have
+	// already handled and logged these errors (but check() them just in case...)
+	RenderDocDLL = GetRenderDocLibrary();
+	check(RenderDocDLL);
 	pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetRenderDocFunctionPointer(RenderDocDLL, TEXT("RENDERDOC_GetAPI"));
-	if (0 == RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_0_0, (void**)&RENDERDOC))
-	{
-		UE_LOG(RenderDocPlugin, Error, TEXT("RenderDoc initialization failed."));
-		return;
-	}
+	check(RENDERDOC_GetAPI);
+	int RENDERDOC_HasAPI = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_0_0, (void**)&RENDERDOC);
+	check(RENDERDOC_HasAPI);
+	check(RENDERDOC);
 
 	IModularFeatures::Get().RegisterModularFeature(GetModularFeatureName(), this);
 	TickNumber = 0;
-
-	// Version checking
-	int major(0), minor(0), patch(0);
-	RENDERDOC->GetAPIVersion(&major, &minor, &patch);
-	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc v%i.%i.%i has been loaded."), major, minor, patch);
 
 	// Setup RenderDoc settings
 	FString RenderDocCapturePath = FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures"));
@@ -224,8 +213,6 @@ void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* Viewport
 			GConfig->SetBool(TEXT("RenderDoc"), TEXT("GreetingHasBeenShown"), true, GGameIni);
 		}
 	}
-
-	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin initialized!"));
 }
 
 void FRenderDocPluginModule::BeginCapture()
@@ -414,7 +401,7 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
 {
 #define LOCTEXT_NAMESPACE "LevelEditorToolBar"
 
-	UE_LOG(RenderDocPlugin, Log, TEXT("Starting extension..."));
+	UE_LOG(RenderDocPlugin, Log, TEXT("Attaching toolbar extension..."));
 	ToolbarBuilder.AddSeparator();
 
 	ToolbarBuilder.BeginSection("RenderdocPlugin");
