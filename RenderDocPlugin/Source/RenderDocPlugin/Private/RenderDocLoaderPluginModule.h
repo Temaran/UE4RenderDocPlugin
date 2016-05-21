@@ -21,3 +21,27 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 ******************************************************************************/
+
+#pragma once
+
+#include "ModuleManager.h"
+#include "Editor/LevelEditor/Public/LevelEditor.h"
+#include "SharedPointer.h"
+#include "Internationalization.h"
+#include "SlateBasics.h"
+#include "MultiBoxExtender.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(RenderDocLoaderPlugin, Log, All);
+DEFINE_LOG_CATEGORY(RenderDocLoaderPlugin);
+
+class FRenderDocLoaderPluginModule// : public IModuleInterface
+{
+public:
+  void StartupModule(class FRenderDocPluginModule* Plugin);
+	void ShutdownModule();
+
+private: 
+	void* RenderDocDLL;
+
+};
+

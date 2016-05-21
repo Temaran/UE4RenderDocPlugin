@@ -22,11 +22,42 @@
 * THE SOFTWARE.
 ******************************************************************************/
 
-#include "RenderDocLoaderPluginPrivatePCH.h" 
+#include "RenderDocPluginPrivatePCH.h"
 #include "RenderDocLoaderPluginModule.h"
 #include "Developer/DesktopPlatform/public/DesktopPlatformModule.h"
 
 #include "../../../../RenderDocAPI/renderdoc_app.h"
+
+#include "RenderDocPluginModule.h"
+
+struct FRenderDocRenderResources : public FRenderResource
+{
+public:
+  virtual void InitDynamicRHI()
+  {
+    hasRHI = true;
+    if (hasRHI && hasEditor)
+      Init();
+  }
+
+  void InitEditor(FRenderDocPluginModule* Plugin)
+  {
+    hasEditor = true;
+    ThePlugin = Plugin;
+    if (hasRHI && hasEditor)
+      Init();
+  }
+
+  void Init()
+  {
+    ThePlugin->Initialize();
+  }
+
+  bool hasRHI = false;
+  bool hasEditor = false;
+  FRenderDocPluginModule* ThePlugin = nullptr;
+};
+TGlobalResource<FRenderDocRenderResources> GRR;
 
 #define LOCTEXT_NAMESPACE "RenderDocLoaderPluginNamespace" 
 
@@ -84,7 +115,7 @@ static void UpdateConfigFiles(const FString& RenderdocPath)
 	}
 }
 
-void FRenderDocLoaderPluginModule::StartupModule()
+void FRenderDocLoaderPluginModule::StartupModule(class FRenderDocPluginModule* Plugin)
 {
 	if (GUsingNullRHI)
 	{
@@ -144,6 +175,18 @@ void FRenderDocLoaderPluginModule::StartupModule()
 		return;
 	}
 
+  if (FModuleManager::Get().IsModuleLoaded("LevelEditor"))
+    Plugin->Initialize();
+  else
+    FModuleManager::Get().OnModulesChanged().AddLambda([Plugin](FName name, EModuleChangeReason reason)
+    {
+      if ((name == "LevelEditor") && (reason == EModuleChangeReason::ModuleLoaded))
+      {
+        UE_LOG(RenderDocLoaderPlugin, Log, TEXT("LevelEditor has been loaded!"));
+        Plugin->Initialize();
+      }
+    });
+
 	UE_LOG(RenderDocLoaderPlugin, Log, TEXT("RenderDoc Loader Plugin loaded!"));
 }
 
@@ -158,6 +201,6 @@ void FRenderDocLoaderPluginModule::ShutdownModule()
 	UE_LOG(RenderDocLoaderPlugin, Log, TEXT("RenderDoc Loader Plugin unloaded!"));
 }
 
-IMPLEMENT_MODULE(FRenderDocLoaderPluginModule, RenderDocLoaderPlugin)
+//IMPLEMENT_MODULE(FRenderDocLoaderPluginModule, RenderDocLoaderPlugin)
 
 #undef LOCTEXT_NAMESPACE 

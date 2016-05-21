@@ -22,7 +22,7 @@
 * THE SOFTWARE.
 ******************************************************************************/
 
-#include "RenderDocPluginPrivatePCH.h" 
+#include "RenderDocPluginPrivatePCH.h"
 #include "RendererInterface.h"
 #include "RenderDocPluginModule.h"
 #include "RenderDocPluginNotification.h"
@@ -93,11 +93,18 @@ void* GetRenderDocLibrary()
 
 void FRenderDocPluginModule::StartupModule()
 {
+  Loader.StartupModule(this);
+}
+
+void FRenderDocPluginModule::Initialize()
+{
+  /*
 	if (!FModuleManager::Get().IsModuleLoaded("RenderDocLoaderPlugin"))
 	{
 		UE_LOG(RenderDocPlugin, Error, TEXT("Unable to initialize RenderDoc Plugin because the 'RenderDoc LOADER Plugin' has not been loaded."));
 		return;
 	}
+  */
 
 	if (GUsingNullRHI)
 	{

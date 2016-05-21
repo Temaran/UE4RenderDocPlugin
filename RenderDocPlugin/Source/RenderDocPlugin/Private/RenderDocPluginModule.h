@@ -38,6 +38,8 @@
 #include "RenderDocPluginSettingsEditorWindow.h"
 #include "RenderDocPluginAboutWindow.h"
 
+#include "RenderDocLoaderPluginModule.h"
+
 #include "../../../../RenderDocAPI/renderdoc_app.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
@@ -48,6 +50,8 @@ class FRenderDocPluginModule : public IRenderDocPlugin
 public:	
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
+
+  void Initialize();
 
 private:
 	// Tick made possible via the dummy input device declared below:
@@ -98,5 +102,6 @@ private:
 	void UE4_RestoreDrawEventsFlag();
 
 	// Tracks the frame count (tick number) for a full frame capture:
+  FRenderDocLoaderPluginModule Loader;
 	uint32 TickNumber;
 };
