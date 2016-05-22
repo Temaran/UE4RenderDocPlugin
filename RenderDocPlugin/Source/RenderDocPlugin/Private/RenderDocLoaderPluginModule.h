@@ -31,17 +31,24 @@
 #include "SlateBasics.h"
 #include "MultiBoxExtender.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(RenderDocLoaderPlugin, Log, All);
-DEFINE_LOG_CATEGORY(RenderDocLoaderPlugin);
+#include "../../../../RenderDocAPI/renderdoc_app.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
+DEFINE_LOG_CATEGORY(RenderDocPlugin);
 
 class FRenderDocLoaderPluginModule// : public IModuleInterface
 {
 public:
-  void StartupModule(class FRenderDocPluginModule* Plugin);
+	void StartupModule(class FRenderDocPluginModule* Plugin);
 	void ShutdownModule();
 
-private: 
+	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
+
+private:
+	friend class FRenderDocPluginModule;
+
 	void* RenderDocDLL;
 
+	RENDERDOC_API_CONTEXT* RenderDocAPI;
 };
 

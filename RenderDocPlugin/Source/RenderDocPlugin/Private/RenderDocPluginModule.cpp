@@ -98,14 +98,6 @@ void FRenderDocPluginModule::StartupModule()
 
 void FRenderDocPluginModule::Initialize()
 {
-  /*
-	if (!FModuleManager::Get().IsModuleLoaded("RenderDocLoaderPlugin"))
-	{
-		UE_LOG(RenderDocPlugin, Error, TEXT("Unable to initialize RenderDoc Plugin because the 'RenderDoc LOADER Plugin' has not been loaded."));
-		return;
-	}
-  */
-
 	if (GUsingNullRHI)
 	{
 		UE_LOG(RenderDocPlugin, Warning, TEXT("RenderDoc Plugin will not be loaded because a Null RHI (Cook Server, perhaps) is being used."));
@@ -115,12 +107,7 @@ void FRenderDocPluginModule::Initialize()
 	// Obtain a handle to the RenderDoc DLL that has been loaded by the RenderDoc
 	// Loader Plugin; no need for error handling here since the Loader would have
 	// already handled and logged these errors (but check() them just in case...)
-	RenderDocDLL = GetRenderDocLibrary();
-	check(RenderDocDLL);
-	pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)GetRenderDocFunctionPointer(RenderDocDLL, TEXT("RENDERDOC_GetAPI"));
-	check(RENDERDOC_GetAPI);
-	int RENDERDOC_HasAPI = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_0_0, (void**)&RENDERDOC);
-	check(RENDERDOC_HasAPI);
+	RENDERDOC = Loader.RenderDocAPI;
 	check(RENDERDOC);
 
 	IModularFeatures::Get().RegisterModularFeature(GetModularFeatureName(), this);
@@ -229,6 +216,7 @@ void FRenderDocPluginModule::BeginCapture()
 
 	HWND WindowHandle = GetActiveWindow();
 
+	typedef FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT RENDERDOC_API_CONTEXT;
 	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
 		StartRenderDocCapture,
 		HWND, WindowHandle, WindowHandle,
@@ -245,6 +233,7 @@ void FRenderDocPluginModule::EndCapture()
 {
   HWND WindowHandle = GetActiveWindow();
 
+	typedef FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT RENDERDOC_API_CONTEXT;
 	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
 		EndRenderDocCapture,
 		HWND, WindowHandle, WindowHandle,
@@ -458,8 +447,7 @@ void FRenderDocPluginModule::ShutdownModule()
 	// Unregister the tab spawner
 	FGlobalTabmanager::Get()->UnregisterTabSpawner(SettingsUITabName);
 
-	if (RenderDocDLL)
-		FPlatformProcess::FreeDllHandle(RenderDocDLL);
+	Loader.ShutdownModule();
 }
 
 void FRenderDocPluginModule::UE4_OverrideDrawEventsFlag(const bool flag)

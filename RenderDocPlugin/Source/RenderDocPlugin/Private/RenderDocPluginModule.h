@@ -40,11 +40,6 @@
 
 #include "RenderDocLoaderPluginModule.h"
 
-#include "../../../../RenderDocAPI/renderdoc_app.h"
-
-DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
-DEFINE_LOG_CATEGORY(RenderDocPlugin);
-
 class FRenderDocPluginModule : public IRenderDocPlugin
 {
 public:	
@@ -70,7 +65,6 @@ private:
 	TSharedPtr<const FExtensionBase> ToolbarExtension;
 
 	FRenderDocPluginSettings RenderDocSettings;
-	void* RenderDocDLL;
 	bool IsInitialized;
 
 	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
@@ -92,9 +86,7 @@ private:
 
  	static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
 	
-	// RenderDoc API context
-	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
-	RENDERDOC_API_CONTEXT* RENDERDOC;
+
 
 	// UE4-related: enable DrawEvents during captures, if necessary:
 	bool UE4_GEmitDrawEvents_BeforeCapture;
@@ -102,6 +94,7 @@ private:
 	void UE4_RestoreDrawEventsFlag();
 
 	// Tracks the frame count (tick number) for a full frame capture:
-  FRenderDocLoaderPluginModule Loader;
+	FRenderDocLoaderPluginModule Loader;
+	FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT* RENDERDOC;
 	uint32 TickNumber;
 };
