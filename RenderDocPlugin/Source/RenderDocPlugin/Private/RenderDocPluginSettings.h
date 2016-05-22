@@ -26,8 +26,6 @@
 
 #include "SlateBasics.h"
 
-#include "../../../../RenderDocAPI/renderdoc_app.h"
-
 struct FRenderDocPluginSettings
 {
 public:

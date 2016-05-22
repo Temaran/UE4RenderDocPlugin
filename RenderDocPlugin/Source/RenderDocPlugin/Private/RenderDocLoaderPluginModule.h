@@ -31,7 +31,7 @@
 #include "SlateBasics.h"
 #include "MultiBoxExtender.h"
 
-#include "../../../../RenderDocAPI/renderdoc_app.h"
+#include "RenderDocAPI/renderdoc_app.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
 DEFINE_LOG_CATEGORY(RenderDocPlugin);

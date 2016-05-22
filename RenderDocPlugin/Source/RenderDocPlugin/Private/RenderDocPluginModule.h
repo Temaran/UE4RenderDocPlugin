@@ -82,8 +82,6 @@ private:
 
 	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder); 
 
-	void* GetRenderDocFunctionPointer(void* ModuleHandle, const TCHAR* FunctionName);
-
  	static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
 	
 
@@ -95,6 +93,14 @@ private:
 
 	// Tracks the frame count (tick number) for a full frame capture:
 	FRenderDocLoaderPluginModule Loader;
-	FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT* RENDERDOC;
+	FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT* RenderDocAPI;
 	uint32 TickNumber;
+
+private:
+	// TODO: refactor the plugin into subclasses:
+	class InputDevice;
+	class RenderDocLoader;
+	class FrameCapturer;
+	class UserInterface;
+
 };

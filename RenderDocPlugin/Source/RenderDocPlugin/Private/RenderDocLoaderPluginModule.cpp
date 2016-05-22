@@ -26,8 +26,6 @@
 #include "RenderDocLoaderPluginModule.h"
 #include "Developer/DesktopPlatform/public/DesktopPlatformModule.h"
 
-#include "../../../../RenderDocAPI/renderdoc_app.h"
-
 #include "RenderDocPluginModule.h"
 
 #define LOCTEXT_NAMESPACE "RenderDocLoaderPluginNamespace" 

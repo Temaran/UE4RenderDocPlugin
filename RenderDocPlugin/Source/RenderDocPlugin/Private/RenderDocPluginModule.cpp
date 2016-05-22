@@ -107,8 +107,8 @@ void FRenderDocPluginModule::Initialize()
 	// Obtain a handle to the RenderDoc DLL that has been loaded by the RenderDoc
 	// Loader Plugin; no need for error handling here since the Loader would have
 	// already handled and logged these errors (but check() them just in case...)
-	RENDERDOC = Loader.RenderDocAPI;
-	check(RENDERDOC);
+	RenderDocAPI = Loader.RenderDocAPI;
+	check(RenderDocAPI);
 
 	IModularFeatures::Get().RegisterModularFeature(GetModularFeatureName(), this);
 	TickNumber = 0;
@@ -125,18 +125,18 @@ void FRenderDocPluginModule::Initialize()
 	FPaths::NormalizeDirectoryName(CapturePath);
 	
 	if (sizeof(TCHAR) == sizeof(char))
-		RENDERDOC->SetLogFilePathTemplate((const char*)*CapturePath);
+		RenderDocAPI->SetLogFilePathTemplate((const char*)*CapturePath);
 	else
-		RENDERDOC->SetLogFilePathTemplate(TCHAR_TO_ANSI(*CapturePath));
+		RenderDocAPI->SetLogFilePathTemplate(TCHAR_TO_ANSI(*CapturePath));
 
-	RENDERDOC->SetFocusToggleKeys(NULL, 0);
-	RENDERDOC->SetCaptureKeys(NULL, 0);
+	RenderDocAPI->SetFocusToggleKeys(NULL, 0);
+	RenderDocAPI->SetCaptureKeys(NULL, 0);
 
-	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_CaptureCallstacks, RenderDocSettings.bCaptureCallStacks  ? 1 : 0);
-	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_RefAllResources,   RenderDocSettings.bRefAllResources    ? 1 : 0);
-	RENDERDOC->SetCaptureOptionU32(eRENDERDOC_Option_SaveAllInitials,   RenderDocSettings.bSaveAllInitials    ? 1 : 0);
+	RenderDocAPI->SetCaptureOptionU32(eRENDERDOC_Option_CaptureCallstacks, RenderDocSettings.bCaptureCallStacks  ? 1 : 0);
+	RenderDocAPI->SetCaptureOptionU32(eRENDERDOC_Option_RefAllResources,   RenderDocSettings.bRefAllResources    ? 1 : 0);
+	RenderDocAPI->SetCaptureOptionU32(eRENDERDOC_Option_SaveAllInitials,   RenderDocSettings.bSaveAllInitials    ? 1 : 0);
 
-	RENDERDOC->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
+	RenderDocAPI->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
 
 	//Init UI
 	FRenderDocPluginStyle::Initialize();
@@ -220,12 +220,12 @@ void FRenderDocPluginModule::BeginCapture()
 	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
 		StartRenderDocCapture,
 		HWND, WindowHandle, WindowHandle,
-		RENDERDOC_API_CONTEXT*, RENDERDOC, RENDERDOC,
+		RENDERDOC_API_CONTEXT*, RenderDocAPI, RenderDocAPI,
 		FRenderDocPluginModule*, Plugin, this,
 		{
 			Plugin->UE4_OverrideDrawEventsFlag();
 			RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
-			RENDERDOC->StartFrameCapture(Device, WindowHandle);
+			RenderDocAPI->StartFrameCapture(Device, WindowHandle);
 		});
 }
 
@@ -237,11 +237,11 @@ void FRenderDocPluginModule::EndCapture()
 	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
 		EndRenderDocCapture,
 		HWND, WindowHandle, WindowHandle,
-		RENDERDOC_API_CONTEXT*, RENDERDOC, RENDERDOC,
+		RENDERDOC_API_CONTEXT*, RenderDocAPI, RenderDocAPI,
 		FRenderDocPluginModule*, Plugin, this,
 		{
 			RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
-			RENDERDOC->EndFrameCapture(Device, WindowHandle);
+			RenderDocAPI->EndFrameCapture(Device, WindowHandle);
 			Plugin->UE4_RestoreDrawEventsFlag();
 
 			RunAsyncTask(ENamedThreads::GameThread, [this]()
@@ -327,7 +327,7 @@ void FRenderDocPluginModule::OpenSettingsEditorWindow()
 
 	TSharedPtr<SRenderDocPluginSettingsEditorWindow> Window = SNew(SRenderDocPluginSettingsEditorWindow)
 		.Settings(RenderDocSettings)
-		.SetCaptureOptions(RENDERDOC->SetCaptureOptionU32);
+		.SetCaptureOptions(RenderDocAPI->SetCaptureOptionU32);
 
 	Window->MoveWindowTo(FSlateApplication::Get().GetCursorPos());
 	GEditor->EditorAddModalWindow(Window.ToSharedRef());
@@ -345,11 +345,11 @@ void FRenderDocPluginModule::StartRenderDoc(FString FrameCaptureBaseDirectory)
 	if (!NewestCapture.IsEmpty())
 	{
 		// This is the new, recommended way of launching the RenderDoc GUI:
-		if (!RENDERDOC->IsRemoteAccessConnected())
+		if (!RenderDocAPI->IsRemoteAccessConnected())
 		{
 		  uint32 PID = (sizeof(TCHAR) == sizeof(char)) ?
-			  RENDERDOC->LaunchReplayUI(true, (const char*)(*ArgumentString))
-			: RENDERDOC->LaunchReplayUI(true, TCHAR_TO_ANSI(*ArgumentString));
+			  RenderDocAPI->LaunchReplayUI(true, (const char*)(*ArgumentString))
+			: RenderDocAPI->LaunchReplayUI(true, TCHAR_TO_ANSI(*ArgumentString));
 
 		  if (0 == PID)
 			UE_LOG(LogTemp, Error, TEXT("Could not launch RenderDoc!!"));
@@ -367,7 +367,7 @@ FString FRenderDocPluginModule::GetNewestCapture(FString BaseDirectory)
 	uint32_t Index = 0;
 	FString OutString;
 	
-	while (RENDERDOC->GetCapture(Index, LogFile, &LogPathLength, &Timestamp))
+	while (RenderDocAPI->GetCapture(Index, LogFile, &LogPathLength, &Timestamp))
 	{
 		if (sizeof(TCHAR) == sizeof(char))
 			OutString = FString(LogPathLength, (TCHAR*)LogFile);
@@ -378,19 +378,6 @@ FString FRenderDocPluginModule::GetNewestCapture(FString BaseDirectory)
 	}
 	
 	return OutString;
-}
-
-void* FRenderDocPluginModule::GetRenderDocFunctionPointer(void* ModuleHandle, const TCHAR* FunctionName)
-{
-	void* OutTarget = FPlatformProcess::GetDllExport(ModuleHandle, FunctionName);
-
-	if (!OutTarget)
-	{
-		UE_LOG(RenderDocPlugin, Error, TEXT("Could not load renderdoc function %s. You are most likely using an incompatible version of Renderdoc"), FunctionName);
-	}
-
-	check(OutTarget);
-	return OutTarget;
 }
 
 void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder)
