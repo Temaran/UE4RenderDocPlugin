@@ -97,7 +97,7 @@ void FRenderDocLoaderPluginModule::StartupModule(class FRenderDocPluginModule* P
 	}
 	
 	// Look for a renderdoc.dll somewhere in the system:
-	UE_LOG(RenderDocPlugin, Warning, TEXT("locating RenderDoc library (renderdoc.dll)..."));
+	UE_LOG(RenderDocPlugin, Log, TEXT("locating RenderDoc library (renderdoc.dll)..."));
 	RenderDocDLL = RenderDocAPI = NULL;
 
 	// 1) Check the Game configuration files:

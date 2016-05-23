@@ -9,6 +9,7 @@
 	"EngineVersion" : 1579795,
 	"Description" : "RenderDoc graphics debugger/profiler integration.",
 	"Category" : "Debugging.Rendering",
+	"EnabledByDefault" : false,
 
 	"Modules" :
 	[
