@@ -34,7 +34,6 @@
 #include "RenderDocAPI/renderdoc_app.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
-DEFINE_LOG_CATEGORY(RenderDocPlugin);
 
 class FRenderDocLoaderPluginModule// : public IModuleInterface
 {
@@ -46,6 +45,7 @@ public:
 
 private:
 	friend class FRenderDocPluginModule;
+	friend class SRenderDocPluginSettingsEditorWindow;
 
 	void* RenderDocDLL;
 

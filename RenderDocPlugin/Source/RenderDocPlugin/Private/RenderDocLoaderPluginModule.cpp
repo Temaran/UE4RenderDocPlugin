@@ -28,6 +28,8 @@
 
 #include "RenderDocPluginModule.h"
 
+DEFINE_LOG_CATEGORY(RenderDocPlugin);
+
 #define LOCTEXT_NAMESPACE "RenderDocLoaderPluginNamespace" 
 
 static void* LoadAndCheckRenderDocLibrary(FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT*& RenderDocAPI, const FString& RenderdocPath)

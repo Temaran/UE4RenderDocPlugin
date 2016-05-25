@@ -327,7 +327,7 @@ void FRenderDocPluginModule::OpenSettingsEditorWindow()
 
 	TSharedPtr<SRenderDocPluginSettingsEditorWindow> Window = SNew(SRenderDocPluginSettingsEditorWindow)
 		.Settings(RenderDocSettings)
-		.SetCaptureOptions(RenderDocAPI->SetCaptureOptionU32);
+		.ThePlugin(this);
 
 	Window->MoveWindowTo(FSlateApplication::Get().GetCursorPos());
 	GEditor->EditorAddModalWindow(Window.ToSharedRef());

@@ -92,6 +92,7 @@ private:
 	void UE4_RestoreDrawEventsFlag();
 
 	// Tracks the frame count (tick number) for a full frame capture:
+ 	friend class SRenderDocPluginSettingsEditorWindow;
 	FRenderDocLoaderPluginModule Loader;
 	FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT* RenderDocAPI;
 	uint32 TickNumber;
