@@ -20,19 +20,21 @@ How to Use
 4. Download and install RenderDoc from http://renderdoc.org/builds  
    The stable build v0.29 of 2016-05-08 is recommended.
 
-5. From within the UE4 Editor, enable both the RenderDocPlugin and the RenderDocLoaderPlugin, as shown below. Note that you will need to restart the UE4 Editor for these changes to take place.  
-   ![](doc/img/howto-plugin_menu.jpg)   ![](doc/img/howto-enable.jpg)
+5. From within the UE4 Editor, enable the RenderDocPlugin as shown below; you will need to restart the UE4 Editor for this change to take place.  
+   ![](doc/img/howto-plugin_menu.jpg) | ![](doc/img/howto-enable.jpg)
 
 6. The first time the plugin is executed, it will attempt to automatically find a RenderDoc installation.  
    If unable to locate one, you will be prompted to locate RenderDoc manually through a dialog window.  
    The plugin will remember the RenderDoc location until it is no longer valid.
 
-7. After the plugin has been loaded successfully, you should have two new buttons in the top-right corner of your Level Editor viewport. The left-most button (see below) will capture the next frame and automatically launch RenderDoc to inspect the frame, while the right-most button exposes some configuration options.  
+7. After the plugin has been loaded successfully, you should have two new buttons in the top-right corner of your Level Editor viewport.  
+The left-most button ![](RenderDocPlugin/Resources/Icon20.png) will capture the next frame and automatically launch RenderDoc to inspect the frame, while the right-most button ![](RenderDocPlugin/Resources/SettingsIcon20.png) exposes some configuration options.  
+Alternatively, the console command `RenderDoc.CaptureFrame` can also be used for capturing a frame. This is particularly useful when in PIE (Play-in-Editor) mode or when in Game mode, as the Level Editor viewport UI is omitted during gameplay.  
    ![](doc/img/howto-capture.jpg)  
-Alternatively, the console command `RenderDoc.CaptureFrame` can also be used for capturing a frame. This is particularly useful when in PIE (Play-in-Editor) mode or when in Game mode, as the Level Editor viewport UI is omitted during gameplay.
    > **NOTE:** if RenderDoc has already been launched and remains open, newly captured frames will not be automatically opened for inspection, but will be enqueued instead; the user must then select in the RenderDoc application the frame capture intended for inspection.  
 
-8. The configuration button exposes a few settings that can be tweaked prior to capturing the frame:
+8. The configuration button ![](RenderDocPlugin/Resources/SettingsIcon20.png) exposes a few settings that can be tweaked prior to capturing the frame:  
+![](doc/img/howto-settings.jpg)
    * _Capture all activity_: by default, the plugin only intercepts the rendering activity of the viewport currently active; by checking this setting, all rendering activity of all Editor windows will be captured (such as the Editor UI itself and Material Editor/Thumbnail previews).
    * _Capture callstack_: captures the call stack when each rendering API call was issued.
    * _Capture all resources_: include all rendering resources of the rendering context in the capture, even those that have not been used/referenced during the frame capture.
@@ -61,17 +63,13 @@ The plugin will then keep track of this RenderDoc location by adding an entry to
   ````
   This method can be very useful if you wish to deploy RenderDoc into repositories that are shared by entire teams, as the RenderDoc path can be relative to some Game or Engine directory.
 
-* You may force plugin compilation by adding the following to the `.uplugin` files:
+* You may force plugin compilation by setting the following in the `RenderDocPlugin.uplugin` file:
   ```json
   "EnabledByDefault" : true,
   ```
   Note that this will not only force-build the plugin, but will also keep the plugin activated at all times.  
   You can then selectively disable the plugin by inserting the following into your `<Game>.uproject` file:
   ```json
-  {
-    "Name": "RenderDocLoaderPlugin",
-    "Enabled": false
-  },
   {
     "Name": "RenderDocPlugin",
     "Enabled": false
