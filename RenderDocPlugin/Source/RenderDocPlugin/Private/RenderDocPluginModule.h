@@ -38,16 +38,15 @@
 #include "RenderDocPluginSettingsEditorWindow.h"
 #include "RenderDocPluginAboutWindow.h"
 
-#include "../../../../RenderDocAPI/renderdoc_app.h"
-
-DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
-DEFINE_LOG_CATEGORY(RenderDocPlugin);
+#include "RenderDocLoaderPluginModule.h"
 
 class FRenderDocPluginModule : public IRenderDocPlugin
 {
 public:	
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
+
+  void Initialize();
 
 private:
 	// Tick made possible via the dummy input device declared below:
@@ -66,7 +65,6 @@ private:
 	TSharedPtr<const FExtensionBase> ToolbarExtension;
 
 	FRenderDocPluginSettings RenderDocSettings;
-	void* RenderDocDLL;
 	bool IsInitialized;
 
 	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
@@ -84,13 +82,9 @@ private:
 
 	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder); 
 
-	void* GetRenderDocFunctionPointer(void* ModuleHandle, const TCHAR* FunctionName);
-
  	static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
 	
-	// RenderDoc API context
-	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
-	RENDERDOC_API_CONTEXT* RENDERDOC;
+
 
 	// UE4-related: enable DrawEvents during captures, if necessary:
 	bool UE4_GEmitDrawEvents_BeforeCapture;
@@ -98,5 +92,16 @@ private:
 	void UE4_RestoreDrawEventsFlag();
 
 	// Tracks the frame count (tick number) for a full frame capture:
+ 	friend class SRenderDocPluginSettingsEditorWindow;
+	FRenderDocLoaderPluginModule Loader;
+	FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT* RenderDocAPI;
 	uint32 TickNumber;
+
+private:
+	// TODO: refactor the plugin into subclasses:
+	class InputDevice;
+	class RenderDocLoader;
+	class FrameCapturer;
+	class UserInterface;
+
 };

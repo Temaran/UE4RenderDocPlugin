@@ -22,55 +22,58 @@
 * THE SOFTWARE.
 ******************************************************************************/
 
-#include "RenderDocLoaderPluginPrivatePCH.h" 
+#include "RenderDocPluginPrivatePCH.h"
 #include "RenderDocLoaderPluginModule.h"
 #include "Developer/DesktopPlatform/public/DesktopPlatformModule.h"
 
-#include "../../../../RenderDocAPI/renderdoc_app.h"
+#include "RenderDocPluginModule.h"
+
+DEFINE_LOG_CATEGORY(RenderDocPlugin);
 
 #define LOCTEXT_NAMESPACE "RenderDocLoaderPluginNamespace" 
 
-static void* LoadAndCheckRenderDocLibrary(const FString& RenderdocPath)
+static void* LoadAndCheckRenderDocLibrary(FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT*& RenderDocAPI, const FString& RenderdocPath)
 {
+	check(nullptr == RenderDocAPI);
+
 	if (RenderdocPath.IsEmpty())
 		return(nullptr);
 
 	FString PathToRenderDocDLL = FPaths::Combine(*RenderdocPath, *FString("renderdoc.dll"));
 	if (!FPaths::FileExists(PathToRenderDocDLL))
 	{
-		UE_LOG(RenderDocLoaderPlugin, Warning, TEXT("unable to locate RenderDoc library (renderdoc.dll) at: %s"), *PathToRenderDocDLL);
+		UE_LOG(RenderDocPlugin, Warning, TEXT("unable to locate RenderDoc library at: %s"), *PathToRenderDocDLL);
 		return(nullptr);
 	}
 
-	UE_LOG(RenderDocLoaderPlugin, Log, TEXT("a RenderDoc library (renderdoc.dll) has been located at: %s"), *PathToRenderDocDLL);
+	UE_LOG(RenderDocPlugin, Log, TEXT("a RenderDoc library has been located at: %s"), *PathToRenderDocDLL);
 
 	void* RenderDocDLL = FPlatformProcess::GetDllHandle(*PathToRenderDocDLL);
 	if (!RenderDocDLL)
 	{
-		UE_LOG(RenderDocLoaderPlugin, Warning, TEXT("unable to dynamically load RenderDoc library 'renderdoc.dll'."));
+		UE_LOG(RenderDocPlugin, Warning, TEXT("unable to dynamically load RenderDoc library"));
 		return(nullptr);
 	}
 
 	pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)FPlatformProcess::GetDllExport(RenderDocDLL, TEXT("RENDERDOC_GetAPI"));
 	if (!RENDERDOC_GetAPI)
 	{
-		UE_LOG(RenderDocLoaderPlugin, Warning, TEXT("unable to obtain 'RENDERDOC_GetAPI' function from 'renderdoc.dll'. You are likely using an incompatible version of RenderDoc."), *PathToRenderDocDLL);
+		UE_LOG(RenderDocPlugin, Warning, TEXT("unable to obtain 'RENDERDOC_GetAPI' function from 'renderdoc.dll'. You are likely using an incompatible version of RenderDoc."), *PathToRenderDocDLL);
 		FPlatformProcess::FreeDllHandle(RenderDocDLL);
 		return(nullptr);
 	}
 
 	// Version checking and reporting
-	RENDERDOC_API_1_0_0* RENDERDOC (nullptr);
-	if (0 == RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_0_0, (void**)&RENDERDOC))
+	if (0 == RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_0_0, (void**)&RenderDocAPI))
 	{
-		UE_LOG(RenderDocLoaderPlugin, Warning, TEXT("unable to initialize RenderDoc library (renderdoc.dll) due to API incompatibility (requires eRENDERDOC_API_Version_1_0_0)."), *PathToRenderDocDLL);
+		UE_LOG(RenderDocPlugin, Warning, TEXT("unable to initialize RenderDoc library due to API incompatibility (plugin requires eRENDERDOC_API_Version_1_0_0)."), *PathToRenderDocDLL);
 		FPlatformProcess::FreeDllHandle(RenderDocDLL);
 		return(nullptr);
 	}
 
 	int major(0), minor(0), patch(0);
-	RENDERDOC->GetAPIVersion(&major, &minor, &patch);
-	UE_LOG(RenderDocLoaderPlugin, Log, TEXT("RenderDoc library (renderdoc.dll) has been loaded (RenderDoc API v%i.%i.%i)."), major, minor, patch);
+	RenderDocAPI->GetAPIVersion(&major, &minor, &patch);
+	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc library has been loaded (RenderDoc API v%i.%i.%i)."), major, minor, patch);
 
 	return(RenderDocDLL);
 }
@@ -84,26 +87,27 @@ static void UpdateConfigFiles(const FString& RenderdocPath)
 	}
 }
 
-void FRenderDocLoaderPluginModule::StartupModule()
+void FRenderDocLoaderPluginModule::StartupModule(class FRenderDocPluginModule* Plugin)
 {
 	if (GUsingNullRHI)
 	{
 		// THIS WILL NEVER TRIGGER because of a sort of chicken-and-egg problem: RenderDoc Loader is a PostConfigInit
 		// plugin, and GUsingNullRHI is only initialized properly between PostConfigInit and PreLoadingScreen phases.
 		// (nevertheless, keep this comment around for future iterations of UE4)
-		UE_LOG(RenderDocLoaderPlugin, Warning, TEXT("RenderDoc Plugin will not be loaded because a Null RHI (Cook Server, perhaps) is being used."));
+		UE_LOG(RenderDocPlugin, Warning, TEXT("this plugin will not be loaded because a null RHI (Cook Server, perhaps) is being used."));
 		return;
 	}
 	
 	// Look for a renderdoc.dll somewhere in the system:
-	RenderDocDLL = NULL;
+	UE_LOG(RenderDocPlugin, Log, TEXT("locating RenderDoc library (renderdoc.dll)..."));
+	RenderDocDLL = RenderDocAPI = NULL;
 
 	// 1) Check the Game configuration files:
 	if (GConfig)
 	{
 		FString RenderdocPath;
 		GConfig->GetString(TEXT("RenderDoc"), TEXT("BinaryPath"), RenderdocPath, GGameIni);
-		RenderDocDLL = LoadAndCheckRenderDocLibrary(RenderdocPath);
+		RenderDocDLL = LoadAndCheckRenderDocLibrary(RenderDocAPI, RenderdocPath);
 	}
 
 	// 2) Check for a RenderDoc system installation in the registry:
@@ -111,7 +115,7 @@ void FRenderDocLoaderPluginModule::StartupModule()
 	{
 		FString RenderdocPath;
 		FWindowsPlatformMisc::QueryRegKey(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Classes\\RenderDoc.RDCCapture.1\\DefaultIcon\\"), TEXT(""), RenderdocPath);
-		RenderDocDLL = LoadAndCheckRenderDocLibrary(RenderdocPath);
+		RenderDocDLL = LoadAndCheckRenderDocLibrary(RenderDocAPI, RenderdocPath);
 		if (RenderDocDLL)
 			UpdateConfigFiles(RenderdocPath);
 	}
@@ -121,7 +125,7 @@ void FRenderDocLoaderPluginModule::StartupModule()
 	{
 		//Renderdoc does not seem to be installed, but it might be built from source or downloaded by archive, 
 		//so prompt the user to navigate to the main exe file
-		UE_LOG(RenderDocLoaderPlugin, Log, TEXT("RenderDoc is not installed! Please provide custom exe path..."));
+		UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc library not found; provide a custom installation location..."));
 		FString RenderdocPath;
 		IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
 		if (DesktopPlatform)
@@ -132,7 +136,7 @@ void FRenderDocLoaderPluginModule::StartupModule()
 				RenderdocPath = OutFiles[0];
 		}
 		RenderdocPath = FPaths::GetPath(RenderdocPath);
-		RenderDocDLL = LoadAndCheckRenderDocLibrary(RenderdocPath);
+		RenderDocDLL = LoadAndCheckRenderDocLibrary(RenderDocAPI, RenderdocPath);
 		if (RenderDocDLL)
 			UpdateConfigFiles(RenderdocPath);
 	}
@@ -140,11 +144,21 @@ void FRenderDocLoaderPluginModule::StartupModule()
 	// 4) All bets are off; aborting...
 	if (!RenderDocDLL)
 	{
-		UE_LOG(RenderDocLoaderPlugin, Error, TEXT("unable to locate RenderDoc libray (renderdoc.dll); aborting module load..."));
+		UE_LOG(RenderDocPlugin, Error, TEXT("unable to initialize the plugin because no RenderDoc libray has been located."));
 		return;
 	}
 
-	UE_LOG(RenderDocLoaderPlugin, Log, TEXT("RenderDoc Loader Plugin loaded!"));
+	// Defer Level Editor UI extensions until Level Editor has been loaded:
+	if (FModuleManager::Get().IsModuleLoaded("LevelEditor"))
+		Plugin->Initialize();
+	else
+		FModuleManager::Get().OnModulesChanged().AddLambda([Plugin](FName name, EModuleChangeReason reason)
+		{
+			if ((name == "LevelEditor") && (reason == EModuleChangeReason::ModuleLoaded))
+				Plugin->Initialize();
+		});
+
+	UE_LOG(RenderDocPlugin, Log, TEXT("plugin has been loaded successfully."));
 }
 
 void FRenderDocLoaderPluginModule::ShutdownModule()
@@ -155,9 +169,7 @@ void FRenderDocLoaderPluginModule::ShutdownModule()
 	if (RenderDocDLL)
     FPlatformProcess::FreeDllHandle(RenderDocDLL);
 
-	UE_LOG(RenderDocLoaderPlugin, Log, TEXT("RenderDoc Loader Plugin unloaded!"));
+	UE_LOG(RenderDocPlugin, Log, TEXT("plugin has been unloaded."));
 }
-
-IMPLEMENT_MODULE(FRenderDocLoaderPluginModule, RenderDocLoaderPlugin)
 
 #undef LOCTEXT_NAMESPACE 

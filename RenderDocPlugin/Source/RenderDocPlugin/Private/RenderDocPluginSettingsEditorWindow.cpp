@@ -30,11 +30,13 @@
 #include "RenderDocPluginSettingsEditorWindow.h"
 #include "RenderDocPluginAboutWindow.h"
 
+#include "RenderDocPluginModule.h"
+
 #define LOCTEXT_NAMESPACE "RenderDocPluginSettingsEditor"
 
 void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 {
-	SetOptions = InArgs._SetCaptureOptions;
+	ThePlugin = InArgs._ThePlugin;
 	RenderDocSettings = InArgs._Settings;
 
 	SWindow::Construct(SWindow::FArguments()
@@ -178,30 +180,30 @@ void SRenderDocPluginSettingsEditorWindow::OnCaptureAllActivityChanged(ECheckBox
 void SRenderDocPluginSettingsEditorWindow::OnCaptureCallStacksChanged(ECheckBoxState NewState)
 {
 	RenderDocSettings.bCaptureCallStacks = NewState == ECheckBoxState::Checked ? true : false;
+  pRENDERDOC_SetCaptureOptionU32 SetOptions = ThePlugin->Loader.RenderDocAPI->SetCaptureOptionU32;
+  int ok = SetOptions(eRENDERDOC_Option_CaptureCallstacks, RenderDocSettings.bCaptureCallStacks ? 1 : 0);
+  check(ok);
 }
 
 void SRenderDocPluginSettingsEditorWindow::OnRefAllResourcesChanged(ECheckBoxState NewState)
 {
 	RenderDocSettings.bRefAllResources = NewState == ECheckBoxState::Checked ? true : false;
+  pRENDERDOC_SetCaptureOptionU32 SetOptions = ThePlugin->Loader.RenderDocAPI->SetCaptureOptionU32;
+  int ok = SetOptions(eRENDERDOC_Option_RefAllResources, RenderDocSettings.bRefAllResources ? 1 : 0);
+  check(ok);
 }
 
 void SRenderDocPluginSettingsEditorWindow::OnSaveAllInitialsChanged(ECheckBoxState NewState)
 {
 	RenderDocSettings.bSaveAllInitials = NewState == ECheckBoxState::Checked ? true : false;
+  pRENDERDOC_SetCaptureOptionU32 SetOptions = ThePlugin->Loader.RenderDocAPI->SetCaptureOptionU32;
+  int ok = SetOptions(eRENDERDOC_Option_SaveAllInitials, RenderDocSettings.bSaveAllInitials ? 1 : 0);
+  check(ok);
 }
 
 FReply SRenderDocPluginSettingsEditorWindow::SaveAndClose()
 {
 	RenderDocSettings.Save();
-
-	int ok (0);
-	ok = SetOptions(eRENDERDOC_Option_CaptureCallstacks, RenderDocSettings.bCaptureCallStacks  ? 1 : 0);
-	check(ok);
-	ok = SetOptions(eRENDERDOC_Option_RefAllResources,   RenderDocSettings.bRefAllResources    ? 1 : 0);
-	check(ok);
-	ok = SetOptions(eRENDERDOC_Option_SaveAllInitials,   RenderDocSettings.bSaveAllInitials    ? 1 : 0);
-	check(ok);
-
 	return Close();
 }
 
