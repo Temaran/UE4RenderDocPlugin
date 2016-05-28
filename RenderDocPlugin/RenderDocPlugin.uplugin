@@ -1,20 +1,22 @@
 {
-    "FileVersion" : 1,
-	
+	"FileVersion" : 1,
+
 	"FriendlyName" : "RenderDoc Plugin",
 	"Version" : 2,
-	"VersionName" : "0.0.2 for UE4.8.2",
+	"VersionName" : "0.2.0 for UE4.10",
 	"CreatedBy" : "Temaran",
 	"CreatedByURL" : "https://github.com/Temaran",
 	"EngineVersion" : 1579795,
-	"Description" : "RenderDoc Graphical Debugger For Unreal Engine 4",
+	"Description" : "RenderDoc graphics debugger/profiler integration.",
 	"Category" : "Debugging.Rendering",
-	
-    "Modules" :
+	"EnabledByDefault" : false,
+
+	"Modules" :
 	[
 		{
 			"Name" : "RenderDocPlugin",
 			"Type" : "Developer",
+			"LoadingPhase" : "PostConfigInit",
 			"WhitelistPlatforms": [ "Win32", "Win64" ]
 		}
 	]

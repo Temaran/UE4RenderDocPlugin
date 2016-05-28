@@ -26,17 +26,19 @@
 
 #include "SlateBasics.h"
 
-#include "../../../../RenderDocAPI/renderdoc_app.h"
-
 struct FRenderDocPluginSettings
 {
 public:
+	bool bCaptureAllActivity;
 	bool bCaptureCallStacks;
 	bool bRefAllResources;
 	bool bSaveAllInitials;
 
 	FRenderDocPluginSettings()
 	{
+		if (!GConfig->GetBool(TEXT("RenderDoc"), TEXT("CaptureAllActivity"), bCaptureCallStacks, GGameIni))
+			bCaptureAllActivity = false;
+
 		if (!GConfig->GetBool(TEXT("RenderDoc"), TEXT("CaptureCallStacks"), bCaptureCallStacks, GGameIni))
 			bCaptureCallStacks = false;
 
@@ -49,9 +51,10 @@ public:
 
 	void Save()
 	{
-		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureCallStacks"), bCaptureCallStacks, GGameIni);
-		GConfig->SetBool(TEXT("RenderDoc"), TEXT("RefAllResources"), bRefAllResources, GGameIni);
-		GConfig->SetBool(TEXT("RenderDoc"), TEXT("SaveAllInitials"), bSaveAllInitials, GGameIni);
+		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureAllActivity"), bCaptureAllActivity, GGameIni);
+		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureCallStacks"),  bCaptureCallStacks, GGameIni);
+		GConfig->SetBool(TEXT("RenderDoc"), TEXT("RefAllResources"),    bRefAllResources, GGameIni);
+		GConfig->SetBool(TEXT("RenderDoc"), TEXT("SaveAllInitials"),    bSaveAllInitials, GGameIni);
 		GConfig->Flush(false, GGameIni);
 	}
 };

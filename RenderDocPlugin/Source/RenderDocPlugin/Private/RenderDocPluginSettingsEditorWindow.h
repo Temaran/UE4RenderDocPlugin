@@ -30,15 +30,12 @@
 class SRenderDocPluginSettingsEditorWindow : public SWindow
 {
 public:
-	SLATE_BEGIN_ARGS(SRenderDocPluginSettingsEditorWindow)
-	{
-	}
-	SLATE_ARGUMENT(FRenderDocPluginSettings, Settings)
-		SLATE_ARGUMENT(pRENDERDOC_SetCaptureOptionU32, SetCaptureOptions)
+	SLATE_BEGIN_ARGS(SRenderDocPluginSettingsEditorWindow) { }
+		SLATE_ARGUMENT(FRenderDocPluginSettings, Settings)
+		SLATE_ARGUMENT(class FRenderDocPluginModule*, ThePlugin)
+	SLATE_END_ARGS()
 
-		SLATE_END_ARGS()
-
-		SRenderDocPluginSettingsEditorWindow() {}
+	SRenderDocPluginSettingsEditorWindow() {}
 
 	/** Widget constructor */
 	void Construct(const FArguments& Args);
@@ -47,8 +44,9 @@ public:
 
 private:
 	FRenderDocPluginSettings RenderDocSettings;
-	pRENDERDOC_SetCaptureOptionU32 SetOptions;
+	class FRenderDocPluginModule* ThePlugin;
 
+	void OnCaptureAllActivityChanged(ECheckBoxState NewState);
 	void OnCaptureCallStacksChanged(ECheckBoxState NewState);
 	void OnRefAllResourcesChanged(ECheckBoxState NewState);
 	void OnSaveAllInitialsChanged(ECheckBoxState NewState);

@@ -45,12 +45,14 @@ namespace UnrealBuildTool.Rules
                                                     "Slate", 
                                                     "SlateCore",
                                                     "EditorStyle",
+                                                    "DesktopPlatform",
                                                     "UnrealEd",
-					                                "Projects",
-					                                "GameProjectGeneration",
+                                                    "Projects",
+                                                    "GameProjectGeneration",
                                                     "RenderCore",
                                                     "MainFrame",
-                                                    "RHI"						// RHI module: required for accessing the UE4 flags GUsingNullRHI and GEmitDrawEvents.
+                                                    "InputDevice",
+													"RHI"				// RHI module: required for accessing the UE4 flag GUsingNullRHI.
 				                                });
         }
     }

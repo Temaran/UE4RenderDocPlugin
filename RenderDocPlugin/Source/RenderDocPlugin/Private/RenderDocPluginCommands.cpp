@@ -30,8 +30,19 @@
 PRAGMA_DISABLE_OPTIMIZATION
 void FRenderDocPluginCommands::RegisterCommands()
 {
-	UI_COMMAND(CaptureFrame, "Capture Frame", "Captures the next frame and launches the renderdoc UI", EUserInterfaceActionType::Button, FInputGesture(EKeys::F12, EModifierKey::Alt));
-	UI_COMMAND(OpenSettings, "Open Settings", "Opens the RenderDoc Plugin Settings Editor", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(
+		CaptureFrame,
+		"Capture Frame",
+		"Captures the next frame and launches RenderDoc.",
+		EUserInterfaceActionType::Button, FInputGesture(EKeys::F12, EModifierKey::Alt)
+	);
+
+	UI_COMMAND(
+		OpenSettings,
+		"Open Settings",
+		"Opens the RenderDoc Plugin Settings Editor",
+		EUserInterfaceActionType::Button, FInputGesture()
+	);
 }
 PRAGMA_ENABLE_OPTIMIZATION
 
