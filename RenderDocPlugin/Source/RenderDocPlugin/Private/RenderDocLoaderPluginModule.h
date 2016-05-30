@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "Engine.h"
 #include "RenderDocAPI/renderdoc_app.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
