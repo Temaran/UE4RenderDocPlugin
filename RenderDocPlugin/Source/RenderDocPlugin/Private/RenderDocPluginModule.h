@@ -33,12 +33,12 @@
 #include "MultiBoxExtender.h"
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginCommands.h"
-#include "RenderDocPluginSettings.h"
 #include "RenderDocPluginSettingsEditorWindow.h"
 #include "RenderDocPluginAboutWindow.h"
 #endif//WITH_EDITOR
 
 #include "RenderDocLoaderPluginModule.h"
+#include "RenderDocPluginSettings.h"
 
 class FRenderDocPluginModule : public IRenderDocPlugin
 {
@@ -56,7 +56,10 @@ private:
 	virtual TSharedPtr< class IInputDevice > CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override;
 
 private:
+
 #if WITH_EDITOR
+	friend class SRenderDocPluginSettingsEditorWindow;
+
 	static const FName SettingsUITabName;
 
 	FDelegateHandle LoadedDelegateHandle;
@@ -65,12 +68,11 @@ private:
 	TSharedPtr<FExtender> ToolbarExtender;
 	TSharedPtr<const FExtensionBase> ToolbarExtension;
 
-	FRenderDocPluginSettings RenderDocSettings;
-
 	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
 
 	void OpenSettingsEditorWindow();
 
+	bool IsEditorInitialized;
 	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder);
 #endif//WITH_EDITOR
 
@@ -86,23 +88,23 @@ private:
 
  	static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
 	
-  bool IsInitialized;
-
 	// UE4-related: enable DrawEvents during captures, if necessary:
 	bool UE4_GEmitDrawEvents_BeforeCapture;
 	void UE4_OverrideDrawEventsFlag(const bool flag=true);
 	void UE4_RestoreDrawEventsFlag();
 
-	// Tracks the frame count (tick number) for a full frame capture:
- 	friend class SRenderDocPluginSettingsEditorWindow;
 	FRenderDocLoaderPluginModule Loader;
+	FRenderDocPluginSettings RenderDocSettings;
 	FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT* RenderDocAPI;
+
+	// Tracks the frame count (tick number) for a full frame capture:
 	uint32 TickNumber;
 
 private:
 	// TODO: refactor the plugin into subclasses:
 	class InputDevice;
 	class RenderDocLoader;
+	class Settings;
 	class FrameCapturer;
 	class UserInterface;
 

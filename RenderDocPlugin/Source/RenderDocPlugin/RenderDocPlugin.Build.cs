@@ -31,7 +31,6 @@ namespace UnrealBuildTool.Rules
 		public RenderDocPlugin(TargetInfo Target)
 		{
 			PrivateDependencyModuleNames.AddRange(new string[] { });
-			//DynamicallyLoadedModuleNames.AddRange(new string[] { "LevelEditor" });
 
 			PublicIncludePaths.AddRange(new string[] { "RenderDocPlugin/Public" });
 			PrivateIncludePaths.AddRange(new string[] { "RenderDocPlugin/Private" });
@@ -44,7 +43,6 @@ namespace UnrealBuildTool.Rules
 				,"InputCore"
 				,"DesktopPlatform"
 				,"Projects"
-				,"GameProjectGeneration"
 				,"RenderCore"
 				,"InputDevice"
 				,"RHI"				// RHI module: required for accessing the UE4 flag GUsingNullRHI.
@@ -52,6 +50,7 @@ namespace UnrealBuildTool.Rules
 
 			if (UEBuildConfiguration.bBuildEditor == true)
 			{
+				DynamicallyLoadedModuleNames.AddRange(new string[] { "LevelEditor" });
 				PublicDependencyModuleNames.AddRange(new string[]
 				{
 					 "Slate"
@@ -59,6 +58,7 @@ namespace UnrealBuildTool.Rules
 					,"EditorStyle"
 					,"UnrealEd"
 					,"MainFrame"
+					,"GameProjectGeneration"
 				});
 			}
 		}

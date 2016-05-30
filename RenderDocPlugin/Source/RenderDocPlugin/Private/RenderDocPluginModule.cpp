@@ -164,7 +164,7 @@ void FRenderDocPluginModule::Initialize()
 		FToolBarExtensionDelegate::CreateRaw(this, &FRenderDocPluginModule::AddToolbarExtension));
 	ExtensionManager->AddExtender(ToolbarExtender);
 
-	IsInitialized = false;
+	IsEditorInitialized = false;
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
 	LoadedDelegateHandle = SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
 #endif//WITH_EDITOR
@@ -198,11 +198,11 @@ void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* Viewport
 	}
 	// <-- YAGER by SKrysanov 6/11/2014
 
-	if (IsInitialized)
+	if (IsEditorInitialized)
 	{
 		return;
 	}
-	IsInitialized = true;
+	IsEditorInitialized = true;
 
 	if (GConfig)
 	{
@@ -270,7 +270,11 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
 void FRenderDocPluginModule::BeginCapture()
 {
 	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
+#if WITH_EDITOR
 	FRenderDocPluginNotification::Get().ShowNotification(NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIShow", "Capturing frame"));
+#else
+	// TODO: if there is no editor, notify via game viewport text
+#endif//WITH_EDITOR
 
 	HWND WindowHandle = GetActiveWindow();
 
@@ -330,6 +334,7 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 		if (GEngine->GameViewport->Viewport->HasFocus())
 			Viewport = GEngine->GameViewport->Viewport;
 	}
+#if WITH_EDITOR
 	if (!Viewport && GEditor)
 	{
 		// WARNING: capturing from a "PIE-Eject" Editor viewport will not work as
@@ -338,6 +343,7 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 		// button is clicked versus the one which the console is attached to)
 		Viewport = GEditor->GetActiveViewport();
 	}
+#endif//WITH_EDITOR
 	check(Viewport);
 	Viewport->Draw(true);
 
@@ -378,7 +384,11 @@ void FRenderDocPluginModule::Tick(float DeltaTime)
 
 void FRenderDocPluginModule::StartRenderDoc(FString FrameCaptureBaseDirectory)
 {
+#if WITH_EDITOR
 	FRenderDocPluginNotification::Get().ShowNotification( NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIShow", "Launching RenderDoc GUI") );
+#else
+	// TODO: if there is no editor, notify via game viewport text
+#endif//WITH_EDITOR
 
 	FString NewestCapture = GetNewestCapture(FrameCaptureBaseDirectory);
 	FString ArgumentString = FString::Printf(TEXT("\"%s\""), *FPaths::ConvertRelativePathToFull(NewestCapture).Append(TEXT(".log")));
@@ -397,7 +407,11 @@ void FRenderDocPluginModule::StartRenderDoc(FString FrameCaptureBaseDirectory)
 		}
 	}
 
+#if WITH_EDITOR
 	FRenderDocPluginNotification::Get().ShowNotification( NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIHide", "RenderDoc GUI Launched!") );
+#else
+	// TODO: if there is no editor, notify via game viewport text
+#endif//WITH_EDITOR
 }
 
 FString FRenderDocPluginModule::GetNewestCapture(FString BaseDirectory)
@@ -426,6 +440,7 @@ void FRenderDocPluginModule::ShutdownModule()
 	if (GUsingNullRHI)
 		return;
 
+#if WITH_EDITOR
 	if (ExtensionManager.IsValid())
 	{
 		FRenderDocPluginStyle::Shutdown();
@@ -440,7 +455,6 @@ void FRenderDocPluginModule::ShutdownModule()
 		ExtensionManager.Reset();
 	}
 
-#if WITH_EDITOR
 	// Unregister the tab spawner
 	FGlobalTabmanager::Get()->UnregisterTabSpawner(SettingsUITabName);
 #endif//WITH_EDITOR
