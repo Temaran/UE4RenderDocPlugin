@@ -30,11 +30,9 @@
 
 #include "Developer/DesktopPlatform/public/DesktopPlatformModule.h"
 
-DEFINE_LOG_CATEGORY(RenderDocPlugin);
-
 #define LOCTEXT_NAMESPACE "RenderDocLoaderPluginNamespace" 
 
-static void* LoadAndCheckRenderDocLibrary(FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT*& RenderDocAPI, const FString& RenderdocPath)
+static void* LoadAndCheckRenderDocLibrary(FRenderDocPluginLoader::RENDERDOC_API_CONTEXT*& RenderDocAPI, const FString& RenderdocPath)
 {
 	check(nullptr == RenderDocAPI);
 
@@ -89,7 +87,7 @@ static void UpdateConfigFiles(const FString& RenderdocPath)
 	}
 }
 
-void FRenderDocLoaderPluginModule::StartupModule(class FRenderDocPluginModule* Plugin)
+void FRenderDocPluginLoader::Initialize()
 {
 	if (GUsingNullRHI)
 	{
@@ -151,24 +149,10 @@ void FRenderDocLoaderPluginModule::StartupModule(class FRenderDocPluginModule* P
 		return;
 	}
 
-#if WITH_EDITOR
-	// Defer Level Editor UI extensions until Level Editor has been loaded:
-	if (FModuleManager::Get().IsModuleLoaded("LevelEditor"))
-		Plugin->Initialize();
-	else
-		FModuleManager::Get().OnModulesChanged().AddLambda([Plugin](FName name, EModuleChangeReason reason)
-		{
-			if ((name == "LevelEditor") && (reason == EModuleChangeReason::ModuleLoaded))
-				Plugin->Initialize();
-		});
-#else// WITHOUT_EDITOR
-	// TODO: add some console command or some keyboard shortcut...
-#endif//WITH_EDITOR
-
 	UE_LOG(RenderDocPlugin, Log, TEXT("plugin has been loaded successfully."));
 }
 
-void FRenderDocLoaderPluginModule::ShutdownModule()
+void FRenderDocPluginLoader::Release()
 {
 	if (GUsingNullRHI)
 		return;

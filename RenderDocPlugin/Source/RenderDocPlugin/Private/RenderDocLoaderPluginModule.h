@@ -24,16 +24,13 @@
 
 #pragma once
 
-#include "Engine.h"
 #include "RenderDocAPI/renderdoc_app.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
-
-class FRenderDocLoaderPluginModule// : public IModuleInterface
+class FRenderDocPluginLoader
 {
 public:
-	void StartupModule(class FRenderDocPluginModule* Plugin);
-	void ShutdownModule();
+	void Initialize();
+	void Release();
 
 	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
 
@@ -42,7 +39,6 @@ private:
 	friend class SRenderDocPluginSettingsEditorWindow;
 
 	void* RenderDocDLL;
-
 	RENDERDOC_API_CONTEXT* RenderDocAPI;
 };
 

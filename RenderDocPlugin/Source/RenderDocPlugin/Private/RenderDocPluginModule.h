@@ -25,7 +25,9 @@
 #pragma once
 
 #include "IRenderDocPlugin.h"
-#include "SharedPointer.h"
+
+#include "RenderDocLoaderPluginModule.h"
+#include "RenderDocPluginSettings.h"
 
 #if WITH_EDITOR
 #include "Editor/LevelEditor/Public/LevelEditor.h"
@@ -37,16 +39,16 @@
 #include "RenderDocPluginAboutWindow.h"
 #endif//WITH_EDITOR
 
-#include "RenderDocLoaderPluginModule.h"
-#include "RenderDocPluginSettings.h"
+#include "SharedPointer.h"
+#include "Engine.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
 
 class FRenderDocPluginModule : public IRenderDocPlugin
 {
 public:	
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
-
-  void Initialize();
 
 private:
 	// Tick made possible via the dummy input device declared below:
@@ -67,6 +69,8 @@ private:
 	TSharedPtr<FExtensibilityManager> ExtensionManager;
 	TSharedPtr<FExtender> ToolbarExtender;
 	TSharedPtr<const FExtensionBase> ToolbarExtension;
+
+  void InitializeEditorExtensions();
 
 	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
 
@@ -93,9 +97,9 @@ private:
 	void UE4_OverrideDrawEventsFlag(const bool flag=true);
 	void UE4_RestoreDrawEventsFlag();
 
-	FRenderDocLoaderPluginModule Loader;
+  FRenderDocPluginLoader Loader;
 	FRenderDocPluginSettings RenderDocSettings;
-	FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT* RenderDocAPI;
+  FRenderDocPluginLoader::RENDERDOC_API_CONTEXT* RenderDocAPI;
 
 	// Tracks the frame count (tick number) for a full frame capture:
 	uint32 TickNumber;

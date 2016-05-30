@@ -30,6 +30,8 @@
 
 #include "RenderDocPluginNotification.h"
 
+DEFINE_LOG_CATEGORY(RenderDocPlugin);
+
 #define LOCTEXT_NAMESPACE "RenderDocPlugin"
 
 
@@ -94,11 +96,11 @@ void* GetRenderDocLibrary()
 
 void FRenderDocPluginModule::StartupModule()
 {
-  Loader.StartupModule(this);
-}
+	Loader.Initialize();
 
-void FRenderDocPluginModule::Initialize()
-{
+	if (!Loader.RenderDocAPI)
+	return;
+
 	if (GUsingNullRHI)
 	{
 		UE_LOG(RenderDocPlugin, Warning, TEXT("RenderDoc Plugin will not be loaded because a Null RHI (Cook Server, perhaps) is being used."));
@@ -140,6 +142,33 @@ void FRenderDocPluginModule::Initialize()
 	RenderDocAPI->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
 
 #if WITH_EDITOR
+	// Defer Level Editor UI extensions until Level Editor has been loaded:
+	if (FModuleManager::Get().IsModuleLoaded("LevelEditor"))
+	    InitializeEditorExtensions();
+	else
+		FModuleManager::Get().OnModulesChanged().AddLambda([this](FName name, EModuleChangeReason reason)
+		{
+			if ((name == "LevelEditor") && (reason == EModuleChangeReason::ModuleLoaded))
+				InitializeEditorExtensions();
+		});
+#endif//WITH_EDITOR
+
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+	static FAutoConsoleCommand CCmdRenderDocCaptureFrame = FAutoConsoleCommand(
+		TEXT("RenderDoc.CaptureFrame"),
+		TEXT("Captures the rendering commands of the next frame and launches RenderDoc"),
+		FConsoleCommandDelegate::CreateRaw(this, &FRenderDocPluginModule::CaptureFrame));
+#endif
+
+	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin is ready!"));
+}
+
+#if WITH_EDITOR
+
+const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"));
+
+void FRenderDocPluginModule::InitializeEditorExtensions()
+{
 	//Init UI
 	FRenderDocPluginStyle::Initialize();
 	FRenderDocPluginCommands::Register();
@@ -167,21 +196,7 @@ void FRenderDocPluginModule::Initialize()
 	IsEditorInitialized = false;
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
 	LoadedDelegateHandle = SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
-#endif//WITH_EDITOR
-
-#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
-	static FAutoConsoleCommand CCmdRenderDocCaptureFrame = FAutoConsoleCommand(
-		TEXT("RenderDoc.CaptureFrame"),
-		TEXT("Captures the rendering commands of the next frame and launches RenderDoc"),
-		FConsoleCommandDelegate::CreateRaw(this, &FRenderDocPluginModule::CaptureFrame));
-#endif
-
-	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin is ready!"));
 }
-
-#if WITH_EDITOR
-
-const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"));
 
 void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr)
 {
@@ -278,7 +293,7 @@ void FRenderDocPluginModule::BeginCapture()
 
 	HWND WindowHandle = GetActiveWindow();
 
-	typedef FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT RENDERDOC_API_CONTEXT;
+	typedef FRenderDocPluginLoader::RENDERDOC_API_CONTEXT RENDERDOC_API_CONTEXT;
 	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
 		StartRenderDocCapture,
 		HWND, WindowHandle, WindowHandle,
@@ -295,7 +310,7 @@ void FRenderDocPluginModule::EndCapture()
 {
   HWND WindowHandle = GetActiveWindow();
 
-	typedef FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT RENDERDOC_API_CONTEXT;
+	typedef FRenderDocPluginLoader::RENDERDOC_API_CONTEXT RENDERDOC_API_CONTEXT;
 	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
 		EndRenderDocCapture,
 		HWND, WindowHandle, WindowHandle,
@@ -459,7 +474,7 @@ void FRenderDocPluginModule::ShutdownModule()
 	FGlobalTabmanager::Get()->UnregisterTabSpawner(SettingsUITabName);
 #endif//WITH_EDITOR
 
-	Loader.ShutdownModule();
+	Loader.Release();
 }
 
 void FRenderDocPluginModule::UE4_OverrideDrawEventsFlag(const bool flag)
