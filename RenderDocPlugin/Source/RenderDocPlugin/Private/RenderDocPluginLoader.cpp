@@ -1,7 +1,8 @@
 /******************************************************************************
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Fredrik Lindh
+* Copyright (c) 2014-2016 Fredrik Lindh
+*                         Marcos Slomp
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +24,7 @@
 ******************************************************************************/
 
 #include "RenderDocPluginPrivatePCH.h"
-#include "RenderDocLoaderPluginModule.h"
+#include "RenderDocPluginLoader.h"
 #include "RenderDocPluginModule.h"
 
 #include "Internationalization.h"

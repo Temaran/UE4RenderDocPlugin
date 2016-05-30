@@ -26,7 +26,7 @@
 
 #include "IRenderDocPlugin.h"
 
-#include "RenderDocLoaderPluginModule.h"
+#include "RenderDocPluginLoader.h"
 #include "RenderDocPluginSettings.h"
 
 #if WITH_EDITOR
