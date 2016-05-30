@@ -24,36 +24,43 @@
 
 namespace UnrealBuildTool.Rules
 {
-    using System.IO;
+	using System.IO;
 
-    public class RenderDocPlugin : ModuleRules
-    {
-        public RenderDocPlugin(TargetInfo Target)
-        {
-            PrivateDependencyModuleNames.AddRange(new string[] { });
-            DynamicallyLoadedModuleNames.AddRange(new string[] { "LevelEditor" });
+	public class RenderDocPlugin : ModuleRules
+	{
+		public RenderDocPlugin(TargetInfo Target)
+		{
+			PrivateDependencyModuleNames.AddRange(new string[] { });
+			//DynamicallyLoadedModuleNames.AddRange(new string[] { "LevelEditor" });
 
-            PublicIncludePaths.AddRange(new string[] { "RenderDocPlugin/Public" });
-            PrivateIncludePaths.AddRange(new string[] { "RenderDocPlugin/Private" });
+			PublicIncludePaths.AddRange(new string[] { "RenderDocPlugin/Public" });
+			PrivateIncludePaths.AddRange(new string[] { "RenderDocPlugin/Private" });
 
-            PublicDependencyModuleNames.AddRange(new string[]
-				                                {
-					                                "Core",
-					                                "CoreUObject",
-                                                    "Engine",
-                                                    "InputCore",
-                                                    "Slate", 
-                                                    "SlateCore",
-                                                    "EditorStyle",
-                                                    "DesktopPlatform",
-                                                    "UnrealEd",
-                                                    "Projects",
-                                                    "GameProjectGeneration",
-                                                    "RenderCore",
-                                                    "MainFrame",
-                                                    "InputDevice",
-													"RHI"				// RHI module: required for accessing the UE4 flag GUsingNullRHI.
-				                                });
-        }
-    }
+			PublicDependencyModuleNames.AddRange(new string[]
+			{
+				 "Core"
+				,"CoreUObject"
+				,"Engine"
+				,"InputCore"
+				,"DesktopPlatform"
+				,"Projects"
+				,"GameProjectGeneration"
+				,"RenderCore"
+				,"InputDevice"
+				,"RHI"				// RHI module: required for accessing the UE4 flag GUsingNullRHI.
+			});
+
+			if (UEBuildConfiguration.bBuildEditor == true)
+			{
+				PublicDependencyModuleNames.AddRange(new string[]
+				{
+					 "Slate"
+					,"SlateCore"
+					,"EditorStyle"
+					,"UnrealEd"
+					,"MainFrame"
+				});
+			}
+		}
+	}
 }

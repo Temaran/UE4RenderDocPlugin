@@ -24,8 +24,9 @@
 
 #pragma once
 
+#if WITH_EDITOR
+
 #include "UnrealEd.h"
-#include "Editor/MainFrame/Public/MainFrame.h"
 #include "NotificationManager.h"
 
 class FRenderDocPluginNotification : public FTickableEditorObject
@@ -59,3 +60,5 @@ private:
 	/** The source code symbol query in progress message */
 	TWeakPtr<SNotificationItem> RenderDocNotificationPtr;
 };
+
+#endif//WITH_EDITOR

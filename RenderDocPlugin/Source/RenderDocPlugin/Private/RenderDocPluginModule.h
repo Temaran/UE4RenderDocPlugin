@@ -24,19 +24,19 @@
 
 #pragma once
 
-#include "ModuleManager.h"
-#include "Editor/LevelEditor/Public/LevelEditor.h"
+#include "IRenderDocPlugin.h"
 #include "SharedPointer.h"
-#include "Internationalization.h"
+
+#if WITH_EDITOR
+#include "Editor/LevelEditor/Public/LevelEditor.h"
 #include "SlateBasics.h"
 #include "MultiBoxExtender.h"
-
-#include "IRenderDocPlugin.h"
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginCommands.h"
 #include "RenderDocPluginSettings.h"
 #include "RenderDocPluginSettingsEditorWindow.h"
 #include "RenderDocPluginAboutWindow.h"
+#endif//WITH_EDITOR
 
 #include "RenderDocLoaderPluginModule.h"
 
@@ -56,6 +56,7 @@ private:
 	virtual TSharedPtr< class IInputDevice > CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override;
 
 private:
+#if WITH_EDITOR
 	static const FName SettingsUITabName;
 
 	FDelegateHandle LoadedDelegateHandle;
@@ -65,9 +66,13 @@ private:
 	TSharedPtr<const FExtensionBase> ToolbarExtension;
 
 	FRenderDocPluginSettings RenderDocSettings;
-	bool IsInitialized;
 
 	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
+
+	void OpenSettingsEditorWindow();
+
+	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder);
+#endif//WITH_EDITOR
 
 	void BeginCapture();
 	void EndCapture();
@@ -75,16 +80,13 @@ private:
 	void CaptureFrame();
 	void CaptureCurrentViewport();	
 	void CaptureEntireFrame();
-	void OpenSettingsEditorWindow();
 
 	void StartRenderDoc(FString FrameCaptureBaseDirectory);
 	FString GetNewestCapture(FString BaseDirectory);
 
-	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder); 
-
  	static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
 	
-
+  bool IsInitialized;
 
 	// UE4-related: enable DrawEvents during captures, if necessary:
 	bool UE4_GEmitDrawEvents_BeforeCapture;

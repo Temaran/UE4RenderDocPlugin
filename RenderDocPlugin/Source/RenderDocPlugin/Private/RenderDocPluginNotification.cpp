@@ -23,6 +23,9 @@
 ******************************************************************************/
 
 #include "RenderDocPluginPrivatePCH.h"
+
+#if WITH_EDITOR
+
 #include "RenderDocPluginNotification.h"
 #include "SNotificationList.h"
 #include "NotificationManager.h"
@@ -82,3 +85,5 @@ TStatId FRenderDocPluginNotification::GetStatId() const
 {
 	RETURN_QUICK_DECLARE_CYCLE_STAT(FRenderDocPluginNotification, STATGROUP_Tickables);
 }
+
+#endif//WITH_EDITOR

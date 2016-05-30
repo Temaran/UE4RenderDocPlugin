@@ -23,6 +23,9 @@
 ******************************************************************************/
 
 #include "RenderDocPluginPrivatePCH.h"
+
+#if WITH_EDITOR
+
 #include "RenderDocPluginStyle.h"
 #include "SlateStyle.h"
 #include "IPluginManager.h"
@@ -82,3 +85,5 @@ void FRenderDocPluginStyle::Shutdown()
 		StyleSet.Reset();
 	}
 }
+
+#endif//WITH_EDITOR

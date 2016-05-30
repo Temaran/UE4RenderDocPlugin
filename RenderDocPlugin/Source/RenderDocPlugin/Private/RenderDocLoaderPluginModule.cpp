@@ -24,9 +24,11 @@
 
 #include "RenderDocPluginPrivatePCH.h"
 #include "RenderDocLoaderPluginModule.h"
-#include "Developer/DesktopPlatform/public/DesktopPlatformModule.h"
-
 #include "RenderDocPluginModule.h"
+
+#include "Internationalization.h"
+
+#include "Developer/DesktopPlatform/public/DesktopPlatformModule.h"
 
 DEFINE_LOG_CATEGORY(RenderDocPlugin);
 
@@ -127,6 +129,7 @@ void FRenderDocLoaderPluginModule::StartupModule(class FRenderDocPluginModule* P
 		//so prompt the user to navigate to the main exe file
 		UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc library not found; provide a custom installation location..."));
 		FString RenderdocPath;
+		// TODO: rework the logic here by improving error checking and reporting
 		IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
 		if (DesktopPlatform)
 		{
@@ -148,6 +151,7 @@ void FRenderDocLoaderPluginModule::StartupModule(class FRenderDocPluginModule* P
 		return;
 	}
 
+#if WITH_EDITOR
 	// Defer Level Editor UI extensions until Level Editor has been loaded:
 	if (FModuleManager::Get().IsModuleLoaded("LevelEditor"))
 		Plugin->Initialize();
@@ -157,6 +161,9 @@ void FRenderDocLoaderPluginModule::StartupModule(class FRenderDocPluginModule* P
 			if ((name == "LevelEditor") && (reason == EModuleChangeReason::ModuleLoaded))
 				Plugin->Initialize();
 		});
+#else// WITHOUT_EDITOR
+	// TODO: add some console command or some keyboard shortcut...
+#endif//WITH_EDITOR
 
 	UE_LOG(RenderDocPlugin, Log, TEXT("plugin has been loaded successfully."));
 }

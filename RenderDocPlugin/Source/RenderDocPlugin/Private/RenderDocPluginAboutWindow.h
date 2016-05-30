@@ -24,6 +24,8 @@
 
 #pragma once
 
+#if WITH_EDITOR
+
 #include "SlateBasics.h"
 
 class SRenderDocPluginAboutWindow : public SWindow
@@ -42,3 +44,5 @@ public:
 private:
 	FReply Close();
 };
+
+#endif//WITH_EDITOR

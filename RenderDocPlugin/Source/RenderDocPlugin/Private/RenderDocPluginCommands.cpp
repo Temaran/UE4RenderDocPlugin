@@ -23,6 +23,9 @@
 ******************************************************************************/
 
 #include "RenderDocPluginPrivatePCH.h"
+
+#if WITH_EDITOR
+
 #include "RenderDocPluginCommands.h"
 
 #define LOCTEXT_NAMESPACE "RenderDocPluginSettingsEditor"
@@ -47,3 +50,5 @@ void FRenderDocPluginCommands::RegisterCommands()
 PRAGMA_ENABLE_OPTIMIZATION
 
 #undef LOCTEXT_NAMESPACE 
+
+#endif//WITH_EDITOR

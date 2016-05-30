@@ -24,13 +24,6 @@
 
 #pragma once
 
-#include "ModuleManager.h"
-#include "Editor/LevelEditor/Public/LevelEditor.h"
-#include "SharedPointer.h"
-#include "Internationalization.h"
-#include "SlateBasics.h"
-#include "MultiBoxExtender.h"
-
 #include "RenderDocAPI/renderdoc_app.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
