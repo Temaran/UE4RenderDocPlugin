@@ -75,3 +75,5 @@ The plugin will then keep track of this RenderDoc location by adding an entry to
     "Enabled": false
   },
   ```
+
+* It is possible to use the plugin in Standalone Game builds (i.e., builds without editor). Open `RenderDocPlugin.uplugin` and change the plugin `"Type"` from `"Developer"` to `"Runtime"`. This will enable the plugin code to be embedded into the game executable (that is, statically linked into the monolithic game binary image). **Note, however, that the plugin will be loaded even on shipping builds!**
