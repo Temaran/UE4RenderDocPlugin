@@ -1,7 +1,8 @@
 /******************************************************************************
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Fredrik Lindh
+* Copyright (c) 2014-2016 Fredrik Lindh
+*                         Marcos Slomp
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -24,35 +25,21 @@
 
 #pragma once
 
-struct FRenderDocPluginSettings
+#include "RenderDocAPI/renderdoc_app.h"
+
+class FRenderDocPluginLoader
 {
 public:
-	bool bCaptureAllActivity;
-	bool bCaptureCallStacks;
-	bool bRefAllResources;
-	bool bSaveAllInitials;
+	void Initialize();
+	void Release();
 
-	FRenderDocPluginSettings()
-	{
-		if (!GConfig->GetBool(TEXT("RenderDoc"), TEXT("CaptureAllActivity"), bCaptureCallStacks, GGameIni))
-			bCaptureAllActivity = false;
+	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
 
-		if (!GConfig->GetBool(TEXT("RenderDoc"), TEXT("CaptureCallStacks"), bCaptureCallStacks, GGameIni))
-			bCaptureCallStacks = false;
+private:
+	friend class FRenderDocPluginModule;
+	friend class SRenderDocPluginSettingsEditorWindow;
 
-		if (!GConfig->GetBool(TEXT("RenderDoc"), TEXT("RefAllResources"), bRefAllResources, GGameIni))
-			bRefAllResources = false;
-
-		if (!GConfig->GetBool(TEXT("RenderDoc"), TEXT("SaveAllInitials"), bSaveAllInitials, GGameIni))
-			bSaveAllInitials = false;
-	}
-
-	void Save()
-	{
-		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureAllActivity"), bCaptureAllActivity, GGameIni);
-		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureCallStacks"),  bCaptureCallStacks, GGameIni);
-		GConfig->SetBool(TEXT("RenderDoc"), TEXT("RefAllResources"),    bRefAllResources, GGameIni);
-		GConfig->SetBool(TEXT("RenderDoc"), TEXT("SaveAllInitials"),    bSaveAllInitials, GGameIni);
-		GConfig->Flush(false, GGameIni);
-	}
+	void* RenderDocDLL;
+	RENDERDOC_API_CONTEXT* RenderDocAPI;
 };
+

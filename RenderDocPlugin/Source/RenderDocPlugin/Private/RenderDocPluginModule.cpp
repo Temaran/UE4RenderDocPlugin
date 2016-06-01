@@ -23,11 +23,14 @@
 ******************************************************************************/
 
 #include "RenderDocPluginPrivatePCH.h"
-#include "RendererInterface.h"
 #include "RenderDocPluginModule.h"
+
+#include "Internationalization.h"
+#include "RendererInterface.h"
+
 #include "RenderDocPluginNotification.h"
 
-const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"));
+DEFINE_LOG_CATEGORY(RenderDocPlugin);
 
 #define LOCTEXT_NAMESPACE "RenderDocPlugin"
 
@@ -93,11 +96,11 @@ void* GetRenderDocLibrary()
 
 void FRenderDocPluginModule::StartupModule()
 {
-  Loader.StartupModule(this);
-}
+	Loader.Initialize();
 
-void FRenderDocPluginModule::Initialize()
-{
+	if (!Loader.RenderDocAPI)
+	return;
+
 	if (GUsingNullRHI)
 	{
 		UE_LOG(RenderDocPlugin, Warning, TEXT("RenderDoc Plugin will not be loaded because a Null RHI (Cook Server, perhaps) is being used."));
@@ -138,6 +141,34 @@ void FRenderDocPluginModule::Initialize()
 
 	RenderDocAPI->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
 
+#if WITH_EDITOR
+	// Defer Level Editor UI extensions until Level Editor has been loaded:
+	if (FModuleManager::Get().IsModuleLoaded("LevelEditor"))
+	    InitializeEditorExtensions();
+	else
+		FModuleManager::Get().OnModulesChanged().AddLambda([this](FName name, EModuleChangeReason reason)
+		{
+			if ((name == "LevelEditor") && (reason == EModuleChangeReason::ModuleLoaded))
+				InitializeEditorExtensions();
+		});
+#endif//WITH_EDITOR
+
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+	static FAutoConsoleCommand CCmdRenderDocCaptureFrame = FAutoConsoleCommand(
+		TEXT("RenderDoc.CaptureFrame"),
+		TEXT("Captures the rendering commands of the next frame and launches RenderDoc"),
+		FConsoleCommandDelegate::CreateRaw(this, &FRenderDocPluginModule::CaptureFrame));
+#endif
+
+	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin is ready!"));
+}
+
+#if WITH_EDITOR
+
+const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"));
+
+void FRenderDocPluginModule::InitializeEditorExtensions()
+{
 	//Init UI
 	FRenderDocPluginStyle::Initialize();
 	FRenderDocPluginCommands::Register();
@@ -162,18 +193,9 @@ void FRenderDocPluginModule::Initialize()
 		FToolBarExtensionDelegate::CreateRaw(this, &FRenderDocPluginModule::AddToolbarExtension));
 	ExtensionManager->AddExtender(ToolbarExtender);
 
-	IsInitialized = false;
+	IsEditorInitialized = false;
 	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
 	LoadedDelegateHandle = SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
-
-#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
-	static FAutoConsoleCommand CCmdRenderDocCaptureFrame = FAutoConsoleCommand(
-		TEXT("RenderDoc.CaptureFrame"),
-		TEXT("Captures the rendering commands of the next frame and launches RenderDoc"),
-		FConsoleCommandDelegate::CreateRaw(this, &FRenderDocPluginModule::CaptureFrame));
-#endif
-
-	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin is ready!"));
 }
 
 void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr)
@@ -191,11 +213,11 @@ void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* Viewport
 	}
 	// <-- YAGER by SKrysanov 6/11/2014
 
-	if (IsInitialized)
+	if (IsEditorInitialized)
 	{
 		return;
 	}
-	IsInitialized = true;
+	IsEditorInitialized = true;
 
 	if (GConfig)
 	{
@@ -209,14 +231,69 @@ void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* Viewport
 	}
 }
 
+void FRenderDocPluginModule::OpenSettingsEditorWindow()
+{
+	if (!GEditor)
+		return;
+
+	UE_LOG(RenderDocPlugin, Log, TEXT("Opening settings window"));
+
+	TSharedPtr<SRenderDocPluginSettingsEditorWindow> Window = SNew(SRenderDocPluginSettingsEditorWindow)
+		.Settings(RenderDocSettings)
+		.ThePlugin(this);
+
+	Window->MoveWindowTo(FSlateApplication::Get().GetCursorPos());
+	GEditor->EditorAddModalWindow(Window.ToSharedRef());
+
+	RenderDocSettings = Window->GetSettings();
+}
+
+void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder)
+{
+#define LOCTEXT_NAMESPACE "LevelEditorToolBar"
+
+	UE_LOG(RenderDocPlugin, Log, TEXT("Attaching toolbar extension..."));
+	ToolbarBuilder.AddSeparator();
+
+	ToolbarBuilder.BeginSection("RenderdocPlugin");
+
+	FSlateIcon IconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.CaptureFrameIcon.Small");
+	ToolbarBuilder.AddToolBarButton(
+		FRenderDocPluginCommands::Get().CaptureFrame,
+		NAME_None,
+		LOCTEXT("RenderDocCapture_Override", "Capture Frame"),
+		LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame and launches RenderDoc."),
+		IconBrush,
+		NAME_None);
+
+	FSlateIcon SettingsIconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.SettingsIcon.Small");
+	ToolbarBuilder.AddToolBarButton(
+		FRenderDocPluginCommands::Get().OpenSettings,
+		NAME_None,
+		LOCTEXT("RenderDocCaptureSettings_Override", "Open Settings"),
+		LOCTEXT("RenderDocCaptureSettings_ToolTipOverride", "Edit RenderDoc Settings"),
+		SettingsIconBrush,
+		NAME_None);
+
+	ToolbarBuilder.EndSection();
+
+#undef LOCTEXT_NAMESPACE
+}
+
+#endif//WITH_EDITOR
+
 void FRenderDocPluginModule::BeginCapture()
 {
 	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
+#if WITH_EDITOR
 	FRenderDocPluginNotification::Get().ShowNotification(NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIShow", "Capturing frame"));
+#else
+	// TODO: if there is no editor, notify via game viewport text
+#endif//WITH_EDITOR
 
 	HWND WindowHandle = GetActiveWindow();
 
-	typedef FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT RENDERDOC_API_CONTEXT;
+	typedef FRenderDocPluginLoader::RENDERDOC_API_CONTEXT RENDERDOC_API_CONTEXT;
 	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
 		StartRenderDocCapture,
 		HWND, WindowHandle, WindowHandle,
@@ -233,7 +310,7 @@ void FRenderDocPluginModule::EndCapture()
 {
   HWND WindowHandle = GetActiveWindow();
 
-	typedef FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT RENDERDOC_API_CONTEXT;
+	typedef FRenderDocPluginLoader::RENDERDOC_API_CONTEXT RENDERDOC_API_CONTEXT;
 	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
 		EndRenderDocCapture,
 		HWND, WindowHandle, WindowHandle,
@@ -272,6 +349,7 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 		if (GEngine->GameViewport->Viewport->HasFocus())
 			Viewport = GEngine->GameViewport->Viewport;
 	}
+#if WITH_EDITOR
 	if (!Viewport && GEditor)
 	{
 		// WARNING: capturing from a "PIE-Eject" Editor viewport will not work as
@@ -280,6 +358,7 @@ void FRenderDocPluginModule::CaptureCurrentViewport()
 		// button is clicked versus the one which the console is attached to)
 		Viewport = GEditor->GetActiveViewport();
 	}
+#endif//WITH_EDITOR
 	check(Viewport);
 	Viewport->Draw(true);
 
@@ -318,26 +397,13 @@ void FRenderDocPluginModule::Tick(float DeltaTime)
 		TickNumber = 0;
 }
 
-void FRenderDocPluginModule::OpenSettingsEditorWindow()
-{
-	if (!GEditor)
-		return;
-
-	UE_LOG(RenderDocPlugin, Log, TEXT("Opening settings window"));
-
-	TSharedPtr<SRenderDocPluginSettingsEditorWindow> Window = SNew(SRenderDocPluginSettingsEditorWindow)
-		.Settings(RenderDocSettings)
-		.ThePlugin(this);
-
-	Window->MoveWindowTo(FSlateApplication::Get().GetCursorPos());
-	GEditor->EditorAddModalWindow(Window.ToSharedRef());
-
-	RenderDocSettings = Window->GetSettings();
-}
-
 void FRenderDocPluginModule::StartRenderDoc(FString FrameCaptureBaseDirectory)
 {
+#if WITH_EDITOR
 	FRenderDocPluginNotification::Get().ShowNotification( NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIShow", "Launching RenderDoc GUI") );
+#else
+	// TODO: if there is no editor, notify via game viewport text
+#endif//WITH_EDITOR
 
 	FString NewestCapture = GetNewestCapture(FrameCaptureBaseDirectory);
 	FString ArgumentString = FString::Printf(TEXT("\"%s\""), *FPaths::ConvertRelativePathToFull(NewestCapture).Append(TEXT(".log")));
@@ -356,7 +422,11 @@ void FRenderDocPluginModule::StartRenderDoc(FString FrameCaptureBaseDirectory)
 		}
 	}
 
+#if WITH_EDITOR
 	FRenderDocPluginNotification::Get().ShowNotification( NSLOCTEXT("LaunchRenderDocGUI", "LaunchRenderDocGUIHide", "RenderDoc GUI Launched!") );
+#else
+	// TODO: if there is no editor, notify via game viewport text
+#endif//WITH_EDITOR
 }
 
 FString FRenderDocPluginModule::GetNewestCapture(FString BaseDirectory)
@@ -380,43 +450,12 @@ FString FRenderDocPluginModule::GetNewestCapture(FString BaseDirectory)
 	return OutString;
 }
 
-void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder)
-{
-#define LOCTEXT_NAMESPACE "LevelEditorToolBar"
-
-	UE_LOG(RenderDocPlugin, Log, TEXT("Attaching toolbar extension..."));
-	ToolbarBuilder.AddSeparator();
-
-	ToolbarBuilder.BeginSection("RenderdocPlugin");
-
-	FSlateIcon IconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.CaptureFrameIcon.Small");
-	ToolbarBuilder.AddToolBarButton(
-		FRenderDocPluginCommands::Get().CaptureFrame,
-		NAME_None,
-		LOCTEXT("RenderDocCapture_Override", "Capture Frame"),
-		LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame and launches RenderDoc."),
-		IconBrush,
-		NAME_None);
-
-	FSlateIcon SettingsIconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.SettingsIcon.Small");
-	ToolbarBuilder.AddToolBarButton(
-		FRenderDocPluginCommands::Get().OpenSettings,
-		NAME_None,
-		LOCTEXT("RenderDocCaptureSettings_Override", "Open Settings"),
-		LOCTEXT("RenderDocCaptureSettings_ToolTipOverride", "Edit RenderDoc Settings"),
-		SettingsIconBrush,
-		NAME_None);
-
-	ToolbarBuilder.EndSection();
-
-#undef LOCTEXT_NAMESPACE
-}
-
 void FRenderDocPluginModule::ShutdownModule()
 {
 	if (GUsingNullRHI)
 		return;
 
+#if WITH_EDITOR
 	if (ExtensionManager.IsValid())
 	{
 		FRenderDocPluginStyle::Shutdown();
@@ -433,8 +472,9 @@ void FRenderDocPluginModule::ShutdownModule()
 
 	// Unregister the tab spawner
 	FGlobalTabmanager::Get()->UnregisterTabSpawner(SettingsUITabName);
+#endif//WITH_EDITOR
 
-	Loader.ShutdownModule();
+	Loader.Release();
 }
 
 void FRenderDocPluginModule::UE4_OverrideDrawEventsFlag(const bool flag)

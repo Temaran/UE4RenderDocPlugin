@@ -24,6 +24,8 @@
 
 #pragma once
 
+#if WITH_EDITOR
+
 #include "SlateBasics.h"
 #include "EditorStyle.h"
 #include "RenderDocPluginStyle.h"
@@ -41,3 +43,5 @@ public:
 	TSharedPtr<FUICommandInfo> CaptureFrame;
 	TSharedPtr<FUICommandInfo> OpenSettings;
 };
+
+#endif//WITH_EDITOR

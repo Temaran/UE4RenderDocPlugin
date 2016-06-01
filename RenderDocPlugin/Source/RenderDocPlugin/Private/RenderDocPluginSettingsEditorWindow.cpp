@@ -23,6 +23,9 @@
 ******************************************************************************/
 
 #include "RenderDocPluginPrivatePCH.h"
+
+#if WITH_EDITOR
+
 #include "Engine.h"
 #include "GlobalShader.h"
 #include "Editor.h"
@@ -220,3 +223,5 @@ FReply SRenderDocPluginSettingsEditorWindow::Close()
 }
 
 #undef LOCTEXT_NAMESPACE
+
+#endif//WITH_EDITOR

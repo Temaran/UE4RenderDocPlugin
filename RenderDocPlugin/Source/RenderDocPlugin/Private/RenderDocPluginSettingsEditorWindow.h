@@ -24,6 +24,8 @@
 
 #pragma once
 
+#if WITH_EDITOR
+
 #include "SlateBasics.h"
 #include "RenderDocPluginSettings.h"
 
@@ -55,3 +57,5 @@ private:
 	FReply ShowAboutWindow();
 	FReply Close();
 };
+
+#endif//WITH_EDITOR
