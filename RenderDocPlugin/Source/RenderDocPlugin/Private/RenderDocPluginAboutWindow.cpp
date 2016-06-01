@@ -23,6 +23,9 @@
 ******************************************************************************/
 
 #include "RenderDocPluginPrivatePCH.h"
+
+#if WITH_EDITOR
+
 #include "Editor.h"
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginAboutWindow.h"
@@ -93,3 +96,5 @@ FReply SRenderDocPluginAboutWindow::Close()
 }
 
 #undef LOCTEXT_NAMESPACE
+
+#endif//WITH_EDITOR

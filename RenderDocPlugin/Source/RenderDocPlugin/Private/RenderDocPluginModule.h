@@ -24,29 +24,31 @@
 
 #pragma once
 
-#include "ModuleManager.h"
+#include "IRenderDocPlugin.h"
+
+#include "RenderDocPluginLoader.h"
+#include "RenderDocPluginSettings.h"
+
+#if WITH_EDITOR
 #include "Editor/LevelEditor/Public/LevelEditor.h"
-#include "SharedPointer.h"
-#include "Internationalization.h"
 #include "SlateBasics.h"
 #include "MultiBoxExtender.h"
-
-#include "IRenderDocPlugin.h"
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginCommands.h"
-#include "RenderDocPluginSettings.h"
 #include "RenderDocPluginSettingsEditorWindow.h"
 #include "RenderDocPluginAboutWindow.h"
+#endif//WITH_EDITOR
 
-#include "RenderDocLoaderPluginModule.h"
+#include "SharedPointer.h"
+#include "Engine.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
 
 class FRenderDocPluginModule : public IRenderDocPlugin
 {
 public:	
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
-
-  void Initialize();
 
 private:
 	// Tick made possible via the dummy input device declared below:
@@ -56,6 +58,10 @@ private:
 	virtual TSharedPtr< class IInputDevice > CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override;
 
 private:
+
+#if WITH_EDITOR
+	friend class SRenderDocPluginSettingsEditorWindow;
+
 	static const FName SettingsUITabName;
 
 	FDelegateHandle LoadedDelegateHandle;
@@ -64,10 +70,15 @@ private:
 	TSharedPtr<FExtender> ToolbarExtender;
 	TSharedPtr<const FExtensionBase> ToolbarExtension;
 
-	FRenderDocPluginSettings RenderDocSettings;
-	bool IsInitialized;
+	void InitializeEditorExtensions();
 
 	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
+
+	void OpenSettingsEditorWindow();
+
+	bool IsEditorInitialized;
+	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder);
+#endif//WITH_EDITOR
 
 	void BeginCapture();
 	void EndCapture();
@@ -75,32 +86,29 @@ private:
 	void CaptureFrame();
 	void CaptureCurrentViewport();	
 	void CaptureEntireFrame();
-	void OpenSettingsEditorWindow();
 
 	void StartRenderDoc(FString FrameCaptureBaseDirectory);
 	FString GetNewestCapture(FString BaseDirectory);
 
-	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder); 
-
  	static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
 	
-
-
 	// UE4-related: enable DrawEvents during captures, if necessary:
 	bool UE4_GEmitDrawEvents_BeforeCapture;
 	void UE4_OverrideDrawEventsFlag(const bool flag=true);
 	void UE4_RestoreDrawEventsFlag();
 
+	FRenderDocPluginLoader Loader;
+	FRenderDocPluginSettings RenderDocSettings;
+	FRenderDocPluginLoader::RENDERDOC_API_CONTEXT* RenderDocAPI;
+
 	// Tracks the frame count (tick number) for a full frame capture:
- 	friend class SRenderDocPluginSettingsEditorWindow;
-	FRenderDocLoaderPluginModule Loader;
-	FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT* RenderDocAPI;
 	uint32 TickNumber;
 
 private:
 	// TODO: refactor the plugin into subclasses:
 	class InputDevice;
 	class RenderDocLoader;
+	class Settings;
 	class FrameCapturer;
 	class UserInterface;
 

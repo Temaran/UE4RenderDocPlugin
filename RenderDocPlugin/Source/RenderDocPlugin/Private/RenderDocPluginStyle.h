@@ -24,6 +24,8 @@
 
 #pragma once
 
+#if WITH_EDITOR
+
 #include "SlateBasics.h"
 
 class FRenderDocPluginStyle
@@ -41,3 +43,5 @@ private:
 private:
 	static TSharedPtr<class FSlateStyleSet> StyleSet;
 };
+
+#endif//WITH_EDITOR

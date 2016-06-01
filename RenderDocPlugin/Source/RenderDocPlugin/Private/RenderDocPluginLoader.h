@@ -1,7 +1,8 @@
 /******************************************************************************
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Fredrik Lindh
+* Copyright (c) 2014-2016 Fredrik Lindh
+*                         Marcos Slomp
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -24,22 +25,13 @@
 
 #pragma once
 
-#include "ModuleManager.h"
-#include "Editor/LevelEditor/Public/LevelEditor.h"
-#include "SharedPointer.h"
-#include "Internationalization.h"
-#include "SlateBasics.h"
-#include "MultiBoxExtender.h"
-
 #include "RenderDocAPI/renderdoc_app.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
-
-class FRenderDocLoaderPluginModule// : public IModuleInterface
+class FRenderDocPluginLoader
 {
 public:
-	void StartupModule(class FRenderDocPluginModule* Plugin);
-	void ShutdownModule();
+	void Initialize();
+	void Release();
 
 	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
 
@@ -48,7 +40,6 @@ private:
 	friend class SRenderDocPluginSettingsEditorWindow;
 
 	void* RenderDocDLL;
-
 	RENDERDOC_API_CONTEXT* RenderDocAPI;
 };
 

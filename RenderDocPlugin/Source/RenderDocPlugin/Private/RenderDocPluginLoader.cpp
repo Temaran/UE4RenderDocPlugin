@@ -1,7 +1,8 @@
 /******************************************************************************
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Fredrik Lindh
+* Copyright (c) 2014-2016 Fredrik Lindh
+*                         Marcos Slomp
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -23,16 +24,16 @@
 ******************************************************************************/
 
 #include "RenderDocPluginPrivatePCH.h"
-#include "RenderDocLoaderPluginModule.h"
-#include "Developer/DesktopPlatform/public/DesktopPlatformModule.h"
-
+#include "RenderDocPluginLoader.h"
 #include "RenderDocPluginModule.h"
 
-DEFINE_LOG_CATEGORY(RenderDocPlugin);
+#include "Internationalization.h"
+
+#include "Developer/DesktopPlatform/public/DesktopPlatformModule.h"
 
 #define LOCTEXT_NAMESPACE "RenderDocLoaderPluginNamespace" 
 
-static void* LoadAndCheckRenderDocLibrary(FRenderDocLoaderPluginModule::RENDERDOC_API_CONTEXT*& RenderDocAPI, const FString& RenderdocPath)
+static void* LoadAndCheckRenderDocLibrary(FRenderDocPluginLoader::RENDERDOC_API_CONTEXT*& RenderDocAPI, const FString& RenderdocPath)
 {
 	check(nullptr == RenderDocAPI);
 
@@ -87,7 +88,7 @@ static void UpdateConfigFiles(const FString& RenderdocPath)
 	}
 }
 
-void FRenderDocLoaderPluginModule::StartupModule(class FRenderDocPluginModule* Plugin)
+void FRenderDocPluginLoader::Initialize()
 {
 	if (GUsingNullRHI)
 	{
@@ -127,6 +128,7 @@ void FRenderDocLoaderPluginModule::StartupModule(class FRenderDocPluginModule* P
 		//so prompt the user to navigate to the main exe file
 		UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc library not found; provide a custom installation location..."));
 		FString RenderdocPath;
+		// TODO: rework the logic here by improving error checking and reporting
 		IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
 		if (DesktopPlatform)
 		{
@@ -148,26 +150,16 @@ void FRenderDocLoaderPluginModule::StartupModule(class FRenderDocPluginModule* P
 		return;
 	}
 
-	// Defer Level Editor UI extensions until Level Editor has been loaded:
-	if (FModuleManager::Get().IsModuleLoaded("LevelEditor"))
-		Plugin->Initialize();
-	else
-		FModuleManager::Get().OnModulesChanged().AddLambda([Plugin](FName name, EModuleChangeReason reason)
-		{
-			if ((name == "LevelEditor") && (reason == EModuleChangeReason::ModuleLoaded))
-				Plugin->Initialize();
-		});
-
 	UE_LOG(RenderDocPlugin, Log, TEXT("plugin has been loaded successfully."));
 }
 
-void FRenderDocLoaderPluginModule::ShutdownModule()
+void FRenderDocPluginLoader::Release()
 {
 	if (GUsingNullRHI)
 		return;
 
 	if (RenderDocDLL)
-    FPlatformProcess::FreeDllHandle(RenderDocDLL);
+		FPlatformProcess::FreeDllHandle(RenderDocDLL);
 
 	UE_LOG(RenderDocPlugin, Log, TEXT("plugin has been unloaded."));
 }

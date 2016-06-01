@@ -24,8 +24,6 @@
 
 #pragma once
 
-#include "SlateBasics.h"
-
 struct FRenderDocPluginSettings
 {
 public:
