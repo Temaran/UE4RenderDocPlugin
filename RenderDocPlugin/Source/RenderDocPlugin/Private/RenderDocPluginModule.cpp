@@ -387,12 +387,14 @@ void FRenderDocPluginModule::Tick(float DeltaTime)
 		return;
 
 	const uint32 TickDiff = GFrameCounter - TickNumber;
-	check(TickDiff <= 2);
+  const uint32 MaxCount = 2;
+
+	check(TickDiff <= MaxCount);
 
 	if (TickDiff == 1)
 		BeginCapture();
 
-	if (TickDiff == 2)
+	if (TickDiff == MaxCount)
 		EndCapture(),
 		TickNumber = 0;
 }
