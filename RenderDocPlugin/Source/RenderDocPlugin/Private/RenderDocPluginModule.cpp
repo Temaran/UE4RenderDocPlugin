@@ -237,16 +237,17 @@ void FRenderDocPluginModule::OpenSettingsEditorWindow()
 		return;
 
 	UE_LOG(RenderDocPlugin, Log, TEXT("Opening settings window"));
-
+  /*
   static TSharedPtr<SRenderDocPluginSettingsEditorWindow> Window;
   Window = SNew(SRenderDocPluginSettingsEditorWindow)
     .Settings(RenderDocSettings)
     .ThePlugin(this);
 
-	//Window->MoveWindowTo(FSlateApplication::Get().GetCursorPos());
-	//GEditor->EditorAddModalWindow(Window.ToSharedRef());
+	Window->MoveWindowTo(FSlateApplication::Get().GetCursorPos());
+	GEditor->EditorAddModalWindow(Window.ToSharedRef());
 
-	RenderDocSettings = Window->GetSettings();
+  RenderDocSettings = Window->GetSettings();
+  */
 }
 
 void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder)
@@ -266,7 +267,7 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
 		LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame and launches RenderDoc."),
 		IconBrush,
 		NAME_None);
-
+  /*
 	FSlateIcon SettingsIconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.SettingsIcon.Small");
 	ToolbarBuilder.AddToolBarButton(
 		FRenderDocPluginCommands::Get().OpenSettings,
@@ -275,10 +276,10 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
 		LOCTEXT("RenderDocCaptureSettings_ToolTipOverride", "Edit RenderDoc Settings"),
 		SettingsIconBrush,
 		NAME_None);
-
+  */
   ToolbarBuilder.AddWidget(
     SNew(SRenderDocPluginSettingsEditorWindow)
-    .Settings(RenderDocSettings)
+    .Settings(&RenderDocSettings)
     .ThePlugin(this)
     );
 

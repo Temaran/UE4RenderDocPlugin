@@ -34,7 +34,7 @@ class SRenderDocPluginSettingsEditorWindow : public SViewportToolBar
 {
 public:
 	SLATE_BEGIN_ARGS(SRenderDocPluginSettingsEditorWindow) { }
-		SLATE_ARGUMENT(FRenderDocPluginSettings, Settings)
+		SLATE_ARGUMENT(FRenderDocPluginSettings*, Settings)
 		SLATE_ARGUMENT(class FRenderDocPluginModule*, ThePlugin)
 	SLATE_END_ARGS()
 
@@ -43,10 +43,10 @@ public:
 	/** Widget constructor */
 	void Construct(const FArguments& Args);
 
-	FRenderDocPluginSettings GetSettings() { return RenderDocSettings; }
+	//FRenderDocPluginSettings GetSettings() { return RenderDocSettings; }
 
 private:
-	FRenderDocPluginSettings RenderDocSettings;
+	FRenderDocPluginSettings* RenderDocSettings;
 	class FRenderDocPluginModule* ThePlugin;
 
 	void OnCaptureAllActivityChanged(ECheckBoxState NewState);

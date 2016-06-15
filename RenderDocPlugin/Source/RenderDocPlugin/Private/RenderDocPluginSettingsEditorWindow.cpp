@@ -40,12 +40,19 @@
 
 TSharedRef<SWidget> SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu() const
 {
-  TSharedRef<SWidget> w = SNew(SVerticalBox)
+  TSharedPtr<FUICommandList> CommandList = MakeShareable(new FUICommandList);
+  FMenuBuilder ShowMenuBuilder (true, CommandList);
+  ShowMenuBuilder.AddWidget(
 
-		+ SVerticalBox::Slot()
+    SNew(SVerticalBox)
+
+    + SVerticalBox::Slot()
+    .AutoHeight()
 		[
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot()
+      .AutoWidth()
+      .HAlign(EHorizontalAlignment::HAlign_Left)
 			.VAlign(EVerticalAlignment::VAlign_Center)
 			[
 				SNew(STextBlock)
@@ -57,15 +64,17 @@ TSharedRef<SWidget> SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu()
 			.HAlign(HAlign_Right)
 			[
 				SNew(SCheckBox)
-				.IsChecked(RenderDocSettings.bCaptureAllActivity ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+				.IsChecked(RenderDocSettings->bCaptureAllActivity ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
 				.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnCaptureAllActivityChanged)
 			]
 		]
 
 		+ SVerticalBox::Slot()
+    .AutoHeight()
 		[
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot()
+      .AutoWidth()
 			.VAlign(EVerticalAlignment::VAlign_Center)
 			[
 				SNew(STextBlock)
@@ -78,15 +87,17 @@ TSharedRef<SWidget> SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu()
 			.HAlign(HAlign_Right)
 			[
 				SNew(SCheckBox)
-				.IsChecked(RenderDocSettings.bCaptureCallStacks ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+				.IsChecked(RenderDocSettings->bCaptureCallStacks ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
 				.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnCaptureCallStacksChanged)
 			]
 		]
 
 		+ SVerticalBox::Slot()
+    .AutoHeight()
 		[
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot()
+      .AutoWidth()
 			.VAlign(EVerticalAlignment::VAlign_Center)
 			[
 				SNew(STextBlock)
@@ -99,15 +110,17 @@ TSharedRef<SWidget> SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu()
 			.HAlign(HAlign_Right)
 			[
 				SNew(SCheckBox)
-				.IsChecked(RenderDocSettings.bRefAllResources ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+				.IsChecked(RenderDocSettings->bRefAllResources ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
 				.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnRefAllResourcesChanged)
 			]
 		]
 
 		+ SVerticalBox::Slot()
+    .AutoHeight()
 		[
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot()
+      .AutoWidth()
 			.VAlign(EVerticalAlignment::VAlign_Center)
 			[
 				SNew(STextBlock)
@@ -120,24 +133,27 @@ TSharedRef<SWidget> SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu()
 			.HAlign(HAlign_Right)
 			[
 				SNew(SCheckBox)
-				.IsChecked(RenderDocSettings.bSaveAllInitials ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
+				.IsChecked(RenderDocSettings->bSaveAllInitials ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
 				.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnSaveAllInitialsChanged)
 			]
 		]
 
 		+ SVerticalBox::Slot()
+    .AutoHeight()
 		[
 			SNew(SHorizontalBox)
 			+ SHorizontalBox::Slot()
+      .AutoWidth()
 			.VAlign(EVerticalAlignment::VAlign_Center)
 			.Padding(5)
 			[
 				SNew(SButton)
 				.OnClicked(this, &SRenderDocPluginSettingsEditorWindow::SaveAndClose)
-				.Text(LOCTEXT("SaveAndCloseButton", "Save and close"))
+				.Text(LOCTEXT("SaveButton", "Save"))
 			]
 
 			+ SHorizontalBox::Slot()
+      .AutoWidth()
 			.VAlign(EVerticalAlignment::VAlign_Center)
 			.Padding(5)
 			[
@@ -145,18 +161,11 @@ TSharedRef<SWidget> SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu()
 				.OnClicked(this, &SRenderDocPluginSettingsEditorWindow::ShowAboutWindow)
 				.Text(LOCTEXT("AboutButton", "About"))
 			]
+    ],
+    FText()
+  );
 
-			+ SHorizontalBox::Slot()
-			.VAlign(EVerticalAlignment::VAlign_Center)
-			.Padding(5)
-			[
-				SNew(SButton)
-				.OnClicked(this, &SRenderDocPluginSettingsEditorWindow::Close)
-				.Text(LOCTEXT("CloseButton", "Close"))
-			]
-    ];
-
-    return(w);
+  return(ShowMenuBuilder.MakeWidget());
 }
 
 void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
@@ -164,14 +173,17 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 	ThePlugin = InArgs._ThePlugin;
 	RenderDocSettings = InArgs._Settings;
 
+  FSlateIcon SettingsIconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.SettingsIcon.Small");
+
   ChildSlot
   [
     SNew(SEditorViewportToolbarMenu)
-    .Label(LOCTEXT("RenderDocSettingsMenu", "RenderDoc Settings"))
+    //.Label(LOCTEXT("RenderDocSettingsMenu", "RenderDoc Settings"))
     .Cursor(EMouseCursor::Default)
     .ParentToolBar(SharedThis(this))
     .AddMetaData<FTagMetaData>(FTagMetaData(TEXT("EditorViewportToolBar.RenderDocSettingsMenu")))
     .OnGetMenuContent(this, &SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu)
+    .LabelIcon(SettingsIconBrush.GetIcon())
   ];
 
 	//bIsTopmostWindow = true;
@@ -179,36 +191,36 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 
 void SRenderDocPluginSettingsEditorWindow::OnCaptureAllActivityChanged(ECheckBoxState NewState)
 {
-	RenderDocSettings.bCaptureAllActivity = NewState == ECheckBoxState::Checked ? true : false;
+	RenderDocSettings->bCaptureAllActivity = NewState == ECheckBoxState::Checked ? true : false;
 }
 
 void SRenderDocPluginSettingsEditorWindow::OnCaptureCallStacksChanged(ECheckBoxState NewState)
 {
-	RenderDocSettings.bCaptureCallStacks = NewState == ECheckBoxState::Checked ? true : false;
+	RenderDocSettings->bCaptureCallStacks = NewState == ECheckBoxState::Checked ? true : false;
 	pRENDERDOC_SetCaptureOptionU32 SetOptions = ThePlugin->Loader.RenderDocAPI->SetCaptureOptionU32;
-	int ok = SetOptions(eRENDERDOC_Option_CaptureCallstacks, RenderDocSettings.bCaptureCallStacks ? 1 : 0);
+	int ok = SetOptions(eRENDERDOC_Option_CaptureCallstacks, RenderDocSettings->bCaptureCallStacks ? 1 : 0);
 	check(ok);
 }
 
 void SRenderDocPluginSettingsEditorWindow::OnRefAllResourcesChanged(ECheckBoxState NewState)
 {
-	RenderDocSettings.bRefAllResources = NewState == ECheckBoxState::Checked ? true : false;
+	RenderDocSettings->bRefAllResources = NewState == ECheckBoxState::Checked ? true : false;
 	pRENDERDOC_SetCaptureOptionU32 SetOptions = ThePlugin->Loader.RenderDocAPI->SetCaptureOptionU32;
-	int ok = SetOptions(eRENDERDOC_Option_RefAllResources, RenderDocSettings.bRefAllResources ? 1 : 0);
+	int ok = SetOptions(eRENDERDOC_Option_RefAllResources, RenderDocSettings->bRefAllResources ? 1 : 0);
 	check(ok);
 }
 
 void SRenderDocPluginSettingsEditorWindow::OnSaveAllInitialsChanged(ECheckBoxState NewState)
 {
-	RenderDocSettings.bSaveAllInitials = NewState == ECheckBoxState::Checked ? true : false;
+	RenderDocSettings->bSaveAllInitials = NewState == ECheckBoxState::Checked ? true : false;
 	pRENDERDOC_SetCaptureOptionU32 SetOptions = ThePlugin->Loader.RenderDocAPI->SetCaptureOptionU32;
-	int ok = SetOptions(eRENDERDOC_Option_SaveAllInitials, RenderDocSettings.bSaveAllInitials ? 1 : 0);
+	int ok = SetOptions(eRENDERDOC_Option_SaveAllInitials, RenderDocSettings->bSaveAllInitials ? 1 : 0);
 	check(ok);
 }
 
 FReply SRenderDocPluginSettingsEditorWindow::SaveAndClose()
 {
-	RenderDocSettings.Save();
+	RenderDocSettings->Save();
 	return Close();
 }
 
