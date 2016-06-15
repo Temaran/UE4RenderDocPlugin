@@ -238,12 +238,13 @@ void FRenderDocPluginModule::OpenSettingsEditorWindow()
 
 	UE_LOG(RenderDocPlugin, Log, TEXT("Opening settings window"));
 
-	TSharedPtr<SRenderDocPluginSettingsEditorWindow> Window = SNew(SRenderDocPluginSettingsEditorWindow)
-		.Settings(RenderDocSettings)
-		.ThePlugin(this);
+  static TSharedPtr<SRenderDocPluginSettingsEditorWindow> Window;
+  Window = SNew(SRenderDocPluginSettingsEditorWindow)
+    .Settings(RenderDocSettings)
+    .ThePlugin(this);
 
-	Window->MoveWindowTo(FSlateApplication::Get().GetCursorPos());
-	GEditor->EditorAddModalWindow(Window.ToSharedRef());
+	//Window->MoveWindowTo(FSlateApplication::Get().GetCursorPos());
+	//GEditor->EditorAddModalWindow(Window.ToSharedRef());
 
 	RenderDocSettings = Window->GetSettings();
 }
@@ -274,6 +275,12 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
 		LOCTEXT("RenderDocCaptureSettings_ToolTipOverride", "Edit RenderDoc Settings"),
 		SettingsIconBrush,
 		NAME_None);
+
+  ToolbarBuilder.AddWidget(
+    SNew(SRenderDocPluginSettingsEditorWindow)
+    .Settings(RenderDocSettings)
+    .ThePlugin(this)
+    );
 
 	ToolbarBuilder.EndSection();
 

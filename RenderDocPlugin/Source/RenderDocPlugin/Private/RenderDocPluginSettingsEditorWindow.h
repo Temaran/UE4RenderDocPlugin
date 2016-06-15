@@ -27,9 +27,10 @@
 #if WITH_EDITOR
 
 #include "SlateBasics.h"
+#include "Editor/UnrealEd/Public/SViewportToolBar.h"
 #include "RenderDocPluginSettings.h"
 
-class SRenderDocPluginSettingsEditorWindow : public SWindow
+class SRenderDocPluginSettingsEditorWindow : public SViewportToolBar
 {
 public:
 	SLATE_BEGIN_ARGS(SRenderDocPluginSettingsEditorWindow) { }
@@ -56,6 +57,8 @@ private:
 	FReply SaveAndClose();
 	FReply ShowAboutWindow();
 	FReply Close();
+
+  TSharedRef<SWidget> GenerateSettingsMenu() const;
 };
 
 #endif//WITH_EDITOR
