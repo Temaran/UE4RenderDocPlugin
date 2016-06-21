@@ -60,8 +60,6 @@ private:
 private:
 
 #if WITH_EDITOR
-	friend class SRenderDocPluginSettingsEditorWindow;
-
 	static const FName SettingsUITabName;
 
 	FDelegateHandle LoadedDelegateHandle;

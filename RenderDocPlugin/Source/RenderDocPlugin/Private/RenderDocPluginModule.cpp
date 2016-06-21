@@ -280,7 +280,6 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
   ToolbarBuilder.AddWidget(
     SNew(SRenderDocPluginSettingsEditorWindow)
     .Settings(&RenderDocSettings)
-    .ThePlugin(this)
     );
 
 	ToolbarBuilder.EndSection();

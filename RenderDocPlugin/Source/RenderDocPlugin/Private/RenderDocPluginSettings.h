@@ -50,9 +50,9 @@ public:
 	void Save()
 	{
 		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureAllActivity"), bCaptureAllActivity, GGameIni);
-		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureCallStacks"),  bCaptureCallStacks, GGameIni);
-		GConfig->SetBool(TEXT("RenderDoc"), TEXT("RefAllResources"),    bRefAllResources, GGameIni);
-		GConfig->SetBool(TEXT("RenderDoc"), TEXT("SaveAllInitials"),    bSaveAllInitials, GGameIni);
+		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureCallStacks"),  bCaptureCallStacks,  GGameIni);
+		GConfig->SetBool(TEXT("RenderDoc"), TEXT("RefAllResources"),    bRefAllResources,    GGameIni);
+		GConfig->SetBool(TEXT("RenderDoc"), TEXT("SaveAllInitials"),    bSaveAllInitials,    GGameIni);
 		GConfig->Flush(false, GGameIni);
 	}
 };

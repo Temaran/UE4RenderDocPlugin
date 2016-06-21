@@ -35,7 +35,6 @@ class SRenderDocPluginSettingsEditorWindow : public SViewportToolBar
 public:
 	SLATE_BEGIN_ARGS(SRenderDocPluginSettingsEditorWindow) { }
 		SLATE_ARGUMENT(FRenderDocPluginSettings*, Settings)
-		SLATE_ARGUMENT(class FRenderDocPluginModule*, ThePlugin)
 	SLATE_END_ARGS()
 
 	SRenderDocPluginSettingsEditorWindow() {}
@@ -47,16 +46,9 @@ public:
 
 private:
 	FRenderDocPluginSettings* RenderDocSettings;
-	class FRenderDocPluginModule* ThePlugin;
 
-	void OnCaptureAllActivityChanged(ECheckBoxState NewState);
-	void OnCaptureCallStacksChanged(ECheckBoxState NewState);
-	void OnRefAllResourcesChanged(ECheckBoxState NewState);
-	void OnSaveAllInitialsChanged(ECheckBoxState NewState);
-		
 	FReply SaveAndClose();
 	FReply ShowAboutWindow();
-	FReply Close();
 
   TSharedRef<SWidget> GenerateSettingsMenu() const;
 };
