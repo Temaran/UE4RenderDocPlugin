@@ -39,13 +39,6 @@ void FRenderDocPluginCommands::RegisterCommands()
 		"Captures the next frame and launches RenderDoc.",
 		EUserInterfaceActionType::Button, FInputGesture(EKeys::F12, EModifierKey::Alt)
 	);
-
-	UI_COMMAND(
-		OpenSettings,
-		"Open Settings",
-		"Opens the RenderDoc Plugin Settings Editor",
-		EUserInterfaceActionType::Button, FInputGesture()
-	);
 }
 PRAGMA_ENABLE_OPTIMIZATION
 

@@ -72,8 +72,6 @@ private:
 
 	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
 
-	void OpenSettingsEditorWindow();
-
 	bool IsEditorInitialized;
 	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder);
 #endif//WITH_EDITOR
