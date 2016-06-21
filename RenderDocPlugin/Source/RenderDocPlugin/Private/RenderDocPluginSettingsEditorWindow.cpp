@@ -82,10 +82,13 @@ public:
       .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
       );
     Flags.Add(false);
+
+    CommandList = MakeShareable( new FUICommandList );
   }
 
   TArray< bool > Flags;
   TArray< TSharedPtr<FUICommandInfo> > Commands;
+  TSharedPtr< FUICommandList > CommandList;
 
   void ToggleShowFlag(uint32 FlagIndex)
   {
@@ -100,32 +103,21 @@ public:
 };
 
 static TSharedPtr<FRenderDocSettingsCommands> RenderDocSettingsCommands;
-static TSharedPtr<FUICommandList> CommandList;
 
 TSharedRef<SWidget> SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu() const
 {
-  if (!CommandList.IsValid())
-    CommandList = MakeShareable(new FUICommandList);
-
-  FMenuBuilder ShowMenuBuilder (true, CommandList);
+  FMenuBuilder ShowMenuBuilder (true, RenderDocSettingsCommands->CommandList);
 
   int index (0);
   for (auto& command : RenderDocSettingsCommands->Commands)
   {
-    CommandList->MapAction(
+    RenderDocSettingsCommands->CommandList->MapAction(
       command,
-      FExecuteAction::CreateLambda([](uint32 FlagIndex)
-      {
-        bool& flag = RenderDocSettingsCommands->Flags[FlagIndex];
-        flag = !flag;
-      }, index),
-      //FExecuteAction::CreateSP(RenderDocSettingsCommands.Get(), &FRenderDocSettingsCommands::ToggleShowFlag, index),
+      FExecuteAction::CreateLambda( [](bool* flag) { *flag = !*flag; },
+        &RenderDocSettingsCommands->Flags[index] ),
       FCanExecuteAction(),
-      //FIsActionChecked::CreateSP(RenderDocSettingsCommands.Get(), &FRenderDocSettingsCommands::IsShowFlagEnabled, index));
-      FIsActionChecked::CreateLambda([](uint32 FlagIndex)
-      {
-        return(RenderDocSettingsCommands->Flags[FlagIndex]);
-      }, index)
+      FIsActionChecked::CreateLambda( [](const bool* flag) { return(*flag); },
+        &RenderDocSettingsCommands->Flags[index] )
     );
     ++index;
     ShowMenuBuilder.AddMenuEntry(command);
