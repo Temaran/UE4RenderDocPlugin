@@ -299,6 +299,12 @@ void FRenderDocPluginModule::BeginCapture()
 	// TODO: if there is no editor, notify via game viewport text
 #endif//WITH_EDITOR
 
+  // TODO: maybe move these SetOptions() to FRenderDocPluginSettings...
+  pRENDERDOC_SetCaptureOptionU32 SetOptions = Loader.RenderDocAPI->SetCaptureOptionU32;
+  int ok = SetOptions(eRENDERDOC_Option_CaptureCallstacks, RenderDocSettings.bCaptureCallStacks ? 1 : 0); check(ok);
+	    ok = SetOptions(eRENDERDOC_Option_RefAllResources,   RenderDocSettings.bRefAllResources   ? 1 : 0); check(ok);
+	    ok = SetOptions(eRENDERDOC_Option_SaveAllInitials,   RenderDocSettings.bSaveAllInitials   ? 1 : 0); check(ok);
+
 	HWND WindowHandle = GetActiveWindow();
 
 	typedef FRenderDocPluginLoader::RENDERDOC_API_CONTEXT RENDERDOC_API_CONTEXT;

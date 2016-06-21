@@ -41,13 +41,15 @@
 class FRenderDocSettingsCommands : public TCommands<FRenderDocSettingsCommands>
 {
 public:
-  FRenderDocSettingsCommands() : TCommands<FRenderDocSettingsCommands>
-  (
+  FRenderDocSettingsCommands(FRenderDocPluginSettings* settings)
+  : TCommands<FRenderDocSettingsCommands>(
     TEXT("RenderDocSettings"), // Context name for fast lookup
     NSLOCTEXT("Contexts", "RenderDocSettings", "RenderDoc Settings"), // Localized context name for displaying
     TEXT("EditorViewport"), // Parent context name.  
     FEditorStyle::GetStyleSetName() // Icon Style Set
-  ) { }
+    )
+  , Settings(settings)
+  { }
 
   virtual ~FRenderDocSettingsCommands() { }
 
@@ -55,51 +57,69 @@ public:
   {
     //UI_COMMAND(ToggleMaximize, "Maximize Viewport", "Toggles the Maximize state of the current viewport", EUserInterfaceActionType::ToggleButton, FInputChord());
 
+    CommandList = MakeShareable(new FUICommandList);
+
     Commands.Add(
       FUICommandInfoDecl(this->AsShared(), FName(TEXT("CaptureAllActivity")), LOCTEXT("CaptureAllActivity", "Capture all activity"), 
         LOCTEXT("CaptureAllActivityToolTip", "If enabled, capture all rendering activity during the next engine update tick; if disabled, only the rendering activity of the active viewport will be captured."))
       .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
     );
-    Flags.Add(false);
+    CommandList->MapAction(
+      Commands.Last(),
+      FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
+        &Settings->bCaptureAllActivity),
+      FCanExecuteAction(),
+      FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
+        &Settings->bCaptureAllActivity)
+    );
 
     Commands.Add(
       FUICommandInfoDecl(this->AsShared(), FName(TEXT("CaptureCallstacks")), LOCTEXT("CaptureCallstacks", "Capture callstacks"),
         LOCTEXT("CaptureCallstacksToolTip", "Save the call stack for every draw event in addition to the event itself. This is useful when you need additional information to solve your particular problem."))
       .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
     );
-    Flags.Add(false);
+    CommandList->MapAction(
+      Commands.Last(),
+      FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
+        &Settings->bCaptureCallStacks),
+      FCanExecuteAction(),
+      FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
+        &Settings->bCaptureCallStacks)
+    );
 
     Commands.Add(
       FUICommandInfoDecl(this->AsShared(), FName(TEXT("RefAllResources")), LOCTEXT("RefAllResources", "Capture all resources"),
         LOCTEXT("RefAllResourcesToolTip", "Capture all resources, including those that are not referenced by the current frame."))
       .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
       );
-    Flags.Add(false);
+    CommandList->MapAction(
+      Commands.Last(),
+      FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
+        &Settings->bRefAllResources),
+      FCanExecuteAction(),
+      FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
+        &Settings->bRefAllResources)
+    );
 
     Commands.Add(
       FUICommandInfoDecl(this->AsShared(), FName(TEXT("SaveAllInitials")), LOCTEXT("SaveAllInitials", "Save all initial states"),
         LOCTEXT("SaveAllInitialsToolTip", "Save the initial status of all resources, even if we think that they will be overwritten in this frame."))
       .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
       );
-    Flags.Add(false);
-
-    CommandList = MakeShareable( new FUICommandList );
+    CommandList->MapAction(
+      Commands.Last(),
+      FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
+        &Settings->bSaveAllInitials),
+      FCanExecuteAction(),
+      FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
+        &Settings->bSaveAllInitials)
+    );
   }
 
-  TArray< bool > Flags;
+  FRenderDocPluginSettings* Settings;
   TArray< TSharedPtr<FUICommandInfo> > Commands;
   TSharedPtr< FUICommandList > CommandList;
 
-  void ToggleShowFlag(uint32 FlagIndex)
-  {
-    bool bOldState = Flags[FlagIndex];
-    Flags[FlagIndex] = !bOldState;
-  }
-
-  bool IsShowFlagEnabled(uint32 FlagIndex) const
-  {
-    return(Flags[FlagIndex]);
-  }
 };
 
 static TSharedPtr<FRenderDocSettingsCommands> RenderDocSettingsCommands;
@@ -108,20 +128,8 @@ TSharedRef<SWidget> SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu()
 {
   FMenuBuilder ShowMenuBuilder (true, RenderDocSettingsCommands->CommandList);
 
-  int index (0);
   for (auto& command : RenderDocSettingsCommands->Commands)
-  {
-    RenderDocSettingsCommands->CommandList->MapAction(
-      command,
-      FExecuteAction::CreateLambda( [](bool* flag) { *flag = !*flag; },
-        &RenderDocSettingsCommands->Flags[index] ),
-      FCanExecuteAction(),
-      FIsActionChecked::CreateLambda( [](const bool* flag) { return(*flag); },
-        &RenderDocSettingsCommands->Flags[index] )
-    );
-    ++index;
     ShowMenuBuilder.AddMenuEntry(command);
-  }
 
   ShowMenuBuilder.AddWidget(
     SNew(SVerticalBox)
@@ -152,132 +160,6 @@ TSharedRef<SWidget> SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu()
     FText()
   );
 
-/*
-  TSharedPtr<FUICommandList> CommandList = MakeShareable(new FUICommandList);
-  FMenuBuilder ShowMenuBuilder (true, CommandList);
-  ShowMenuBuilder.AddWidget(
-
-    SNew(SVerticalBox)
-
-    + SVerticalBox::Slot()
-    .AutoHeight()
-		[
-			SNew(SHorizontalBox)
-			+ SHorizontalBox::Slot()
-      .AutoWidth()
-      .HAlign(EHorizontalAlignment::HAlign_Left)
-			.VAlign(EVerticalAlignment::VAlign_Center)
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("CaptureAllActivity", "Capture all activity"))
-				.ToolTipText(LOCTEXT("CaptureAllActivityToolTip", "If enabled, capture all rendering activity during the next engine update tick; if disabled, only the rendering activity of the active viewport will be captured."))
-			]
-			+ SHorizontalBox::Slot()
-			.VAlign(EVerticalAlignment::VAlign_Center)
-			.HAlign(HAlign_Right)
-			[
-				SNew(SCheckBox)
-				.IsChecked(RenderDocSettings->bCaptureAllActivity ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-				.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnCaptureAllActivityChanged)
-			]
-		]
-
-		+ SVerticalBox::Slot()
-    .AutoHeight()
-		[
-			SNew(SHorizontalBox)
-			+ SHorizontalBox::Slot()
-      .AutoWidth()
-			.VAlign(EVerticalAlignment::VAlign_Center)
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("CaptureCallstacks", "Capture callstacks"))
-				.ToolTipText(LOCTEXT("CaptureCallstacksToolTip", "Save the call stack for every draw event in addition to the event itself. This is useful when you need additional information to solve your particular problem."))
-			]
-
-			+ SHorizontalBox::Slot()
-			.VAlign(EVerticalAlignment::VAlign_Center)
-			.HAlign(HAlign_Right)
-			[
-				SNew(SCheckBox)
-				.IsChecked(RenderDocSettings->bCaptureCallStacks ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-				.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnCaptureCallStacksChanged)
-			]
-		]
-
-		+ SVerticalBox::Slot()
-    .AutoHeight()
-		[
-			SNew(SHorizontalBox)
-			+ SHorizontalBox::Slot()
-      .AutoWidth()
-			.VAlign(EVerticalAlignment::VAlign_Center)
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("RefAllResources", "Capture all resources"))
-				.ToolTipText(LOCTEXT("RefAllResourcesToolTip", "Capture all resources, including those that are not referenced by the current frame."))
-			]
-
-			+ SHorizontalBox::Slot()
-			.VAlign(EVerticalAlignment::VAlign_Center)
-			.HAlign(HAlign_Right)
-			[
-				SNew(SCheckBox)
-				.IsChecked(RenderDocSettings->bRefAllResources ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-				.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnRefAllResourcesChanged)
-			]
-		]
-
-		+ SVerticalBox::Slot()
-    .AutoHeight()
-		[
-			SNew(SHorizontalBox)
-			+ SHorizontalBox::Slot()
-      .AutoWidth()
-			.VAlign(EVerticalAlignment::VAlign_Center)
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("SaveAllInitials", "Save all initial states"))
-				.ToolTipText(LOCTEXT("SaveAllInitialsToolTip", "Save the initial status of all resources, even if we think that they will be overwritten in this frame."))
-			]
-
-			+ SHorizontalBox::Slot()
-			.VAlign(EVerticalAlignment::VAlign_Center)
-			.HAlign(HAlign_Right)
-			[
-				SNew(SCheckBox)
-				.IsChecked(RenderDocSettings->bSaveAllInitials ? ECheckBoxState::Checked : ECheckBoxState::Unchecked)
-				.OnCheckStateChanged(this, &SRenderDocPluginSettingsEditorWindow::OnSaveAllInitialsChanged)
-			]
-		]
-
-		+ SVerticalBox::Slot()
-    .AutoHeight()
-		[
-			SNew(SHorizontalBox)
-			+ SHorizontalBox::Slot()
-      .AutoWidth()
-			.VAlign(EVerticalAlignment::VAlign_Center)
-			.Padding(5)
-			[
-				SNew(SButton)
-				.OnClicked(this, &SRenderDocPluginSettingsEditorWindow::SaveAndClose)
-				.Text(LOCTEXT("SaveButton", "Save"))
-			]
-
-			+ SHorizontalBox::Slot()
-      .AutoWidth()
-			.VAlign(EVerticalAlignment::VAlign_Center)
-			.Padding(5)
-			[
-				SNew(SButton)
-				.OnClicked(this, &SRenderDocPluginSettingsEditorWindow::ShowAboutWindow)
-				.Text(LOCTEXT("AboutButton", "About"))
-			]
-    ],
-    FText()
-  );
-  */
   return(ShowMenuBuilder.MakeWidget());
 }
 
@@ -288,7 +170,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 
   if (!RenderDocSettingsCommands.IsValid())
   {
-    RenderDocSettingsCommands = MakeShareable(new FRenderDocSettingsCommands);
+    RenderDocSettingsCommands = MakeShareable(new FRenderDocSettingsCommands(RenderDocSettings));
     RenderDocSettingsCommands->RegisterCommands();
   }
 
@@ -304,8 +186,6 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
     .OnGetMenuContent(this, &SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu)
     .LabelIcon(SettingsIconBrush.GetIcon())
   ];
-
-	//bIsTopmostWindow = true;
 }
 
 void SRenderDocPluginSettingsEditorWindow::OnCaptureAllActivityChanged(ECheckBoxState NewState)
