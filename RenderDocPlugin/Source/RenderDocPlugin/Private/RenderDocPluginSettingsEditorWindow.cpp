@@ -38,8 +38,129 @@
 
 #define LOCTEXT_NAMESPACE "RenderDocPluginSettingsEditor"
 
+class FRenderDocSettingsCommands : public TCommands<FRenderDocSettingsCommands>
+{
+public:
+  FRenderDocSettingsCommands() : TCommands<FRenderDocSettingsCommands>
+  (
+    TEXT("RenderDocSettings"), // Context name for fast lookup
+    NSLOCTEXT("Contexts", "RenderDocSettings", "RenderDoc Settings"), // Localized context name for displaying
+    TEXT("EditorViewport"), // Parent context name.  
+    FEditorStyle::GetStyleSetName() // Icon Style Set
+  ) { }
+
+  virtual ~FRenderDocSettingsCommands() { }
+
+  virtual void RegisterCommands()
+  {
+    //UI_COMMAND(ToggleMaximize, "Maximize Viewport", "Toggles the Maximize state of the current viewport", EUserInterfaceActionType::ToggleButton, FInputChord());
+
+    Commands.Add(
+      FUICommandInfoDecl(this->AsShared(), FName(TEXT("CaptureAllActivity")), LOCTEXT("CaptureAllActivity", "Capture all activity"), 
+        LOCTEXT("CaptureAllActivityToolTip", "If enabled, capture all rendering activity during the next engine update tick; if disabled, only the rendering activity of the active viewport will be captured."))
+      .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
+    );
+    Flags.Add(false);
+
+    Commands.Add(
+      FUICommandInfoDecl(this->AsShared(), FName(TEXT("CaptureCallstacks")), LOCTEXT("CaptureCallstacks", "Capture callstacks"),
+        LOCTEXT("CaptureCallstacksToolTip", "Save the call stack for every draw event in addition to the event itself. This is useful when you need additional information to solve your particular problem."))
+      .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
+    );
+    Flags.Add(false);
+
+    Commands.Add(
+      FUICommandInfoDecl(this->AsShared(), FName(TEXT("RefAllResources")), LOCTEXT("RefAllResources", "Capture all resources"),
+        LOCTEXT("RefAllResourcesToolTip", "Capture all resources, including those that are not referenced by the current frame."))
+      .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
+      );
+    Flags.Add(false);
+
+    Commands.Add(
+      FUICommandInfoDecl(this->AsShared(), FName(TEXT("SaveAllInitials")), LOCTEXT("SaveAllInitials", "Save all initial states"),
+        LOCTEXT("SaveAllInitialsToolTip", "Save the initial status of all resources, even if we think that they will be overwritten in this frame."))
+      .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
+      );
+    Flags.Add(false);
+  }
+
+  TArray< bool > Flags;
+  TArray< TSharedPtr<FUICommandInfo> > Commands;
+
+  void ToggleShowFlag(uint32 FlagIndex)
+  {
+    bool bOldState = Flags[FlagIndex];
+    Flags[FlagIndex] = !bOldState;
+  }
+
+  bool IsShowFlagEnabled(uint32 FlagIndex) const
+  {
+    return(Flags[FlagIndex]);
+  }
+};
+
+static TSharedPtr<FRenderDocSettingsCommands> RenderDocSettingsCommands;
+static TSharedPtr<FUICommandList> CommandList;
+
 TSharedRef<SWidget> SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu() const
 {
+  if (!CommandList.IsValid())
+    CommandList = MakeShareable(new FUICommandList);
+
+  FMenuBuilder ShowMenuBuilder (true, CommandList);
+
+  int index (0);
+  for (auto& command : RenderDocSettingsCommands->Commands)
+  {
+    CommandList->MapAction(
+      command,
+      FExecuteAction::CreateLambda([](uint32 FlagIndex)
+      {
+        bool& flag = RenderDocSettingsCommands->Flags[FlagIndex];
+        flag = !flag;
+      }, index),
+      //FExecuteAction::CreateSP(RenderDocSettingsCommands.Get(), &FRenderDocSettingsCommands::ToggleShowFlag, index),
+      FCanExecuteAction(),
+      //FIsActionChecked::CreateSP(RenderDocSettingsCommands.Get(), &FRenderDocSettingsCommands::IsShowFlagEnabled, index));
+      FIsActionChecked::CreateLambda([](uint32 FlagIndex)
+      {
+        return(RenderDocSettingsCommands->Flags[FlagIndex]);
+      }, index)
+    );
+    ++index;
+    ShowMenuBuilder.AddMenuEntry(command);
+  }
+
+  ShowMenuBuilder.AddWidget(
+    SNew(SVerticalBox)
+    +SVerticalBox::Slot()
+    .AutoHeight()
+    [
+      SNew(SHorizontalBox)
+      + SHorizontalBox::Slot()
+      .AutoWidth()
+      .VAlign(EVerticalAlignment::VAlign_Center)
+      .Padding(5)
+      [
+        SNew(SButton)
+        .OnClicked(this, &SRenderDocPluginSettingsEditorWindow::SaveAndClose)
+      .Text(LOCTEXT("SaveButton", "Save"))
+      ]
+
+      +SHorizontalBox::Slot()
+      .AutoWidth()
+      .VAlign(EVerticalAlignment::VAlign_Center)
+      .Padding(5)
+      [
+        SNew(SButton)
+        .OnClicked(this, &SRenderDocPluginSettingsEditorWindow::ShowAboutWindow)
+      .Text(LOCTEXT("AboutButton", "About"))
+      ]
+    ],
+    FText()
+  );
+
+/*
   TSharedPtr<FUICommandList> CommandList = MakeShareable(new FUICommandList);
   FMenuBuilder ShowMenuBuilder (true, CommandList);
   ShowMenuBuilder.AddWidget(
@@ -164,7 +285,7 @@ TSharedRef<SWidget> SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu()
     ],
     FText()
   );
-
+  */
   return(ShowMenuBuilder.MakeWidget());
 }
 
@@ -173,12 +294,18 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 	ThePlugin = InArgs._ThePlugin;
 	RenderDocSettings = InArgs._Settings;
 
+  if (!RenderDocSettingsCommands.IsValid())
+  {
+    RenderDocSettingsCommands = MakeShareable(new FRenderDocSettingsCommands);
+    RenderDocSettingsCommands->RegisterCommands();
+  }
+
   FSlateIcon SettingsIconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.SettingsIcon.Small");
 
   ChildSlot
   [
     SNew(SEditorViewportToolbarMenu)
-    //.Label(LOCTEXT("RenderDocSettingsMenu", "RenderDoc Settings"))
+    .ToolTipText(LOCTEXT("RenderDocSettingsMenu", "RenderDoc Settings"))
     .Cursor(EMouseCursor::Default)
     .ParentToolBar(SharedThis(this))
     .AddMetaData<FTagMetaData>(FTagMetaData(TEXT("EditorViewportToolBar.RenderDocSettingsMenu")))
