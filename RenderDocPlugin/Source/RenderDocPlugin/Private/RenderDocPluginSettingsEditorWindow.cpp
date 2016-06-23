@@ -38,14 +38,13 @@
 class FRenderDocSettingsCommands : public TCommands<FRenderDocSettingsCommands>
 {
 public:
-  FRenderDocSettingsCommands(FRenderDocPluginSettings* settings)
+  FRenderDocSettingsCommands()
   : TCommands<FRenderDocSettingsCommands>(
     TEXT("RenderDocSettings"), // Context name for fast lookup
     NSLOCTEXT("Contexts", "RenderDocSettings", "RenderDoc Settings"), // Localized context name for displaying
     TEXT("EditorViewport"), // Parent context name.  
     FEditorStyle::GetStyleSetName() // Icon Style Set
     )
-  , Settings(settings)
   { }
 
   virtual ~FRenderDocSettingsCommands() { }
@@ -54,20 +53,10 @@ public:
   {
     //UI_COMMAND(ToggleMaximize, "Maximize Viewport", "Toggles the Maximize state of the current viewport", EUserInterfaceActionType::ToggleButton, FInputChord());
 
-    CommandList = MakeShareable(new FUICommandList);
-
     Commands.Add(
       FUICommandInfoDecl(this->AsShared(), FName(TEXT("CaptureAllActivity")), LOCTEXT("CaptureAllActivity", "Capture all activity"), 
         LOCTEXT("CaptureAllActivityToolTip", "If enabled, capture all rendering activity during the next engine update tick; if disabled, only the rendering activity of the active viewport will be captured."))
       .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
-    );
-    CommandList->MapAction(
-      Commands.Last(),
-      FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
-        &Settings->bCaptureAllActivity),
-      FCanExecuteAction(),
-      FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
-        &Settings->bCaptureAllActivity)
     );
 
     Commands.Add(
@@ -75,100 +64,30 @@ public:
         LOCTEXT("CaptureCallstacksToolTip", "Save the call stack for every draw event in addition to the event itself. This is useful when you need additional information to solve your particular problem."))
       .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
     );
-    CommandList->MapAction(
-      Commands.Last(),
-      FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
-        &Settings->bCaptureCallStacks),
-      FCanExecuteAction(),
-      FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
-        &Settings->bCaptureCallStacks)
-    );
 
     Commands.Add(
       FUICommandInfoDecl(this->AsShared(), FName(TEXT("RefAllResources")), LOCTEXT("RefAllResources", "Capture all resources"),
         LOCTEXT("RefAllResourcesToolTip", "Capture all resources, including those that are not referenced by the current frame."))
       .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
       );
-    CommandList->MapAction(
-      Commands.Last(),
-      FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
-        &Settings->bRefAllResources),
-      FCanExecuteAction(),
-      FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
-        &Settings->bRefAllResources)
-    );
 
     Commands.Add(
       FUICommandInfoDecl(this->AsShared(), FName(TEXT("SaveAllInitials")), LOCTEXT("SaveAllInitials", "Save all initial states"),
         LOCTEXT("SaveAllInitialsToolTip", "Save the initial status of all resources, even if we think that they will be overwritten in this frame."))
       .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
       );
-    CommandList->MapAction(
-      Commands.Last(),
-      FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
-        &Settings->bSaveAllInitials),
-      FCanExecuteAction(),
-      FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
-        &Settings->bSaveAllInitials)
-    );
   }
 
-  FRenderDocPluginSettings* Settings;
   TArray< TSharedPtr<FUICommandInfo> > Commands;
-  TSharedPtr< FUICommandList > CommandList;
 
 };
-
-static TSharedPtr<FRenderDocSettingsCommands> RenderDocSettingsCommands;
-
-TSharedRef<SWidget> SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu() const
-{
-  FMenuBuilder ShowMenuBuilder (true, RenderDocSettingsCommands->CommandList);
-
-  for (auto& command : RenderDocSettingsCommands->Commands)
-    ShowMenuBuilder.AddMenuEntry(command);
-
-  ShowMenuBuilder.AddWidget(
-    SNew(SVerticalBox)
-    +SVerticalBox::Slot()
-    .AutoHeight()
-    [
-      SNew(SHorizontalBox)
-      + SHorizontalBox::Slot()
-      .AutoWidth()
-      .VAlign(EVerticalAlignment::VAlign_Center)
-      .Padding(5)
-      [
-        SNew(SButton)
-        .OnClicked(this, &SRenderDocPluginSettingsEditorWindow::SaveAndClose)
-      .Text(LOCTEXT("SaveButton", "Save"))
-      ]
-
-      +SHorizontalBox::Slot()
-      .AutoWidth()
-      .VAlign(EVerticalAlignment::VAlign_Center)
-      .Padding(5)
-      [
-        SNew(SButton)
-        .OnClicked(this, &SRenderDocPluginSettingsEditorWindow::ShowAboutWindow)
-      .Text(LOCTEXT("AboutButton", "About"))
-      ]
-    ],
-    FText()
-  );
-
-  return(ShowMenuBuilder.MakeWidget());
-}
 
 void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 {
 	RenderDocSettings = InArgs._Settings;
 
-  if (!RenderDocSettingsCommands.IsValid())
-  {
-    RenderDocSettingsCommands = MakeShareable(new FRenderDocSettingsCommands(RenderDocSettings));
-    RenderDocSettingsCommands->RegisterCommands();
-  }
+  FRenderDocSettingsCommands::Register();
+  BindCommands(RenderDocSettings);
 
   FSlateIcon SettingsIconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.SettingsIcon.Small");
 
@@ -179,21 +98,99 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
     .Cursor(EMouseCursor::Default)
     .ParentToolBar(SharedThis(this))
     .AddMetaData<FTagMetaData>(FTagMetaData(TEXT("EditorViewportToolBar.RenderDocSettingsMenu")))
-    .OnGetMenuContent(this, &SRenderDocPluginSettingsEditorWindow::GenerateSettingsMenu)
     .LabelIcon(SettingsIconBrush.GetIcon())
+    .OnGetMenuContent_Lambda([this]() -> TSharedRef<SWidget>
+    {
+      auto& Commands = FRenderDocSettingsCommands::Get();
+      FMenuBuilder ShowMenuBuilder (true, CommandList);
+
+      for (auto& command : Commands.Commands)
+        ShowMenuBuilder.AddMenuEntry(command);
+
+      ShowMenuBuilder.AddWidget(
+        SNew(SVerticalBox)
+        +SVerticalBox::Slot()
+        .AutoHeight()
+        [
+          SNew(SHorizontalBox)
+          + SHorizontalBox::Slot()
+          .AutoWidth()
+          .VAlign(EVerticalAlignment::VAlign_Center)
+          .Padding(5)
+          [
+            SNew(SButton)
+            .Text(LOCTEXT("SaveButton", "Save"))
+            .OnClicked_Lambda([this]()
+            {
+              RenderDocSettings->Save();
+              return( FReply::Handled() );
+            })
+          ]
+
+          +SHorizontalBox::Slot()
+          .AutoWidth()
+          .VAlign(EVerticalAlignment::VAlign_Center)
+          .Padding(5)
+          [
+            SNew(SButton)
+            .Text(LOCTEXT("AboutButton", "About"))
+            .OnClicked_Lambda([]()
+            {
+              GEditor->EditorAddModalWindow( SNew(SRenderDocPluginAboutWindow) );
+              return( FReply::Handled() );
+            })
+          ]
+        ],
+        FText()
+      );
+
+      return(ShowMenuBuilder.MakeWidget());
+    })
   ];
 }
 
-FReply SRenderDocPluginSettingsEditorWindow::SaveAndClose()
+void SRenderDocPluginSettingsEditorWindow::BindCommands(FRenderDocPluginSettings* Settings)
 {
-	RenderDocSettings->Save();
-  return FReply::Handled();
-}
+  check(!CommandList.IsValid());
+  CommandList = MakeShareable(new FUICommandList);
 
-FReply SRenderDocPluginSettingsEditorWindow::ShowAboutWindow()
-{
-	GEditor->EditorAddModalWindow(SNew(SRenderDocPluginAboutWindow));
-  return FReply::Handled();
+  auto& Commands = FRenderDocSettingsCommands::Get().Commands;
+
+  CommandList->MapAction(
+    Commands[0],
+    FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
+      &Settings->bCaptureAllActivity),
+    FCanExecuteAction(),
+    FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
+      &Settings->bCaptureAllActivity)
+  );
+
+  CommandList->MapAction(
+    Commands[1],
+    FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
+      &Settings->bCaptureCallStacks),
+    FCanExecuteAction(),
+    FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
+      &Settings->bCaptureCallStacks)
+  );
+
+  CommandList->MapAction(
+    Commands[2],
+    FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
+      &Settings->bRefAllResources),
+    FCanExecuteAction(),
+    FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
+      &Settings->bRefAllResources)
+  );
+
+  CommandList->MapAction(
+    Commands[3],
+    FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
+      &Settings->bSaveAllInitials),
+    FCanExecuteAction(),
+    FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
+      &Settings->bSaveAllInitials)
+  );
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -42,15 +42,11 @@ public:
 	/** Widget constructor */
 	void Construct(const FArguments& Args);
 
-	//FRenderDocPluginSettings GetSettings() { return RenderDocSettings; }
-
 private:
 	FRenderDocPluginSettings* RenderDocSettings;
+  TSharedPtr<FUICommandList> CommandList;
 
-	FReply SaveAndClose();
-	FReply ShowAboutWindow();
-
-  TSharedRef<SWidget> GenerateSettingsMenu() const;
+  void BindCommands(FRenderDocPluginSettings* settings);
 };
 
 #endif//WITH_EDITOR
