@@ -29,6 +29,7 @@
 #include "Engine.h"
 #include "Editor.h"
 #include "Editor/UnrealEd/Public/SEditorViewportToolBarMenu.h"
+#include "Editor/UnrealEd/Public/SViewportToolBarComboMenu.h"
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginSettingsEditorWindow.h"
 #include "RenderDocPluginAboutWindow.h"
@@ -84,21 +85,34 @@ public:
 
 void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 {
+  auto ThePlugin = InArgs._ThePlugin;
 	auto RenderDocSettings = InArgs._Settings;
 
   FRenderDocSettingsCommands::Register();
   BindCommands(RenderDocSettings);
 
-  FSlateIcon SettingsIconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.SettingsIcon.Small");
+  FSlateIcon IconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.CaptureFrameIcon.Small");
+  //FSlateIcon SettingsIconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.SettingsIcon.Small");
 
+  static bool clicked (false);
   ChildSlot
   [
-    SNew(SEditorViewportToolbarMenu)
-    .ToolTipText(LOCTEXT("RenderDocSettingsMenu", "RenderDoc Settings"))
+    SNew(SViewportToolBarComboMenu)
     .Cursor(EMouseCursor::Default)
+    .Style(TEXT("ViewportMenu"))
+    .IsChecked_Lambda([]()->ECheckBoxState { return(ECheckBoxState::Unchecked); })
+    .OnCheckStateChanged_Lambda([ThePlugin](ECheckBoxState InState)
+    {
+      //FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+      //TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
+      //CommandBindings->GetActionForCommand(FRenderDocPluginCommands::Get().CaptureFrame)->Execute();
+      ThePlugin->CaptureFrame();
+    })
+    //.Label_Lambda([]()->FText { return(FText::Format(LOCTEXT("GridRotation - Number - DegreeSymbol", "{0}\u00b0"), FText::AsNumber(GEditor->GetRotGridSize().Pitch))); })
+    .ToggleButtonToolTip(LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame and launches RenderDoc."))  // TODO: aquire tooltip captions from the CaptureFrame command
+    .MenuButtonToolTip(LOCTEXT("RenderDocSettings_ToolTipOverride", "RenderDoc Settings"))
+    .Icon(IconBrush)
     .ParentToolBar(SharedThis(this))
-    .AddMetaData<FTagMetaData>(FTagMetaData(TEXT("EditorViewportToolBar.RenderDocSettingsMenu")))
-    .LabelIcon(SettingsIconBrush.GetIcon())
     .OnGetMenuContent_Lambda([this,RenderDocSettings]() -> TSharedRef<SWidget>
     {
       auto& Commands = FRenderDocSettingsCommands::Get();

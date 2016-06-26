@@ -34,6 +34,7 @@ class SRenderDocPluginSettingsEditorWindow : public SViewportToolBar
 {
 public:
 	SLATE_BEGIN_ARGS(SRenderDocPluginSettingsEditorWindow) { }
+    SLATE_ARGUMENT(FRenderDocPluginModule*, ThePlugin)
 		SLATE_ARGUMENT(FRenderDocPluginSettings*, Settings)
 	SLATE_END_ARGS()
 

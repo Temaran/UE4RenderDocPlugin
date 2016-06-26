@@ -237,18 +237,9 @@ void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder
 
 	ToolbarBuilder.BeginSection("RenderdocPlugin");
 
-	FSlateIcon IconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.CaptureFrameIcon.Small");
-
-	ToolbarBuilder.AddToolBarButton(
-		FRenderDocPluginCommands::Get().CaptureFrame,
-		NAME_None,
-		LOCTEXT("RenderDocCapture_Override", "Capture Frame"),
-		LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame and launches RenderDoc."),
-		IconBrush,
-		NAME_None);
-
   ToolbarBuilder.AddWidget(
     SNew(SRenderDocPluginSettingsEditorWindow)
+    .ThePlugin(this)
     .Settings(&RenderDocSettings)
     );
 

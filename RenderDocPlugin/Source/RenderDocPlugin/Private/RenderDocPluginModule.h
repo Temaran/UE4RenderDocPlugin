@@ -79,6 +79,7 @@ private:
 	void BeginCapture();
 	void EndCapture();
 
+  friend class SRenderDocPluginSettingsEditorWindow;
 	void CaptureFrame();
 	void CaptureCurrentViewport();	
 	void CaptureEntireFrame();
