@@ -84,7 +84,7 @@ public:
 
 void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 {
-	RenderDocSettings = InArgs._Settings;
+	auto RenderDocSettings = InArgs._Settings;
 
   FRenderDocSettingsCommands::Register();
   BindCommands(RenderDocSettings);
@@ -99,7 +99,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
     .ParentToolBar(SharedThis(this))
     .AddMetaData<FTagMetaData>(FTagMetaData(TEXT("EditorViewportToolBar.RenderDocSettingsMenu")))
     .LabelIcon(SettingsIconBrush.GetIcon())
-    .OnGetMenuContent_Lambda([this]() -> TSharedRef<SWidget>
+    .OnGetMenuContent_Lambda([this,RenderDocSettings]() -> TSharedRef<SWidget>
     {
       auto& Commands = FRenderDocSettingsCommands::Get();
       FMenuBuilder ShowMenuBuilder (true, CommandList);
@@ -120,7 +120,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
           [
             SNew(SButton)
             .Text(LOCTEXT("SaveButton", "Save"))
-            .OnClicked_Lambda([this]()
+            .OnClicked_Lambda([RenderDocSettings]()
             {
               RenderDocSettings->Save();
               return( FReply::Handled() );
@@ -147,6 +147,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
       return(ShowMenuBuilder.MakeWidget());
     })
   ];
+
 }
 
 void SRenderDocPluginSettingsEditorWindow::BindCommands(FRenderDocPluginSettings* Settings)

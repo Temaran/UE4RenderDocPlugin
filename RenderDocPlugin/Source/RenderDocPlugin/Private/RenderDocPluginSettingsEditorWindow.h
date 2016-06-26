@@ -37,16 +37,13 @@ public:
 		SLATE_ARGUMENT(FRenderDocPluginSettings*, Settings)
 	SLATE_END_ARGS()
 
-	SRenderDocPluginSettingsEditorWindow() {}
-
 	/** Widget constructor */
 	void Construct(const FArguments& Args);
 
 private:
-	FRenderDocPluginSettings* RenderDocSettings;
-  TSharedPtr<FUICommandList> CommandList;
+	TSharedPtr<FUICommandList> CommandList;
 
-  void BindCommands(FRenderDocPluginSettings* settings);
+	void BindCommands(FRenderDocPluginSettings* settings);
 };
 
 #endif//WITH_EDITOR

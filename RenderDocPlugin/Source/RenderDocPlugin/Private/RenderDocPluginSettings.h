@@ -47,7 +47,7 @@ public:
 			bSaveAllInitials = false;
 	}
 
-	void Save()
+	void Save() const
 	{
 		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureAllActivity"), bCaptureAllActivity, GGameIni);
 		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureCallStacks"),  bCaptureCallStacks,  GGameIni);
