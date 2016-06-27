@@ -44,7 +44,7 @@ public:
 private:
 	TSharedPtr<FUICommandList> CommandList;
 
-	void BindCommands(FRenderDocPluginSettings* settings);
+	void BindCommands(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* settings);
 };
 
 #endif//WITH_EDITOR

@@ -60,8 +60,6 @@ private:
 private:
 
 #if WITH_EDITOR
-	static const FName SettingsUITabName;
-
 	FDelegateHandle LoadedDelegateHandle;
 
 	TSharedPtr<FExtensibilityManager> ExtensionManager;

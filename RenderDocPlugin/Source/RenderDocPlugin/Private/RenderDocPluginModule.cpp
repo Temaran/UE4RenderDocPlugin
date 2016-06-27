@@ -165,14 +165,8 @@ void FRenderDocPluginModule::StartupModule()
 
 #if WITH_EDITOR
 
-const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"));
-
 void FRenderDocPluginModule::InitializeEditorExtensions()
 {
-	//Init UI
-	FRenderDocPluginStyle::Initialize();
-	FRenderDocPluginCommands::Register();
-
 	// The LoadModule request below will crash if running as an editor commandlet!
 	// ( the GUsingNullRHI check above should prevent this code from executing, but I am
 	//   re-emphasizing it here since many plugins appear to be ignoring this condition... )
@@ -180,9 +174,6 @@ void FRenderDocPluginModule::InitializeEditorExtensions()
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 
 	TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
-	CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureFrame,
-		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureFrame),
-		FCanExecuteAction());
 
 	ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
 	ToolbarExtender = MakeShareable(new FExtender);
@@ -445,9 +436,6 @@ void FRenderDocPluginModule::ShutdownModule()
 	{
 		ExtensionManager.Reset();
 	}
-
-	// Unregister the tab spawner
-	FGlobalTabmanager::Get()->UnregisterTabSpawner(SettingsUITabName);
 #endif//WITH_EDITOR
 
 	Loader.Release();

@@ -31,57 +31,11 @@
 #include "Editor/UnrealEd/Public/SEditorViewportToolBarMenu.h"
 #include "Editor/UnrealEd/Public/SViewportToolBarComboMenu.h"
 #include "RenderDocPluginStyle.h"
+#include "RenderDocPluginCommands.h"
 #include "RenderDocPluginSettingsEditorWindow.h"
 #include "RenderDocPluginAboutWindow.h"
 
 #define LOCTEXT_NAMESPACE "RenderDocPluginSettingsEditor"
-
-class FRenderDocSettingsCommands : public TCommands<FRenderDocSettingsCommands>
-{
-public:
-  FRenderDocSettingsCommands()
-  : TCommands<FRenderDocSettingsCommands>(
-    TEXT("RenderDocSettings"), // Context name for fast lookup
-    NSLOCTEXT("Contexts", "RenderDocSettings", "RenderDoc Settings"), // Localized context name for displaying
-    TEXT("EditorViewport"), // Parent context name.  
-    FEditorStyle::GetStyleSetName() // Icon Style Set
-    )
-  { }
-
-  virtual ~FRenderDocSettingsCommands() { }
-
-  virtual void RegisterCommands()
-  {
-    //UI_COMMAND(ToggleMaximize, "Maximize Viewport", "Toggles the Maximize state of the current viewport", EUserInterfaceActionType::ToggleButton, FInputChord());
-
-    Commands.Add(
-      FUICommandInfoDecl(this->AsShared(), FName(TEXT("CaptureAllActivity")), LOCTEXT("CaptureAllActivity", "Capture all activity"), 
-        LOCTEXT("CaptureAllActivityToolTip", "If enabled, capture all rendering activity during the next engine update tick; if disabled, only the rendering activity of the active viewport will be captured."))
-      .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
-    );
-
-    Commands.Add(
-      FUICommandInfoDecl(this->AsShared(), FName(TEXT("CaptureCallstacks")), LOCTEXT("CaptureCallstacks", "Capture callstacks"),
-        LOCTEXT("CaptureCallstacksToolTip", "Save the call stack for every draw event in addition to the event itself. This is useful when you need additional information to solve your particular problem."))
-      .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
-    );
-
-    Commands.Add(
-      FUICommandInfoDecl(this->AsShared(), FName(TEXT("RefAllResources")), LOCTEXT("RefAllResources", "Capture all resources"),
-        LOCTEXT("RefAllResourcesToolTip", "Capture all resources, including those that are not referenced by the current frame."))
-      .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
-      );
-
-    Commands.Add(
-      FUICommandInfoDecl(this->AsShared(), FName(TEXT("SaveAllInitials")), LOCTEXT("SaveAllInitials", "Save all initial states"),
-        LOCTEXT("SaveAllInitialsToolTip", "Save the initial status of all resources, even if we think that they will be overwritten in this frame."))
-      .UserInterfaceType(EUserInterfaceActionType::ToggleButton)
-      );
-  }
-
-  TArray< TSharedPtr<FUICommandInfo> > Commands;
-
-};
 
 #include "EditorStyleSet.h"
 
@@ -99,8 +53,10 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
   auto ThePlugin = InArgs._ThePlugin;
 	auto RenderDocSettings = InArgs._Settings;
 
-  FRenderDocSettingsCommands::Register();
-  BindCommands(RenderDocSettings);
+  FRenderDocPluginStyle::Initialize();
+  FRenderDocPluginCommands::Register();
+
+  BindCommands(ThePlugin, RenderDocSettings);
 
   FSlateIcon IconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.CaptureFrameIcon.Small");
   FSlateIcon SettingsIconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.SettingsIcon.Small");
@@ -115,8 +71,8 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
     .AutoWidth()
     [
       SNew(SButton)
-      .ToolTipText(LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame and launches RenderDoc."))  // TODO: aquire tooltip captions from the CaptureFrame command
-      .OnClicked_Lambda([ThePlugin]() { ThePlugin->CaptureFrame(); return(FReply::Handled()); })
+      .ToolTipText(FRenderDocPluginCommands::Get().CaptureFrame->GetDescription())  // TODO: [Alt+F12] does not show up in the tooltip...
+      .OnClicked_Lambda([this]() { CommandList->GetActionForCommand(FRenderDocPluginCommands::Get().CaptureFrame)->Execute(); return(FReply::Handled()); })
       [
         SNew(SImage)
         .Image(IconBrush.GetIcon())
@@ -176,11 +132,13 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
 				[        
           ([this,RenderDocSettings]() -> TSharedRef<SWidget>
           {
-            auto& Commands = FRenderDocSettingsCommands::Get();
+            auto& Commands = FRenderDocPluginCommands::Get();
             FMenuBuilder ShowMenuBuilder (true, CommandList);
 
-            for (auto& command : Commands.Commands)
-              ShowMenuBuilder.AddMenuEntry(command);
+            ShowMenuBuilder.AddMenuEntry(Commands.Settings_CaptureAllActivity);
+            ShowMenuBuilder.AddMenuEntry(Commands.Settings_CaptureCallstack);
+            ShowMenuBuilder.AddMenuEntry(Commands.Settings_CaptureAllResources);
+            ShowMenuBuilder.AddMenuEntry(Commands.Settings_SaveAllInitialState);
 
             ShowMenuBuilder.AddWidget(
               SNew(SVerticalBox)
@@ -195,6 +153,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
                 [
                   SNew(SButton)
                   .Text(LOCTEXT("SaveButton", "Save"))
+                  .ToolTipText(LOCTEXT("SaveButton_ToolTipOverride", "Save current RenderDoc settings for this game project."))
                   .OnClicked_Lambda([RenderDocSettings]()
                   {
                     RenderDocSettings->Save();
@@ -227,15 +186,21 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
   ];  // end of Toolbar extension
 }
 
-void SRenderDocPluginSettingsEditorWindow::BindCommands(FRenderDocPluginSettings* Settings)
+void SRenderDocPluginSettingsEditorWindow::BindCommands(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings)
 {
   check(!CommandList.IsValid());
   CommandList = MakeShareable(new FUICommandList);
 
-  auto& Commands = FRenderDocSettingsCommands::Get().Commands;
+  auto& Commands = FRenderDocPluginCommands::Get();
 
   CommandList->MapAction(
-    Commands[0],
+    Commands.CaptureFrame,
+    FExecuteAction::CreateLambda([ThePlugin]() { ThePlugin->CaptureFrame(); }),
+    FCanExecuteAction()
+  );
+
+  CommandList->MapAction(
+    Commands.Settings_CaptureAllActivity,
     FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
       &Settings->bCaptureAllActivity),
     FCanExecuteAction(),
@@ -244,7 +209,7 @@ void SRenderDocPluginSettingsEditorWindow::BindCommands(FRenderDocPluginSettings
   );
 
   CommandList->MapAction(
-    Commands[1],
+    Commands.Settings_CaptureCallstack,
     FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
       &Settings->bCaptureCallStacks),
     FCanExecuteAction(),
@@ -253,7 +218,7 @@ void SRenderDocPluginSettingsEditorWindow::BindCommands(FRenderDocPluginSettings
   );
 
   CommandList->MapAction(
-    Commands[2],
+    Commands.Settings_CaptureAllResources,
     FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
       &Settings->bRefAllResources),
     FCanExecuteAction(),
@@ -262,7 +227,7 @@ void SRenderDocPluginSettingsEditorWindow::BindCommands(FRenderDocPluginSettings
   );
 
   CommandList->MapAction(
-    Commands[3],
+    Commands.Settings_SaveAllInitialState,
     FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
       &Settings->bSaveAllInitials),
     FCanExecuteAction(),
