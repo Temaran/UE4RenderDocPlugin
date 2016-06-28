@@ -27,35 +27,42 @@
 #if WITH_EDITOR
 
 #include "SlateBasics.h"
+#include "Editor/UnrealEd/Public/SViewportToolBar.h"
 #include "RenderDocPluginSettings.h"
 
-class SRenderDocPluginSettingsEditorWindow : public SWindow
+class FRenderDocPluginEditorExtension
 {
 public:
-	SLATE_BEGIN_ARGS(SRenderDocPluginSettingsEditorWindow) { }
-		SLATE_ARGUMENT(FRenderDocPluginSettings, Settings)
-		SLATE_ARGUMENT(class FRenderDocPluginModule*, ThePlugin)
-	SLATE_END_ARGS()
+  FRenderDocPluginEditorExtension(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings);
+  ~FRenderDocPluginEditorExtension();
 
-	SRenderDocPluginSettingsEditorWindow() {}
+private:
+  void Initialize(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings);
+  void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
+  void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder, FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings);
+
+  bool IsEditorInitialized;
+  FDelegateHandle LoadedDelegateHandle;
+  TSharedPtr<FExtensibilityManager> ExtensionManager;
+  TSharedPtr<FExtender> ToolbarExtender;
+  TSharedPtr<const FExtensionBase> ToolbarExtension;
+};
+
+class SRenderDocPluginToolbar : public SViewportToolBar
+{
+public:
+	SLATE_BEGIN_ARGS(SRenderDocPluginToolbar) { }
+    SLATE_ARGUMENT(FRenderDocPluginModule*, ThePlugin)
+		SLATE_ARGUMENT(FRenderDocPluginSettings*, Settings)
+	SLATE_END_ARGS()
 
 	/** Widget constructor */
 	void Construct(const FArguments& Args);
 
-	FRenderDocPluginSettings GetSettings() { return RenderDocSettings; }
-
 private:
-	FRenderDocPluginSettings RenderDocSettings;
-	class FRenderDocPluginModule* ThePlugin;
+	TSharedPtr<FUICommandList> CommandList;
 
-	void OnCaptureAllActivityChanged(ECheckBoxState NewState);
-	void OnCaptureCallStacksChanged(ECheckBoxState NewState);
-	void OnRefAllResourcesChanged(ECheckBoxState NewState);
-	void OnSaveAllInitialsChanged(ECheckBoxState NewState);
-		
-	FReply SaveAndClose();
-	FReply ShowAboutWindow();
-	FReply Close();
+	void BindCommands(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* settings);
 };
 
 #endif//WITH_EDITOR

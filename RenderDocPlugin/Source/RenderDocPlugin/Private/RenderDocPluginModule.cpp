@@ -142,15 +142,7 @@ void FRenderDocPluginModule::StartupModule()
 	RenderDocAPI->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
 
 #if WITH_EDITOR
-	// Defer Level Editor UI extensions until Level Editor has been loaded:
-	if (FModuleManager::Get().IsModuleLoaded("LevelEditor"))
-		InitializeEditorExtensions();
-	else
-		FModuleManager::Get().OnModulesChanged().AddLambda([this](FName name, EModuleChangeReason reason)
-		{
-			if ((name == "LevelEditor") && (reason == EModuleChangeReason::ModuleLoaded))
-				InitializeEditorExtensions();
-		});
+  EditorExtensions = new FRenderDocPluginEditorExtension (this, &RenderDocSettings);
 #endif//WITH_EDITOR
 
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
@@ -163,125 +155,6 @@ void FRenderDocPluginModule::StartupModule()
 	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin is ready!"));
 }
 
-#if WITH_EDITOR
-
-const FName FRenderDocPluginModule::SettingsUITabName(TEXT("RenderDocSettingsUI"));
-
-void FRenderDocPluginModule::InitializeEditorExtensions()
-{
-	//Init UI
-	FRenderDocPluginStyle::Initialize();
-	FRenderDocPluginCommands::Register();
-
-	// The LoadModule request below will crash if running as an editor commandlet!
-	// ( the GUsingNullRHI check above should prevent this code from executing, but I am
-	//   re-emphasizing it here since many plugins appear to be ignoring this condition... )
-	check(!IsRunningCommandlet());
-	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-
-	TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
-	CommandBindings->MapAction(FRenderDocPluginCommands::Get().CaptureFrame,
-		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::CaptureFrame),
-		FCanExecuteAction());
-	CommandBindings->MapAction(FRenderDocPluginCommands::Get().OpenSettings,
-		FExecuteAction::CreateRaw(this, &FRenderDocPluginModule::OpenSettingsEditorWindow),
-		FCanExecuteAction());
-
-	ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
-	ToolbarExtender = MakeShareable(new FExtender);
-	ToolbarExtension = ToolbarExtender->AddToolBarExtension("CameraSpeed", EExtensionHook::After, CommandBindings,
-		FToolBarExtensionDelegate::CreateRaw(this, &FRenderDocPluginModule::AddToolbarExtension));
-	ExtensionManager->AddExtender(ToolbarExtender);
-
-	IsEditorInitialized = false;
-	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
-	LoadedDelegateHandle = SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
-}
-
-void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr)
-{
-	// would be nice to use the preprocessor definition WITH_EDITOR instead,
-	// but the user may launch a standalone the game through the editor...
-	if (!GEditor)
-		return;
-
-	// --> YAGER by SKrysanov 6/11/2014 : fixed crash on removing this callback in render thread.
-	if (IsInGameThread())
-	{
-		FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
-		SlateRenderer->OnSlateWindowRendered().Remove(LoadedDelegateHandle);
-	}
-	// <-- YAGER by SKrysanov 6/11/2014
-
-	if (IsEditorInitialized)
-	{
-		return;
-	}
-	IsEditorInitialized = true;
-
-	if (GConfig)
-	{
-		bool bGreetingHasBeenShown (false);
-		GConfig->GetBool(TEXT("RenderDoc"), TEXT("GreetingHasBeenShown"), bGreetingHasBeenShown, GGameIni);
-		if (!bGreetingHasBeenShown && GEditor)
-		{
-			GEditor->EditorAddModalWindow(SNew(SRenderDocPluginAboutWindow));
-			GConfig->SetBool(TEXT("RenderDoc"), TEXT("GreetingHasBeenShown"), true, GGameIni);
-		}
-	}
-}
-
-void FRenderDocPluginModule::OpenSettingsEditorWindow()
-{
-	if (!GEditor)
-		return;
-
-	UE_LOG(RenderDocPlugin, Log, TEXT("Opening settings window"));
-
-	TSharedPtr<SRenderDocPluginSettingsEditorWindow> Window = SNew(SRenderDocPluginSettingsEditorWindow)
-		.Settings(RenderDocSettings)
-		.ThePlugin(this);
-
-	Window->MoveWindowTo(FSlateApplication::Get().GetCursorPos());
-	GEditor->EditorAddModalWindow(Window.ToSharedRef());
-
-	RenderDocSettings = Window->GetSettings();
-}
-
-void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder)
-{
-#define LOCTEXT_NAMESPACE "LevelEditorToolBar"
-
-	UE_LOG(RenderDocPlugin, Log, TEXT("Attaching toolbar extension..."));
-	ToolbarBuilder.AddSeparator();
-
-	ToolbarBuilder.BeginSection("RenderdocPlugin");
-
-	FSlateIcon IconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.CaptureFrameIcon.Small");
-	ToolbarBuilder.AddToolBarButton(
-		FRenderDocPluginCommands::Get().CaptureFrame,
-		NAME_None,
-		LOCTEXT("RenderDocCapture_Override", "Capture Frame"),
-		LOCTEXT("RenderDocCapture_ToolTipOverride", "Captures the next frame and launches RenderDoc."),
-		IconBrush,
-		NAME_None);
-
-	FSlateIcon SettingsIconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.SettingsIcon.Small");
-	ToolbarBuilder.AddToolBarButton(
-		FRenderDocPluginCommands::Get().OpenSettings,
-		NAME_None,
-		LOCTEXT("RenderDocCaptureSettings_Override", "Open Settings"),
-		LOCTEXT("RenderDocCaptureSettings_ToolTipOverride", "Edit RenderDoc Settings"),
-		SettingsIconBrush,
-		NAME_None);
-
-	ToolbarBuilder.EndSection();
-
-#undef LOCTEXT_NAMESPACE
-}
-
-#endif//WITH_EDITOR
-
 void FRenderDocPluginModule::BeginCapture()
 {
 	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
@@ -290,6 +163,12 @@ void FRenderDocPluginModule::BeginCapture()
 #else
 	// TODO: if there is no editor, notify via game viewport text
 #endif//WITH_EDITOR
+
+  // TODO: maybe move these SetOptions() to FRenderDocPluginSettings...
+  pRENDERDOC_SetCaptureOptionU32 SetOptions = Loader.RenderDocAPI->SetCaptureOptionU32;
+  int ok = SetOptions(eRENDERDOC_Option_CaptureCallstacks, RenderDocSettings.bCaptureCallStacks ? 1 : 0); check(ok);
+	    ok = SetOptions(eRENDERDOC_Option_RefAllResources,   RenderDocSettings.bRefAllResources   ? 1 : 0); check(ok);
+	    ok = SetOptions(eRENDERDOC_Option_SaveAllInitials,   RenderDocSettings.bSaveAllInitials   ? 1 : 0); check(ok);
 
 	HWND WindowHandle = GetActiveWindow();
 
@@ -458,22 +337,7 @@ void FRenderDocPluginModule::ShutdownModule()
 		return;
 
 #if WITH_EDITOR
-	if (ExtensionManager.IsValid())
-	{
-		FRenderDocPluginStyle::Shutdown();
-		FRenderDocPluginCommands::Unregister();
-
-		ToolbarExtender->RemoveExtension(ToolbarExtension.ToSharedRef());
-
-		ExtensionManager->RemoveExtender(ToolbarExtender);
-	}
-	else
-	{
-		ExtensionManager.Reset();
-	}
-
-	// Unregister the tab spawner
-	FGlobalTabmanager::Get()->UnregisterTabSpawner(SettingsUITabName);
+  delete(EditorExtensions);
 #endif//WITH_EDITOR
 
 	Loader.Release();
