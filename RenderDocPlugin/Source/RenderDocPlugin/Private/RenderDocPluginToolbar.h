@@ -30,10 +30,28 @@
 #include "Editor/UnrealEd/Public/SViewportToolBar.h"
 #include "RenderDocPluginSettings.h"
 
-class SRenderDocPluginSettingsEditorWindow : public SViewportToolBar
+class FRenderDocPluginEditorExtension
 {
 public:
-	SLATE_BEGIN_ARGS(SRenderDocPluginSettingsEditorWindow) { }
+  FRenderDocPluginEditorExtension(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings);
+  ~FRenderDocPluginEditorExtension();
+
+private:
+  void Initialize(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings);
+  void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
+  void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder, FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings);
+
+  bool IsEditorInitialized;
+  FDelegateHandle LoadedDelegateHandle;
+  TSharedPtr<FExtensibilityManager> ExtensionManager;
+  TSharedPtr<FExtender> ToolbarExtender;
+  TSharedPtr<const FExtensionBase> ToolbarExtension;
+};
+
+class SRenderDocPluginToolbar : public SViewportToolBar
+{
+public:
+	SLATE_BEGIN_ARGS(SRenderDocPluginToolbar) { }
     SLATE_ARGUMENT(FRenderDocPluginModule*, ThePlugin)
 		SLATE_ARGUMENT(FRenderDocPluginSettings*, Settings)
 	SLATE_END_ARGS()

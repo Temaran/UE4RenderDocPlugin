@@ -74,6 +74,6 @@ void FRenderDocPluginCommands::RegisterCommands()
 }
 PRAGMA_ENABLE_OPTIMIZATION
 
-#undef LOCTEXT_NAMESPACE 
+#undef LOCTEXT_NAMESPACE//"RenderDocPluginSettingsEditor"
 
 #endif//WITH_EDITOR

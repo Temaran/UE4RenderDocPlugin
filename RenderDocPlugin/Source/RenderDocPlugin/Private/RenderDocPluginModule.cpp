@@ -142,15 +142,7 @@ void FRenderDocPluginModule::StartupModule()
 	RenderDocAPI->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
 
 #if WITH_EDITOR
-	// Defer Level Editor UI extensions until Level Editor has been loaded:
-	if (FModuleManager::Get().IsModuleLoaded("LevelEditor"))
-		InitializeEditorExtensions();
-	else
-		FModuleManager::Get().OnModulesChanged().AddLambda([this](FName name, EModuleChangeReason reason)
-		{
-			if ((name == "LevelEditor") && (reason == EModuleChangeReason::ModuleLoaded))
-				InitializeEditorExtensions();
-		});
+  EditorExtensions = new FRenderDocPluginEditorExtension (this, &RenderDocSettings);
 #endif//WITH_EDITOR
 
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
@@ -162,84 +154,6 @@ void FRenderDocPluginModule::StartupModule()
 
 	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin is ready!"));
 }
-
-#if WITH_EDITOR
-
-void FRenderDocPluginModule::InitializeEditorExtensions()
-{
-	// The LoadModule request below will crash if running as an editor commandlet!
-	// ( the GUsingNullRHI check above should prevent this code from executing, but I am
-	//   re-emphasizing it here since many plugins appear to be ignoring this condition... )
-	check(!IsRunningCommandlet());
-	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-
-	TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
-
-	ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
-	ToolbarExtender = MakeShareable(new FExtender);
-	ToolbarExtension = ToolbarExtender->AddToolBarExtension("CameraSpeed", EExtensionHook::After, CommandBindings,
-		FToolBarExtensionDelegate::CreateRaw(this, &FRenderDocPluginModule::AddToolbarExtension));
-	ExtensionManager->AddExtender(ToolbarExtender);
-
-	IsEditorInitialized = false;
-	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
-	LoadedDelegateHandle = SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginModule::OnEditorLoaded);
-}
-
-void FRenderDocPluginModule::OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr)
-{
-	// would be nice to use the preprocessor definition WITH_EDITOR instead,
-	// but the user may launch a standalone the game through the editor...
-	if (!GEditor)
-		return;
-
-	// --> YAGER by SKrysanov 6/11/2014 : fixed crash on removing this callback in render thread.
-	if (IsInGameThread())
-	{
-		FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
-		SlateRenderer->OnSlateWindowRendered().Remove(LoadedDelegateHandle);
-	}
-	// <-- YAGER by SKrysanov 6/11/2014
-
-	if (IsEditorInitialized)
-	{
-		return;
-	}
-	IsEditorInitialized = true;
-
-	if (GConfig)
-	{
-		bool bGreetingHasBeenShown (false);
-		GConfig->GetBool(TEXT("RenderDoc"), TEXT("GreetingHasBeenShown"), bGreetingHasBeenShown, GGameIni);
-		if (!bGreetingHasBeenShown && GEditor)
-		{
-			GEditor->EditorAddModalWindow(SNew(SRenderDocPluginAboutWindow));
-			GConfig->SetBool(TEXT("RenderDoc"), TEXT("GreetingHasBeenShown"), true, GGameIni);
-		}
-	}
-}
-
-void FRenderDocPluginModule::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder)
-{
-#define LOCTEXT_NAMESPACE "LevelEditorToolBar"
-
-	UE_LOG(RenderDocPlugin, Log, TEXT("Attaching toolbar extension..."));
-	ToolbarBuilder.AddSeparator();
-
-	ToolbarBuilder.BeginSection("RenderdocPlugin");
-
-  ToolbarBuilder.AddWidget(
-    SNew(SRenderDocPluginSettingsEditorWindow)
-    .ThePlugin(this)
-    .Settings(&RenderDocSettings)
-    );
-
-	ToolbarBuilder.EndSection();
-
-#undef LOCTEXT_NAMESPACE
-}
-
-#endif//WITH_EDITOR
 
 void FRenderDocPluginModule::BeginCapture()
 {
@@ -423,19 +337,7 @@ void FRenderDocPluginModule::ShutdownModule()
 		return;
 
 #if WITH_EDITOR
-	if (ExtensionManager.IsValid())
-	{
-		FRenderDocPluginStyle::Shutdown();
-		FRenderDocPluginCommands::Unregister();
-
-		ToolbarExtender->RemoveExtension(ToolbarExtension.ToSharedRef());
-
-		ExtensionManager->RemoveExtender(ToolbarExtender);
-	}
-	else
-	{
-		ExtensionManager.Reset();
-	}
+  delete(EditorExtensions);
 #endif//WITH_EDITOR
 
 	Loader.Release();

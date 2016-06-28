@@ -28,16 +28,122 @@
 
 #include "Engine.h"
 #include "Editor.h"
+#include "EditorStyleSet.h"
 #include "Editor/UnrealEd/Public/SEditorViewportToolBarMenu.h"
 #include "Editor/UnrealEd/Public/SViewportToolBarComboMenu.h"
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginCommands.h"
-#include "RenderDocPluginSettingsEditorWindow.h"
+#include "RenderDocPluginToolbar.h"
+#include "RenderDocPluginModule.h"
 #include "RenderDocPluginAboutWindow.h"
 
-#define LOCTEXT_NAMESPACE "RenderDocPluginSettingsEditor"
+FRenderDocPluginEditorExtension::FRenderDocPluginEditorExtension(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings)
+{
+	// Defer Level Editor UI extensions until Level Editor has been loaded:
+	if (FModuleManager::Get().IsModuleLoaded("LevelEditor"))
+    Initialize(ThePlugin, Settings);
+	else
+		FModuleManager::Get().OnModulesChanged().AddLambda([this, ThePlugin, Settings](FName name, EModuleChangeReason reason)
+		{
+			if ((name == "LevelEditor") && (reason == EModuleChangeReason::ModuleLoaded))
+        Initialize(ThePlugin, Settings);
+		});
+}
 
-#include "EditorStyleSet.h"
+FRenderDocPluginEditorExtension::~FRenderDocPluginEditorExtension()
+{
+  if (ExtensionManager.IsValid())
+  {
+    FRenderDocPluginStyle::Shutdown();
+    FRenderDocPluginCommands::Unregister();
+
+    ToolbarExtender->RemoveExtension(ToolbarExtension.ToSharedRef());
+
+    ExtensionManager->RemoveExtender(ToolbarExtender);
+  }
+  else
+  {
+    ExtensionManager.Reset();
+  }
+}
+
+void FRenderDocPluginEditorExtension::Initialize(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings)
+{
+	// The LoadModule request below will crash if running as an editor commandlet!
+	// ( the GUsingNullRHI check above should prevent this code from executing, but I am
+	//   re-emphasizing it here since many plugins appear to be ignoring this condition... )
+	check(!IsRunningCommandlet());
+	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+
+	TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
+
+	ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
+	ToolbarExtender = MakeShareable(new FExtender);
+	ToolbarExtension = ToolbarExtender->AddToolBarExtension("CameraSpeed", EExtensionHook::After, CommandBindings,
+    FToolBarExtensionDelegate::CreateLambda([this, ThePlugin, Settings](FToolBarBuilder& ToolbarBuilder)
+    { AddToolbarExtension(ToolbarBuilder, ThePlugin, Settings); })
+  );
+	ExtensionManager->AddExtender(ToolbarExtender);
+
+	IsEditorInitialized = false;
+	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
+	LoadedDelegateHandle = SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginEditorExtension::OnEditorLoaded);
+}
+
+void FRenderDocPluginEditorExtension::OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr)
+{
+	// would be nice to use the preprocessor definition WITH_EDITOR instead,
+	// but the user may launch a standalone the game through the editor...
+	if (!GEditor)
+		return;
+
+	// --> YAGER by SKrysanov 6/11/2014 : fixed crash on removing this callback in render thread.
+	if (IsInGameThread())
+	{
+		FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
+		SlateRenderer->OnSlateWindowRendered().Remove(LoadedDelegateHandle);
+	}
+	// <-- YAGER by SKrysanov 6/11/2014
+
+	if (IsEditorInitialized)
+	{
+		return;
+	}
+	IsEditorInitialized = true;
+
+	if (GConfig)
+	{
+		bool bGreetingHasBeenShown (false);
+		GConfig->GetBool(TEXT("RenderDoc"), TEXT("GreetingHasBeenShown"), bGreetingHasBeenShown, GGameIni);
+		if (!bGreetingHasBeenShown && GEditor)
+		{
+			GEditor->EditorAddModalWindow(SNew(SRenderDocPluginAboutWindow));
+			GConfig->SetBool(TEXT("RenderDoc"), TEXT("GreetingHasBeenShown"), true, GGameIni);
+		}
+	}
+}
+
+void FRenderDocPluginEditorExtension::AddToolbarExtension(FToolBarBuilder& ToolbarBuilder, FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings)
+{
+#define LOCTEXT_NAMESPACE "LevelEditorToolBar"
+
+  UE_LOG(RenderDocPlugin, Log, TEXT("Attaching toolbar extension..."));
+  ToolbarBuilder.AddSeparator();
+
+  ToolbarBuilder.BeginSection("RenderdocPlugin");
+
+  ToolbarBuilder.AddWidget(
+    SNew(SRenderDocPluginToolbar)
+    .ThePlugin(ThePlugin)
+    .Settings(Settings)
+    );
+
+  ToolbarBuilder.EndSection();
+
+#undef LOCTEXT_NAMESPACE//"LevelEditorToolBar"
+}
+
+#define LOCTEXT_NAMESPACE "RenderDocPluginSettingsEditor"
 
 namespace TransformViewportToolbarDefs
 {
@@ -48,7 +154,7 @@ namespace TransformViewportToolbarDefs
   const float ToggleImageScale = 16.0f;
 }
 
-void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
+void SRenderDocPluginToolbar::Construct(const FArguments& InArgs)
 {
   auto ThePlugin = InArgs._ThePlugin;
 	auto RenderDocSettings = InArgs._Settings;
@@ -186,7 +292,7 @@ void SRenderDocPluginSettingsEditorWindow::Construct(const FArguments& InArgs)
   ];  // end of Toolbar extension
 }
 
-void SRenderDocPluginSettingsEditorWindow::BindCommands(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings)
+void SRenderDocPluginToolbar::BindCommands(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings)
 {
   check(!CommandList.IsValid());
   CommandList = MakeShareable(new FUICommandList);

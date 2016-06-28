@@ -35,7 +35,7 @@
 #include "MultiBoxExtender.h"
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginCommands.h"
-#include "RenderDocPluginSettingsEditorWindow.h"
+#include "RenderDocPluginToolbar.h"
 #include "RenderDocPluginAboutWindow.h"
 #endif//WITH_EDITOR
 
@@ -57,27 +57,10 @@ private:
 	// Mandatory IInputDeviceModule override that spawns the dummy input device:
 	virtual TSharedPtr< class IInputDevice > CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override;
 
-private:
-
-#if WITH_EDITOR
-	FDelegateHandle LoadedDelegateHandle;
-
-	TSharedPtr<FExtensibilityManager> ExtensionManager;
-	TSharedPtr<FExtender> ToolbarExtender;
-	TSharedPtr<const FExtensionBase> ToolbarExtension;
-
-	void InitializeEditorExtensions();
-
-	void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
-
-	bool IsEditorInitialized;
-	void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder);
-#endif//WITH_EDITOR
-
 	void BeginCapture();
 	void EndCapture();
 
-  friend class SRenderDocPluginSettingsEditorWindow;
+  friend class SRenderDocPluginToolbar;
 	void CaptureFrame();
 	void CaptureCurrentViewport();	
 	void CaptureEntireFrame();
@@ -98,6 +81,10 @@ private:
 
 	// Tracks the frame count (tick number) for a full frame capture:
 	uint32 TickNumber;
+
+#if WITH_EDITOR
+  FRenderDocPluginEditorExtension* EditorExtensions;
+#endif//WITH_EDITOR
 
 private:
 	// TODO: refactor the plugin into subclasses:
