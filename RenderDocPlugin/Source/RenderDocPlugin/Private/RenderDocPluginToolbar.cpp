@@ -69,16 +69,20 @@ FRenderDocPluginEditorExtension::~FRenderDocPluginEditorExtension()
 
 void FRenderDocPluginEditorExtension::Initialize(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings)
 {
-  if (GUsingNullRHI)
-  {
-    UE_LOG(RenderDocPlugin, Warning, TEXT("RenderDoc Plugin will not be loaded because a Null RHI (Cook Server, perhaps) is being used."));
-    return;
-  }
+	if (GUsingNullRHI)
+	{
+		UE_LOG(RenderDocPlugin, Warning, TEXT("RenderDoc Plugin will not be loaded because a Null RHI (Cook Server, perhaps) is being used."));
+		return;
+	}
 
 	// The LoadModule request below will crash if running as an editor commandlet!
 	// ( the GUsingNullRHI check above should prevent this code from executing, but I am
 	//   re-emphasizing it here since many plugins appear to be ignoring this condition... )
 	check(!IsRunningCommandlet());
+
+	FRenderDocPluginStyle::Initialize();
+	FRenderDocPluginCommands::Register();
+
 	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
 
 	TSharedRef<FUICommandList> CommandBindings = LevelEditorModule.GetGlobalLevelEditorActions();
@@ -86,9 +90,9 @@ void FRenderDocPluginEditorExtension::Initialize(FRenderDocPluginModule* ThePlug
 	ExtensionManager = LevelEditorModule.GetToolBarExtensibilityManager();
 	ToolbarExtender = MakeShareable(new FExtender);
 	ToolbarExtension = ToolbarExtender->AddToolBarExtension("CameraSpeed", EExtensionHook::After, CommandBindings,
-    FToolBarExtensionDelegate::CreateLambda([this, ThePlugin, Settings](FToolBarBuilder& ToolbarBuilder)
-    { AddToolbarExtension(ToolbarBuilder, ThePlugin, Settings); })
-  );
+		FToolBarExtensionDelegate::CreateLambda([this, ThePlugin, Settings](FToolBarBuilder& ToolbarBuilder)
+		{ AddToolbarExtension(ToolbarBuilder, ThePlugin, Settings); })
+	);
 	ExtensionManager->AddExtender(ToolbarExtender);
 
 	IsEditorInitialized = false;
@@ -133,18 +137,18 @@ void FRenderDocPluginEditorExtension::AddToolbarExtension(FToolBarBuilder& Toolb
 {
 #define LOCTEXT_NAMESPACE "LevelEditorToolBar"
 
-  UE_LOG(RenderDocPlugin, Log, TEXT("Attaching toolbar extension..."));
-  ToolbarBuilder.AddSeparator();
+	UE_LOG(RenderDocPlugin, Log, TEXT("Attaching toolbar extension..."));
+	ToolbarBuilder.AddSeparator();
 
-  ToolbarBuilder.BeginSection("RenderdocPlugin");
+	ToolbarBuilder.BeginSection("RenderdocPlugin");
 
-  ToolbarBuilder.AddWidget(
-    SNew(SRenderDocPluginToolbar)
-    .ThePlugin(ThePlugin)
-    .Settings(Settings)
-    );
+	ToolbarBuilder.AddWidget(
+		SNew(SRenderDocPluginToolbar)
+		.ThePlugin(ThePlugin)
+		.Settings(Settings)
+	);
 
-  ToolbarBuilder.EndSection();
+	ToolbarBuilder.EndSection();
 
 #undef LOCTEXT_NAMESPACE//"LevelEditorToolBar"
 }
@@ -153,199 +157,197 @@ void FRenderDocPluginEditorExtension::AddToolbarExtension(FToolBarBuilder& Toolb
 
 namespace TransformViewportToolbarDefs
 {
-  /** Size of the arrow shown on SGridSnapSettings Menu button */
-  const float DownArrowSize = 4.0f;
+	/** Size of the arrow shown on SGridSnapSettings Menu button */
+	const float DownArrowSize = 4.0f;
 
-  /** Size of the icon displayed on the toggle button of SGridSnapSettings */
-  const float ToggleImageScale = 16.0f;
+	/** Size of the icon displayed on the toggle button of SGridSnapSettings */
+	const float ToggleImageScale = 16.0f;
 }
 
 void SRenderDocPluginToolbar::Construct(const FArguments& InArgs)
 {
-  auto ThePlugin = InArgs._ThePlugin;
+	auto ThePlugin = InArgs._ThePlugin;
 	auto RenderDocSettings = InArgs._Settings;
 
-  FRenderDocPluginStyle::Initialize();
-  FRenderDocPluginCommands::Register();
+	BindCommands(ThePlugin, RenderDocSettings);
 
-  BindCommands(ThePlugin, RenderDocSettings);
+	FSlateIcon IconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.CaptureFrameIcon.Small");
+	FSlateIcon SettingsIconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.SettingsIcon.Small");
 
-  FSlateIcon IconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.CaptureFrameIcon.Small");
-  FSlateIcon SettingsIconBrush = FSlateIcon(FRenderDocPluginStyle::Get()->GetStyleSetName(), "RenderDocPlugin.SettingsIcon.Small");
+	// Widget inspired by STransformViewportToolbar::MakeSurfaceSnappingButton()
+	FName ToolBarStyle = TEXT("ViewportMenu");
+	ChildSlot
+	[
+		SNew(SHorizontalBox)
 
-  // Widget inspired by STransformViewportToolbar::MakeSurfaceSnappingButton()
-  FName ToolBarStyle = TEXT("ViewportMenu");
-  ChildSlot
-  [
-    SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		[
+			SNew(SButton)
+			.ToolTipText(FRenderDocPluginCommands::Get().CaptureFrame->GetDescription())  // TODO: [Alt+F12] does not show up in the tooltip...
+			.OnClicked_Lambda([this]() { CommandList->GetActionForCommand(FRenderDocPluginCommands::Get().CaptureFrame)->Execute(); return(FReply::Handled()); })
+		[
+			SNew(SImage)
+			.Image(IconBrush.GetIcon())
+		]
+	]
 
-    + SHorizontalBox::Slot()
-    .AutoWidth()
-    [
-      SNew(SButton)
-      .ToolTipText(FRenderDocPluginCommands::Get().CaptureFrame->GetDescription())  // TODO: [Alt+F12] does not show up in the tooltip...
-      .OnClicked_Lambda([this]() { CommandList->GetActionForCommand(FRenderDocPluginCommands::Get().CaptureFrame)->Execute(); return(FReply::Handled()); })
-      [
-        SNew(SImage)
-        .Image(IconBrush.GetIcon())
-      ]
-    ]
-
-    + SHorizontalBox::Slot()
-    .AutoWidth()
-    [
-      SNew(SCheckBox)
-      .Cursor(EMouseCursor::Default)
-      .Style(FEditorStyle::Get(), EMultiBlockLocation::ToName(FEditorStyle::Join(ToolBarStyle, ".ToggleButton"), EMultiBlockLocation::End))
-      .Padding(0)
-      .ToolTipText(LOCTEXT("RenderDocSettings_ToolTipOverride", "RenderDoc Settings"))
-      .IsChecked_Static([] { return(ECheckBoxState::Unchecked); })
-      .Content()
+	+ SHorizontalBox::Slot()
+	.AutoWidth()
+	[
+		SNew(SCheckBox)
+		.Cursor(EMouseCursor::Default)
+		.Style(FEditorStyle::Get(), EMultiBlockLocation::ToName(FEditorStyle::Join(ToolBarStyle, ".ToggleButton"), EMultiBlockLocation::End))
+		.Padding(0)
+		.ToolTipText(LOCTEXT("RenderDocSettings_ToolTipOverride", "RenderDoc Settings"))
+		.IsChecked_Static([] { return(ECheckBoxState::Unchecked); })
+		.Content()
+		[
+			SNew( SComboButton )
+			.ButtonStyle( FEditorStyle::Get(), "HoverHintOnly" )
+			.HasDownArrow( false )
+			.ContentPadding( 0 )
+			.ButtonContent()
 			[
-				SNew( SComboButton )
-				.ButtonStyle( FEditorStyle::Get(), "HoverHintOnly" )
-				.HasDownArrow( false )
-				.ContentPadding( 0 )
-				.ButtonContent()
+				SNew( SVerticalBox )
+
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.Padding(FMargin(3.f, 2.f, 5.f, 0.f))
 				[
-					SNew( SVerticalBox )
-
-					+ SVerticalBox::Slot()
-					.AutoHeight()
-					.Padding(FMargin(3.f, 2.f, 5.f, 0.f))
-					[
-						SNew( SBox )
-						.WidthOverride( TransformViewportToolbarDefs::ToggleImageScale )
-						.HeightOverride( TransformViewportToolbarDefs::ToggleImageScale )
-						.HAlign( HAlign_Center )
-						.VAlign( VAlign_Center )
-						[
-							SNew( SImage )
-							.Image( SettingsIconBrush.GetIcon() )
-						]
-					]
-
-					+ SVerticalBox::Slot()
-					.AutoHeight()
+					SNew( SBox )
+					.WidthOverride( TransformViewportToolbarDefs::ToggleImageScale )
+					.HeightOverride( TransformViewportToolbarDefs::ToggleImageScale )
 					.HAlign( HAlign_Center )
-					.Padding(FMargin(0.f, 0.f, 0.f, 3.f))
+					.VAlign( VAlign_Center )
 					[
-						SNew( SBox )
-						.WidthOverride( TransformViewportToolbarDefs::DownArrowSize )
-						.HeightOverride( TransformViewportToolbarDefs::DownArrowSize )
-						[
-							SNew(SImage)
-							.Image(FEditorStyle::GetBrush("ComboButton.Arrow"))
-							.ColorAndOpacity(FLinearColor::Black)
-						]
+						SNew( SImage )
+						.Image( SettingsIconBrush.GetIcon() )
 					]
 				]
-				.MenuContent()
-				[        
-          ([this,RenderDocSettings]() -> TSharedRef<SWidget>
-          {
-            auto& Commands = FRenderDocPluginCommands::Get();
-            FMenuBuilder ShowMenuBuilder (true, CommandList);
 
-            ShowMenuBuilder.AddMenuEntry(Commands.Settings_CaptureAllActivity);
-            ShowMenuBuilder.AddMenuEntry(Commands.Settings_CaptureCallstack);
-            ShowMenuBuilder.AddMenuEntry(Commands.Settings_CaptureAllResources);
-            ShowMenuBuilder.AddMenuEntry(Commands.Settings_SaveAllInitialState);
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.HAlign( HAlign_Center )
+				.Padding(FMargin(0.f, 0.f, 0.f, 3.f))
+				[
+					SNew( SBox )
+					.WidthOverride( TransformViewportToolbarDefs::DownArrowSize )
+					.HeightOverride( TransformViewportToolbarDefs::DownArrowSize )
+					[
+						SNew(SImage)
+						.Image(FEditorStyle::GetBrush("ComboButton.Arrow"))
+						.ColorAndOpacity(FLinearColor::Black)
+					]
+				]
+			]
+			.MenuContent()
+			[        
+				([this,RenderDocSettings]() -> TSharedRef<SWidget>
+				{
+					auto& Commands = FRenderDocPluginCommands::Get();
+					FMenuBuilder ShowMenuBuilder (true, CommandList);
 
-            ShowMenuBuilder.AddWidget(
-              SNew(SVerticalBox)
-              +SVerticalBox::Slot()
-              .AutoHeight()
-              [
-                SNew(SHorizontalBox)
-                + SHorizontalBox::Slot()
-                .AutoWidth()
-                .VAlign(EVerticalAlignment::VAlign_Center)
-                .Padding(5)
-                [
-                  SNew(SButton)
-                  .Text(LOCTEXT("SaveButton", "Save"))
-                  .ToolTipText(LOCTEXT("SaveButton_ToolTipOverride", "Save current RenderDoc settings for this game project."))
-                  .OnClicked_Lambda([RenderDocSettings]()
-                  {
-                    RenderDocSettings->Save();
-                    return( FReply::Handled() );
-                  })
-                ]
+					ShowMenuBuilder.AddMenuEntry(Commands.Settings_CaptureAllActivity);
+					ShowMenuBuilder.AddMenuEntry(Commands.Settings_CaptureCallstack);
+					ShowMenuBuilder.AddMenuEntry(Commands.Settings_CaptureAllResources);
+					ShowMenuBuilder.AddMenuEntry(Commands.Settings_SaveAllInitialState);
 
-                +SHorizontalBox::Slot()
-                .AutoWidth()
-                .VAlign(EVerticalAlignment::VAlign_Center)
-                .Padding(5)
-                [
-                  SNew(SButton)
-                  .Text(LOCTEXT("AboutButton", "About"))
-                  .OnClicked_Lambda([]()
-                  {
-                    GEditor->EditorAddModalWindow( SNew(SRenderDocPluginAboutWindow) );
-                    return( FReply::Handled() );
-                  })
-                ]
-              ],
-              FText()
-            );
+					ShowMenuBuilder.AddWidget(
+						SNew(SVerticalBox)
+						+SVerticalBox::Slot()
+						.AutoHeight()
+						[
+							SNew(SHorizontalBox)
+							+ SHorizontalBox::Slot()
+							.AutoWidth()
+							.VAlign(EVerticalAlignment::VAlign_Center)
+							.Padding(5)
+							[
+								SNew(SButton)
+								.Text(LOCTEXT("SaveButton", "Save"))
+								.ToolTipText(LOCTEXT("SaveButton_ToolTipOverride", "Save current RenderDoc settings for this game project."))
+								.OnClicked_Lambda([RenderDocSettings]()
+								{
+									RenderDocSettings->Save();
+									return( FReply::Handled() );
+								})
+							]
 
-            return(ShowMenuBuilder.MakeWidget());
-          }())
-        ] // end of SComboButton::MenuContent()
-      ] // end of SComboButton
-    ] // end of SCheckBox
-  ];  // end of Toolbar extension
+							+SHorizontalBox::Slot()
+							.AutoWidth()
+							.VAlign(EVerticalAlignment::VAlign_Center)
+							.Padding(5)
+							[
+								SNew(SButton)
+								.Text(LOCTEXT("AboutButton", "About"))
+								.OnClicked_Lambda([]()
+								{
+									GEditor->EditorAddModalWindow( SNew(SRenderDocPluginAboutWindow) );
+									return( FReply::Handled() );
+								})
+							]
+						],
+						FText()
+					);
+
+					return(ShowMenuBuilder.MakeWidget());
+				}())
+			] // end of SComboButton::MenuContent()
+		] // end of SComboButton
+	] // end of SCheckBox
+];  // end of Toolbar extension
+
 }
 
 void SRenderDocPluginToolbar::BindCommands(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings)
 {
-  check(!CommandList.IsValid());
-  CommandList = MakeShareable(new FUICommandList);
+	check(!CommandList.IsValid());
+	CommandList = MakeShareable(new FUICommandList);
 
-  auto& Commands = FRenderDocPluginCommands::Get();
+	auto& Commands = FRenderDocPluginCommands::Get();
 
-  CommandList->MapAction(
-    Commands.CaptureFrame,
-    FExecuteAction::CreateLambda([ThePlugin]() { ThePlugin->CaptureFrame(); }),
-    FCanExecuteAction()
-  );
+	CommandList->MapAction(
+		Commands.CaptureFrame,
+		FExecuteAction::CreateLambda([ThePlugin]() { ThePlugin->CaptureFrame(); }),
+		FCanExecuteAction()
+	);
 
-  CommandList->MapAction(
-    Commands.Settings_CaptureAllActivity,
-    FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
-      &Settings->bCaptureAllActivity),
-    FCanExecuteAction(),
-    FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
-      &Settings->bCaptureAllActivity)
-  );
+	CommandList->MapAction(
+		Commands.Settings_CaptureAllActivity,
+		FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
+			&Settings->bCaptureAllActivity),
+		FCanExecuteAction(),
+		FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
+			&Settings->bCaptureAllActivity)
+	);
 
-  CommandList->MapAction(
-    Commands.Settings_CaptureCallstack,
-    FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
-      &Settings->bCaptureCallStacks),
-    FCanExecuteAction(),
-    FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
-      &Settings->bCaptureCallStacks)
-  );
+	CommandList->MapAction(
+		Commands.Settings_CaptureCallstack,
+		FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
+			&Settings->bCaptureCallStacks),
+		FCanExecuteAction(),
+		FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
+			&Settings->bCaptureCallStacks)
+	);
 
-  CommandList->MapAction(
-    Commands.Settings_CaptureAllResources,
-    FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
-      &Settings->bRefAllResources),
-    FCanExecuteAction(),
-    FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
-      &Settings->bRefAllResources)
-  );
+	CommandList->MapAction(
+		Commands.Settings_CaptureAllResources,
+		FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
+			&Settings->bRefAllResources),
+		FCanExecuteAction(),
+		FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
+			&Settings->bRefAllResources)
+	);
 
-  CommandList->MapAction(
-    Commands.Settings_SaveAllInitialState,
-    FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
-      &Settings->bSaveAllInitials),
-    FCanExecuteAction(),
-    FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
-      &Settings->bSaveAllInitials)
-  );
+	CommandList->MapAction(
+		Commands.Settings_SaveAllInitialState,
+		FExecuteAction::CreateLambda([](bool* flag) { *flag = !*flag; },
+			&Settings->bSaveAllInitials),
+		FCanExecuteAction(),
+		FIsActionChecked::CreateLambda([](const bool* flag) { return(*flag); },
+			&Settings->bSaveAllInitials)
+	);
 }
 
 #undef LOCTEXT_NAMESPACE
