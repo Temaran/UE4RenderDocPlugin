@@ -101,6 +101,10 @@ void FRenderDocPluginModule::StartupModule()
 	if (!Loader.RenderDocAPI)
 		return;
 
+  // Regrettably, GUsingNullRHI is set to true AFTER the PostInitConfig modules
+  // have been loaded (RenderDoc plugin being one of them). When this code runs
+  // the following condition will never be true, so it must be tested again in
+  // the Toolbar initialization code.
 	if (GUsingNullRHI)
 	{
 		UE_LOG(RenderDocPlugin, Warning, TEXT("RenderDoc Plugin will not be loaded because a Null RHI (Cook Server, perhaps) is being used."));

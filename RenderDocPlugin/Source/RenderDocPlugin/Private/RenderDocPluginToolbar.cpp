@@ -69,6 +69,12 @@ FRenderDocPluginEditorExtension::~FRenderDocPluginEditorExtension()
 
 void FRenderDocPluginEditorExtension::Initialize(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings)
 {
+  if (GUsingNullRHI)
+  {
+    UE_LOG(RenderDocPlugin, Warning, TEXT("RenderDoc Plugin will not be loaded because a Null RHI (Cook Server, perhaps) is being used."));
+    return;
+  }
+
 	// The LoadModule request below will crash if running as an editor commandlet!
 	// ( the GUsingNullRHI check above should prevent this code from executing, but I am
 	//   re-emphasizing it here since many plugins appear to be ignoring this condition... )
