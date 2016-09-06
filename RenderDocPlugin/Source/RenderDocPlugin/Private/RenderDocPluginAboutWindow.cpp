@@ -34,7 +34,8 @@
 
 void SRenderDocPluginAboutWindow::Construct(const FArguments& InArgs)
 {
-	FString Message = FString("Hello and thank you for trying out this plugin!\n\n" \
+	FString Message = FString(
+    "Hello and thank you for trying out the RenderDoc plugin!\n\n" \
 		"To capture a frame, press the green capture button on the top\n" \
 		"right of any viewport. If you cannot see the button, you might\n" \
 		"have to adjust your viewport width until all buttons fit the screen.\n" \
