@@ -1,7 +1,8 @@
 /******************************************************************************
 * The MIT License (MIT)
 *
-* Copyright (c) 2014 Fredrik Lindh
+* Copyright (c) 2014-2016 Fredrik Lindh
+*                         Marcos Slomp
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -24,34 +25,21 @@
 
 #pragma once
 
-#include "SlateBasics.h"
-#include "RenderDocPluginSettings.h"
+#include "RenderDocAPI/renderdoc_app.h"
 
-class SRenderDocPluginSettingsEditorWindow : public SWindow
+class FRenderDocPluginLoader
 {
 public:
-	SLATE_BEGIN_ARGS(SRenderDocPluginSettingsEditorWindow) { }
-		SLATE_ARGUMENT(FRenderDocPluginSettings, Settings)
-		SLATE_ARGUMENT(class FRenderDocPluginModule*, ThePlugin)
-	SLATE_END_ARGS()
+	void Initialize();
+	void Release();
 
-	SRenderDocPluginSettingsEditorWindow() {}
-
-	/** Widget constructor */
-	void Construct(const FArguments& Args);
-
-	FRenderDocPluginSettings GetSettings() { return RenderDocSettings; }
+	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
 
 private:
-	FRenderDocPluginSettings RenderDocSettings;
-	class FRenderDocPluginModule* ThePlugin;
+	friend class FRenderDocPluginModule;
+	friend class SRenderDocPluginSettingsEditorWindow;
 
-	void OnCaptureAllActivityChanged(ECheckBoxState NewState);
-	void OnCaptureCallStacksChanged(ECheckBoxState NewState);
-	void OnRefAllResourcesChanged(ECheckBoxState NewState);
-	void OnSaveAllInitialsChanged(ECheckBoxState NewState);
-		
-	FReply SaveAndClose();
-	FReply ShowAboutWindow();
-	FReply Close();
+	void* RenderDocDLL;
+	RENDERDOC_API_CONTEXT* RenderDocAPI;
 };
+

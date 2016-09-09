@@ -24,6 +24,8 @@
 
 #pragma once
 
+#if WITH_EDITOR
+
 #include "SlateBasics.h"
 #include "EditorStyle.h"
 #include "RenderDocPluginStyle.h"
@@ -39,5 +41,10 @@ public:
 	virtual void RegisterCommands() override;
 
 	TSharedPtr<FUICommandInfo> CaptureFrame;
-	TSharedPtr<FUICommandInfo> OpenSettings;
+  TSharedPtr<FUICommandInfo> Settings_CaptureAllActivity;
+  TSharedPtr<FUICommandInfo> Settings_CaptureCallstack;
+  TSharedPtr<FUICommandInfo> Settings_CaptureAllResources;
+  TSharedPtr<FUICommandInfo> Settings_SaveAllInitialState;
 };
+
+#endif//WITH_EDITOR

@@ -7,9 +7,6 @@
 	  (for the time being, Eject from the PIE viewport to get access to the HUD buttons)
   * "Standalone Game" viewports launched via the Editor
 	  (for the time being, use the console command 'RenderDoc.CaptureFrame')
-  * "Standalone Game" builds, without Editor
-	  (this might be tricky since the plugin has Type=Developer, and Standalone executables
-	   require Type=Runtime so that the plugin code is linked statically against the .exe)
   * Tool preview viewports, such the ones in the Material Editor, Persona, Cascade, etc.
     (for the time being, rendering activity on these preview viewports can be intercepted
 	   by activating the "capture all activity" toggle in the plugin settings)

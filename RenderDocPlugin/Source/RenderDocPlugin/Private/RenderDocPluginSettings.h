@@ -24,8 +24,6 @@
 
 #pragma once
 
-#include "SlateBasics.h"
-
 struct FRenderDocPluginSettings
 {
 public:
@@ -49,12 +47,12 @@ public:
 			bSaveAllInitials = false;
 	}
 
-	void Save()
+	void Save() const
 	{
 		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureAllActivity"), bCaptureAllActivity, GGameIni);
-		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureCallStacks"),  bCaptureCallStacks, GGameIni);
-		GConfig->SetBool(TEXT("RenderDoc"), TEXT("RefAllResources"),    bRefAllResources, GGameIni);
-		GConfig->SetBool(TEXT("RenderDoc"), TEXT("SaveAllInitials"),    bSaveAllInitials, GGameIni);
+		GConfig->SetBool(TEXT("RenderDoc"), TEXT("CaptureCallStacks"),  bCaptureCallStacks,  GGameIni);
+		GConfig->SetBool(TEXT("RenderDoc"), TEXT("RefAllResources"),    bRefAllResources,    GGameIni);
+		GConfig->SetBool(TEXT("RenderDoc"), TEXT("SaveAllInitials"),    bSaveAllInitials,    GGameIni);
 		GConfig->Flush(false, GGameIni);
 	}
 };

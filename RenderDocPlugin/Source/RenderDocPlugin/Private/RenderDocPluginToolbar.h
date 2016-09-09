@@ -24,31 +24,45 @@
 
 #pragma once
 
-#include "ModuleManager.h"
-#include "Editor/LevelEditor/Public/LevelEditor.h"
-#include "SharedPointer.h"
-#include "Internationalization.h"
+#if WITH_EDITOR
+
 #include "SlateBasics.h"
-#include "MultiBoxExtender.h"
+#include "Editor/UnrealEd/Public/SViewportToolBar.h"
+#include "RenderDocPluginSettings.h"
 
-#include "RenderDocAPI/renderdoc_app.h"
-
-DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
-
-class FRenderDocLoaderPluginModule// : public IModuleInterface
+class FRenderDocPluginEditorExtension
 {
 public:
-	void StartupModule(class FRenderDocPluginModule* Plugin);
-	void ShutdownModule();
-
-	typedef RENDERDOC_API_1_0_0 RENDERDOC_API_CONTEXT;
+  FRenderDocPluginEditorExtension(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings);
+  ~FRenderDocPluginEditorExtension();
 
 private:
-	friend class FRenderDocPluginModule;
-	friend class SRenderDocPluginSettingsEditorWindow;
+  void Initialize(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings);
+  void OnEditorLoaded(SWindow& SlateWindow, void* ViewportRHIPtr);
+  void AddToolbarExtension(FToolBarBuilder& ToolbarBuilder, FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* Settings);
 
-	void* RenderDocDLL;
-
-	RENDERDOC_API_CONTEXT* RenderDocAPI;
+  bool IsEditorInitialized;
+  FDelegateHandle LoadedDelegateHandle;
+  TSharedPtr<FExtensibilityManager> ExtensionManager;
+  TSharedPtr<FExtender> ToolbarExtender;
+  TSharedPtr<const FExtensionBase> ToolbarExtension;
 };
 
+class SRenderDocPluginToolbar : public SViewportToolBar
+{
+public:
+	SLATE_BEGIN_ARGS(SRenderDocPluginToolbar) { }
+    SLATE_ARGUMENT(FRenderDocPluginModule*, ThePlugin)
+		SLATE_ARGUMENT(FRenderDocPluginSettings*, Settings)
+	SLATE_END_ARGS()
+
+	/** Widget constructor */
+	void Construct(const FArguments& Args);
+
+private:
+	TSharedPtr<FUICommandList> CommandList;
+
+	void BindCommands(FRenderDocPluginModule* ThePlugin, FRenderDocPluginSettings* settings);
+};
+
+#endif//WITH_EDITOR
