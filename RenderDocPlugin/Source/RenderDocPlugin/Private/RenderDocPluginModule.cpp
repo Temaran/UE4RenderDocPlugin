@@ -101,10 +101,10 @@ void FRenderDocPluginModule::StartupModule()
 	if (!Loader.RenderDocAPI)
 		return;
 
-  // Regrettably, GUsingNullRHI is set to true AFTER the PostInitConfig modules
-  // have been loaded (RenderDoc plugin being one of them). When this code runs
-  // the following condition will never be true, so it must be tested again in
-  // the Toolbar initialization code.
+	// Regrettably, GUsingNullRHI is set to true AFTER the PostInitConfig modules
+	// have been loaded (RenderDoc plugin being one of them). When this code runs
+	// the following condition will never be true, so it must be tested again in
+	// the Toolbar initialization code.
 	if (GUsingNullRHI)
 	{
 		UE_LOG(RenderDocPlugin, Warning, TEXT("RenderDoc Plugin will not be loaded because a Null RHI (Cook Server, perhaps) is being used."));
@@ -146,7 +146,7 @@ void FRenderDocPluginModule::StartupModule()
 	RenderDocAPI->MaskOverlayBits(eRENDERDOC_Overlay_None, eRENDERDOC_Overlay_None);
 
 #if WITH_EDITOR
-  EditorExtensions = new FRenderDocPluginEditorExtension (this, &RenderDocSettings);
+	EditorExtensions = new FRenderDocPluginEditorExtension (this, &RenderDocSettings);
 #endif//WITH_EDITOR
 
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
@@ -159,6 +159,28 @@ void FRenderDocPluginModule::StartupModule()
 	UE_LOG(RenderDocPlugin, Log, TEXT("RenderDoc plugin is ready!"));
 }
 
+class FRenderDocPluginModule::FrameCapturer
+{
+public:
+	static void BeginCapture(HWND WindowHandle, FRenderDocPluginLoader::RENDERDOC_API_CONTEXT* RenderDocAPI, FRenderDocPluginModule* Plugin)
+	{
+		Plugin->UE4_OverrideDrawEventsFlag();
+		RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
+		RenderDocAPI->StartFrameCapture(Device, WindowHandle);
+	}
+	static void EndCapture(HWND WindowHandle, FRenderDocPluginLoader::RENDERDOC_API_CONTEXT* RenderDocAPI, FRenderDocPluginModule* Plugin)
+	{
+		RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
+		RenderDocAPI->EndFrameCapture(Device, WindowHandle);
+		Plugin->UE4_RestoreDrawEventsFlag();
+
+		Plugin->RunAsyncTask(ENamedThreads::GameThread, [Plugin]()
+		{
+			Plugin->StartRenderDoc(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
+		});
+	}
+};
+
 void FRenderDocPluginModule::BeginCapture()
 {
 	UE_LOG(RenderDocPlugin, Log, TEXT("Capture frame and launch renderdoc!"));
@@ -168,9 +190,9 @@ void FRenderDocPluginModule::BeginCapture()
 	// TODO: if there is no editor, notify via game viewport text
 #endif//WITH_EDITOR
 
-  // TODO: maybe move these SetOptions() to FRenderDocPluginSettings...
-  pRENDERDOC_SetCaptureOptionU32 SetOptions = Loader.RenderDocAPI->SetCaptureOptionU32;
-  int ok = SetOptions(eRENDERDOC_Option_CaptureCallstacks, RenderDocSettings.bCaptureCallStacks ? 1 : 0); check(ok);
+	// TODO: maybe move these SetOptions() to FRenderDocPluginSettings...
+	pRENDERDOC_SetCaptureOptionU32 SetOptions = Loader.RenderDocAPI->SetCaptureOptionU32;
+	int ok = SetOptions(eRENDERDOC_Option_CaptureCallstacks, RenderDocSettings.bCaptureCallStacks ? 1 : 0); check(ok);
 	    ok = SetOptions(eRENDERDOC_Option_RefAllResources,   RenderDocSettings.bRefAllResources   ? 1 : 0); check(ok);
 	    ok = SetOptions(eRENDERDOC_Option_SaveAllInitials,   RenderDocSettings.bSaveAllInitials   ? 1 : 0); check(ok);
 
@@ -183,9 +205,7 @@ void FRenderDocPluginModule::BeginCapture()
 		RENDERDOC_API_CONTEXT*, RenderDocAPI, RenderDocAPI,
 		FRenderDocPluginModule*, Plugin, this,
 		{
-			Plugin->UE4_OverrideDrawEventsFlag();
-			RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
-			RenderDocAPI->StartFrameCapture(Device, WindowHandle);
+			FrameCapturer::BeginCapture(WindowHandle, RenderDocAPI, Plugin);
 		});
 }
 
@@ -200,14 +220,7 @@ void FRenderDocPluginModule::EndCapture()
 		RENDERDOC_API_CONTEXT*, RenderDocAPI, RenderDocAPI,
 		FRenderDocPluginModule*, Plugin, this,
 		{
-			RENDERDOC_DevicePointer Device = GDynamicRHI->RHIGetNativeDevice();
-			RenderDocAPI->EndFrameCapture(Device, WindowHandle);
-			Plugin->UE4_RestoreDrawEventsFlag();
-
-			RunAsyncTask(ENamedThreads::GameThread, [this]()
-			{
-				Plugin->StartRenderDoc(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
-			});
+			FrameCapturer::EndCapture(WindowHandle, RenderDocAPI, Plugin); return;
 		});
 }
 
@@ -270,7 +283,7 @@ void FRenderDocPluginModule::Tick(float DeltaTime)
 		return;
 
 	const uint32 TickDiff = GFrameCounter - TickNumber;
-  const uint32 MaxCount = 2;
+	const uint32 MaxCount = 2;
 
 	check(TickDiff <= MaxCount);
 
@@ -341,10 +354,12 @@ void FRenderDocPluginModule::ShutdownModule()
 		return;
 
 #if WITH_EDITOR
-  delete(EditorExtensions);
+	delete(EditorExtensions);
 #endif//WITH_EDITOR
 
 	Loader.Release();
+
+	RenderDocAPI = NULL;
 }
 
 void FRenderDocPluginModule::UE4_OverrideDrawEventsFlag(const bool flag)
