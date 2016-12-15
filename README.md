@@ -13,7 +13,7 @@ https://github.com/slomp
 How to Use
 ----------
 
-1. Make sure you are using Unreal Engine 4 version 4.10.0 or later.  
+1. Make sure you are using Unreal Engine 4 version **4.10.0 or later**.  
    There are commit tags in the repository for older versions of the plugin that suit former versions of UE4.
 
 2. Copy the contents of this repository into your `<Game>/Plugins/` folder.  
@@ -22,7 +22,7 @@ How to Use
 3. In order to build the plugin, make sure to run UE4's `Generate Project Files` to register the plugin source code with Unreal Build Tool.
 
 4. Download and install RenderDoc from http://renderdoc.org/builds  
-   The stable build v0.29 of 2016-05-08 is recommended.
+   The stable build v0.32 of 2016-12-02 is recommended.
 
 5. From within the UE4 Editor, enable the RenderDocPlugin as shown below; you will need to restart the UE4 Editor for this change to take place.  
    ![](doc/img/howto-plugin_menu.jpg) | ![](doc/img/howto-enable.jpg)
