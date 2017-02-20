@@ -23,6 +23,10 @@
 * THE SOFTWARE.
 ******************************************************************************/
 
+// modified by imskull
+//#include "windows.h"
+//#include "windowsx.h"
+
 #include "RenderDocPluginPrivatePCH.h"
 #include "RenderDocPluginLoader.h"
 #include "RenderDocPluginModule.h"
@@ -30,6 +34,9 @@
 #include "Internationalization.h"
 
 #include "Developer/DesktopPlatform/public/DesktopPlatformModule.h"
+
+#include "AllowWindowsPlatformTypes.h"
+#include "HideWindowsPlatformTypes.h"
 
 #define LOCTEXT_NAMESPACE "RenderDocLoaderPluginNamespace" 
 
