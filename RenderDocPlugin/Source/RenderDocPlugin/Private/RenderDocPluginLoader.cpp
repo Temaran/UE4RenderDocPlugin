@@ -23,10 +23,6 @@
 * THE SOFTWARE.
 ******************************************************************************/
 
-// modified by imskull
-//#include "windows.h"
-//#include "windowsx.h"
-
 #include "RenderDocPluginPrivatePCH.h"
 #include "RenderDocPluginLoader.h"
 #include "RenderDocPluginModule.h"
