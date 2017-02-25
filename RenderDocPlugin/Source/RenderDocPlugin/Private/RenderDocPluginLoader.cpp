@@ -26,6 +26,8 @@
 // Starting from UE4.15, this must be the first include file...
 #include "RenderDocPluginLoader.h"
 
+#include "WindowsHWrapper.h"
+
 #include "RenderDocPluginModule.h"
 
 #include "Internationalization.h"
