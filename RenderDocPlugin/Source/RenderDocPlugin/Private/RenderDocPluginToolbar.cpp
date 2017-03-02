@@ -22,9 +22,10 @@
 * THE SOFTWARE.
 ******************************************************************************/
 
-#include "RenderDocPluginPrivatePCH.h"
-
 #if WITH_EDITOR
+
+// Starting from UE4.15, this must be the first include file...
+#include "RenderDocPluginToolbar.h"
 
 #include "Engine.h"
 #include "Editor.h"
@@ -33,7 +34,6 @@
 #include "Editor/UnrealEd/Public/SViewportToolBarComboMenu.h"
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginCommands.h"
-#include "RenderDocPluginToolbar.h"
 #include "RenderDocPluginModule.h"
 #include "RenderDocPluginAboutWindow.h"
 

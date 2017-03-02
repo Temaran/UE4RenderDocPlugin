@@ -22,11 +22,11 @@
 * THE SOFTWARE.
 ******************************************************************************/
 
-#include "RenderDocPluginPrivatePCH.h"
-
 #if WITH_EDITOR
 
+// Starting from UE4.15, this must be the first include file...
 #include "RenderDocPluginStyle.h"
+
 #include "SlateStyle.h"
 #include "IPluginManager.h"
 
