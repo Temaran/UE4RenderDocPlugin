@@ -1,7 +1,6 @@
 # ======================= #
 # Unreal Engine generated #
 # ======================= #
-Binaries/
 DerivedDataCache/
 Intermediate/
 Saved/
@@ -14,6 +13,7 @@ Saved/
 *.sln
 *.suo
 *.user
+*.pdb
  
 # ============ #
 # Third party  #
