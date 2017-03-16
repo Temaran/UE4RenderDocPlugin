@@ -34,6 +34,9 @@
 
 #include "Developer/DesktopPlatform/public/DesktopPlatformModule.h"
 
+#include "AllowWindowsPlatformTypes.h"
+#include "HideWindowsPlatformTypes.h"
+
 #define LOCTEXT_NAMESPACE "RenderDocLoaderPluginNamespace" 
 
 static void* LoadAndCheckRenderDocLibrary(FRenderDocPluginLoader::RENDERDOC_API_CONTEXT*& RenderDocAPI, const FString& RenderdocPath)
