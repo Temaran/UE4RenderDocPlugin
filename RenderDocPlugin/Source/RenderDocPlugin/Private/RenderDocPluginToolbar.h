@@ -30,6 +30,8 @@
 #include "Editor/UnrealEd/Public/SViewportToolBar.h"
 #include "RenderDocPluginSettings.h"
 
+class FRenderDocPluginModule;
+
 class FRenderDocPluginEditorExtension
 {
 public:
