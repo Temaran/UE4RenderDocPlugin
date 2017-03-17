@@ -22,7 +22,7 @@
 * THE SOFTWARE.
 ******************************************************************************/
 
-// Starting from UE4.15, this must be the first include file...
+#include "RenderDocPluginPrivatePCH.h"
 #include "RenderDocPluginModule.h"
 
 #include "WindowsHWrapper.h"

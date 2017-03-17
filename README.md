@@ -10,6 +10,11 @@ Shoutouts
 HUGE shoutout to Slomp for contributing a lot of amazing stuff to this project!
 https://github.com/slomp
 
+For BP Projects
+---------------
+I put a packaged plugin on my google drive if you cannot build from source:
+https://drive.google.com/open?id=0Bz4Uwz2KHfw6VXpQRTliUXJFRTg
+
 How to Use
 ----------
 

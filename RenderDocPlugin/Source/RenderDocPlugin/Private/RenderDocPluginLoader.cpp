@@ -23,7 +23,7 @@
 * THE SOFTWARE.
 ******************************************************************************/
 
-// Starting from UE4.15, this must be the first include file...
+#include "RenderDocPluginPrivatePCH.h"
 #include "RenderDocPluginLoader.h"
 
 #include "WindowsHWrapper.h"
@@ -33,6 +33,9 @@
 #include "Internationalization.h"
 
 #include "Developer/DesktopPlatform/public/DesktopPlatformModule.h"
+
+#include "AllowWindowsPlatformTypes.h"
+#include "HideWindowsPlatformTypes.h"
 
 #define LOCTEXT_NAMESPACE "RenderDocLoaderPluginNamespace" 
 
@@ -137,7 +140,7 @@ void FRenderDocPluginLoader::Initialize()
 		{
 			FString Filter = TEXT("Renderdoc executable|renderdocui.exe");
 			TArray<FString> OutFiles;
-			if (DesktopPlatform->OpenFileDialog(NULL, TEXT("Locate main Renderdoc executable..."), TEXT(""), TEXT(""), Filter, EFileDialogFlags::None, OutFiles))
+			if (DesktopPlatform->OpenFileDialog(NULL, TEXT("Locate main Renderdoc executable... You can find the latest builds at https://renderdoc.org/builds"), TEXT(""), TEXT(""), Filter, EFileDialogFlags::None, OutFiles))
 				RenderdocPath = OutFiles[0];
 		}
 		RenderdocPath = FPaths::GetPath(RenderdocPath);
