@@ -26,7 +26,6 @@
 
 // Starting from UE4.15, this must be the first include file...
 #include "RenderDocPluginNotification.h"
-#include "RenderDocPluginPrivatePCH.h"
 
 #include "SNotificationList.h"
 #include "NotificationManager.h"

@@ -26,7 +26,6 @@
 
 // Starting from UE4.15, this must be the first include file...
 #include "RenderDocPluginStyle.h"
-#include "RenderDocPluginPrivatePCH.h"
 
 #include "SlateStyle.h"
 #include "IPluginManager.h"

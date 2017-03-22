@@ -26,7 +26,6 @@
 
 // Starting from UE4.15, this must be the first include file...
 #include "RenderDocPluginToolbar.h"
-#include "RenderDocPluginPrivatePCH.h"
 
 #include "Engine.h"
 #include "Editor.h"
