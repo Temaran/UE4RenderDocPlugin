@@ -27,8 +27,6 @@
 // Starting from UE4.15, this must be the first include file...
 #include "RenderDocPluginToolbar.h"
 
-#include "Engine.h"
-#include "Editor.h"
 #include "EditorStyleSet.h"
 #include "Editor/UnrealEd/Public/SEditorViewportToolBarMenu.h"
 #include "Editor/UnrealEd/Public/SViewportToolBarComboMenu.h"

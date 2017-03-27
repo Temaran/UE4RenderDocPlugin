@@ -28,6 +28,7 @@
 #include "RenderDocPluginStyle.h"
 
 #include "SlateStyle.h"
+#include "SlateStyleRegistry.h"
 #include "IPluginManager.h"
 
 FString FRenderDocPluginStyle::InContent(const FString& RelativePath, const ANSICHAR* Extension)

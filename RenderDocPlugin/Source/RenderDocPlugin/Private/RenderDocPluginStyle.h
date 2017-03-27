@@ -26,8 +26,6 @@
 
 #if WITH_EDITOR
 
-#include "SlateBasics.h"
-
 class FRenderDocPluginStyle
 {
 public:

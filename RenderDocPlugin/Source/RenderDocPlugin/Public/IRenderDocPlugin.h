@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "InputDevice.h"
+#include "IInputDeviceModule.h"
 
 
 /**

@@ -26,8 +26,6 @@
 
 #if WITH_EDITOR
 
-#include "SlateBasics.h"
-#include "EditorStyle.h"
 #include "RenderDocPluginStyle.h"
 
 class FRenderDocPluginCommands : public TCommands<FRenderDocPluginCommands>

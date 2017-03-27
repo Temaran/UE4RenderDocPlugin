@@ -29,6 +29,7 @@
 
 #include "Internationalization.h"
 #include "RendererInterface.h"
+#include "Async.h"
 
 #include "RenderDocPluginNotification.h"
 
