@@ -61,6 +61,15 @@ namespace UnrealBuildTool.Rules
 					,"GameProjectGeneration"
 				});
 			}
+
+			// Set it to false to disable "unity builds" for this module:
+			//bFasterWithoutUnity = true;
+
+			// UE4.15:
+			// by default, bEnforceIWYU is set to true;
+			// set it to false in order to remove the "first header" include
+			// restriction from cpp files.
+			//bEnforceIWYU = false;
 		}
 	}
 }
