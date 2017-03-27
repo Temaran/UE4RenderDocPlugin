@@ -26,10 +26,9 @@
 
 #if WITH_EDITOR
 
+#include "SlateBasics.h"
 #include "Editor/UnrealEd/Public/SViewportToolBar.h"
 #include "RenderDocPluginSettings.h"
-
-class FRenderDocPluginModule;
 
 class FRenderDocPluginEditorExtension
 {

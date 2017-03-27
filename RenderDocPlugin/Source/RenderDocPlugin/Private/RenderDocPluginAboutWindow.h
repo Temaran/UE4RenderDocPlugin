@@ -26,6 +26,8 @@
 
 #if WITH_EDITOR
 
+#include "SlateBasics.h"
+
 class SRenderDocPluginAboutWindow : public SWindow
 {
 public:

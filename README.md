@@ -18,9 +18,8 @@ https://drive.google.com/open?id=0Bz4Uwz2KHfw6VXpQRTliUXJFRTg
 How to Use
 ----------
 
-1. Make sure you are using Unreal Engine 4 version **4.15.0 or later**.  
-   There are commit tags in the repository for older versions of the plugin that suit former versions of UE4.  
-   (The 4.14.x tag (`af34a8ec57`) is backwards compatible with all engine versions starting from UE4.10.0.)
+1. Make sure you are using Unreal Engine 4 version **4.10.0 or later**.  
+   There are commit tags in the repository for older versions of the plugin that suit former versions of UE4.
 
 2. Copy the contents of this repository into your `<Game>/Plugins/` folder.  
    Alternatively, you may copy it to the `UE4/Engine/Plugins/` folder, thus making the plugin available to all of your projects.
@@ -28,7 +27,7 @@ How to Use
 3. In order to build the plugin, make sure to run UE4's `Generate Project Files` to register the plugin source code with Unreal Build Tool.
 
 4. Download and install RenderDoc from http://renderdoc.org/builds  
-   The stable build v0.33 of 2017-02-24 is recommended.
+   The stable build v0.32 of 2016-12-02 is recommended.
 
 5. From within the UE4 Editor, enable the RenderDocPlugin as shown below; you will need to restart the UE4 Editor for this change to take place.  
    ![](doc/img/howto-plugin_menu.jpg) | ![](doc/img/howto-enable.jpg)
@@ -87,5 +86,3 @@ The plugin will then keep track of this RenderDoc location by adding an entry to
   ```
 
 * It is possible to use the plugin in Standalone Game builds (i.e., builds without editor). Open `RenderDocPlugin.uplugin` and change the plugin `"Type"` from `"Developer"` to `"Runtime"`. This will enable the plugin code to be embedded into the game executable (that is, statically linked into the monolithic game binary image). **Note, however, that the plugin will be loaded even on shipping builds!**
-
-* Amalgamated builds (unity builds) of the plugin can be controlled via the `bFasterWithoutUnity` build variable in `RenderDocPlugin.Build.cs`. Similarly, starting from UE4.15.x, _IWYU_ (include-what-you-use) control can be enforced or relaxed via the `bEnforceIWYU` build variable in the same file.

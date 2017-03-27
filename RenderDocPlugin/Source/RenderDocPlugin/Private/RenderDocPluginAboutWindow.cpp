@@ -24,9 +24,8 @@
 
 #if WITH_EDITOR
 
-// Starting from UE4.15, this must be the first include file...
+#include "RenderDocPluginPrivatePCH.h"
 #include "RenderDocPluginAboutWindow.h"
-
 #include "Editor.h"
 #include "UnrealClient.h"
 #include "RenderDocPluginStyle.h"

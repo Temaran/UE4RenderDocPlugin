@@ -24,11 +24,10 @@
 
 #if WITH_EDITOR
 
-// Starting from UE4.15, this must be the first include file...
+#include "RenderDocPluginPrivatePCH.h"
 #include "RenderDocPluginStyle.h"
 
 #include "SlateStyle.h"
-#include "SlateStyleRegistry.h"
 #include "IPluginManager.h"
 
 FString FRenderDocPluginStyle::InContent(const FString& RelativePath, const ANSICHAR* Extension)
