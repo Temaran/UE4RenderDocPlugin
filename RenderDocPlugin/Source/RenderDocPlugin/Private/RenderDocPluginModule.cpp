@@ -201,30 +201,28 @@ void FRenderDocPluginModule::BeginCapture()
 
 	HWND WindowHandle = GetActiveWindow();
 
-	typedef FRenderDocPluginLoader::RENDERDOC_API_CONTEXT RENDERDOC_API_CONTEXT;
-	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
-		StartRenderDocCapture,
-		HWND, WindowHandle, WindowHandle,
-		RENDERDOC_API_CONTEXT*, RenderDocAPI, RenderDocAPI,
-		FRenderDocPluginModule*, Plugin, this,
+	// UE4.15+: ENQUEUE_RENDER_COMMAND/EnqueueUniqueRenderCommand is preferable from now on:
+	// https://docs.unrealengine.com/latest/INT/Support/Builds/ReleaseNotes/4_15/
+	ENQUEUE_RENDER_COMMAND(RenderDocBeginCapture)(
+		[WindowHandle, this](FRHICommandList& RHICmdList)
 		{
-			FrameCapturer::BeginCapture(WindowHandle, RenderDocAPI, Plugin);
-		});
+			FrameCapturer::BeginCapture(WindowHandle, RenderDocAPI, this);
+		}
+	);
 }
 
 void FRenderDocPluginModule::EndCapture()
 {
 	HWND WindowHandle = GetActiveWindow();
 
-	typedef FRenderDocPluginLoader::RENDERDOC_API_CONTEXT RENDERDOC_API_CONTEXT;
-	ENQUEUE_UNIQUE_RENDER_COMMAND_THREEPARAMETER(
-		EndRenderDocCapture,
-		HWND, WindowHandle, WindowHandle,
-		RENDERDOC_API_CONTEXT*, RenderDocAPI, RenderDocAPI,
-		FRenderDocPluginModule*, Plugin, this,
+	// UE4.15+: ENQUEUE_RENDER_COMMAND/EnqueueUniqueRenderCommand is preferable from now on:
+	// https://docs.unrealengine.com/latest/INT/Support/Builds/ReleaseNotes/4_15/
+	ENQUEUE_RENDER_COMMAND(RenderDocEndCapture)(
+		[WindowHandle, this](FRHICommandList& RHICmdList)
 		{
-			FrameCapturer::EndCapture(WindowHandle, RenderDocAPI, Plugin); return;
-		});
+			FrameCapturer::EndCapture(WindowHandle, RenderDocAPI, this);
+		}
+	);
 }
 
 void FRenderDocPluginModule::CaptureFrame()
