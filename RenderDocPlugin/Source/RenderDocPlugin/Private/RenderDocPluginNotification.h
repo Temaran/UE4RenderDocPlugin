@@ -26,6 +26,7 @@
 
 #if WITH_EDITOR
 
+#include "UnrealEd.h"
 #include "NotificationManager.h"
 
 class FRenderDocPluginNotification : public FTickableEditorObject

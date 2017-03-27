@@ -31,6 +31,7 @@
 
 #if WITH_EDITOR
 #include "Editor/LevelEditor/Public/LevelEditor.h"
+#include "SlateBasics.h"
 #include "MultiBoxExtender.h"
 #include "RenderDocPluginStyle.h"
 #include "RenderDocPluginCommands.h"
@@ -39,6 +40,7 @@
 #endif//WITH_EDITOR
 
 #include "SharedPointer.h"
+#include "Engine.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(RenderDocPlugin, Log, All);
 
@@ -66,6 +68,8 @@ private:
 	void StartRenderDoc(FString FrameCaptureBaseDirectory);
 	FString GetNewestCapture(FString BaseDirectory);
 
+ 	static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
+	
 	// UE4-related: enable DrawEvents during captures, if necessary:
 	bool UE4_GEmitDrawEvents_BeforeCapture;
 	void UE4_OverrideDrawEventsFlag(const bool flag=true);
