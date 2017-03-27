@@ -66,8 +66,6 @@ private:
 	void StartRenderDoc(FString FrameCaptureBaseDirectory);
 	FString GetNewestCapture(FString BaseDirectory);
 
- 	static void RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What);
-	
 	// UE4-related: enable DrawEvents during captures, if necessary:
 	bool UE4_GEmitDrawEvents_BeforeCapture;
 	void UE4_OverrideDrawEventsFlag(const bool flag=true);

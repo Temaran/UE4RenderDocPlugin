@@ -177,7 +177,7 @@ public:
 		RenderDocAPI->EndFrameCapture(Device, WindowHandle);
 		Plugin->UE4_RestoreDrawEventsFlag();
 
-		Plugin->RunAsyncTask(ENamedThreads::GameThread, [Plugin]()
+		AsyncTask(ENamedThreads::GameThread, [Plugin]()
 		{
 			Plugin->StartRenderDoc(FPaths::Combine(*FPaths::GameSavedDir(), *FString("RenderDocCaptures")));
 		});
@@ -380,21 +380,6 @@ void FRenderDocPluginModule::UE4_RestoreDrawEventsFlag()
 	//UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
 	GEmitDrawEvents = UE4_GEmitDrawEvents_BeforeCapture;
 	//UE_LOG(RenderDocPlugin, Log, TEXT("  GEmitDrawEvents=%d"), GEmitDrawEvents);
-}
-
-void FRenderDocPluginModule::RunAsyncTask(ENamedThreads::Type Where, TFunction<void()> What)
-{
-	struct FAsyncGraphTask : public FAsyncGraphTaskBase
-	{
-		ENamedThreads::Type TargetThread;
-		TFunction<void()> TheTask;
-
-		FAsyncGraphTask(ENamedThreads::Type Thread, TFunction<void()>&& Task) : TargetThread(Thread), TheTask(MoveTemp(Task)) { }
-		void DoTask(ENamedThreads::Type CurrentThread, const FGraphEventRef& MyCompletionGraphEvent) { TheTask(); }
-		ENamedThreads::Type GetDesiredThread() { return(TargetThread); }
-	};
-
-	TGraphTask<FAsyncGraphTask>::CreateTask().ConstructAndDispatchWhenReady(Where, MoveTemp(What));
 }
 
 #undef LOCTEXT_NAMESPACE
