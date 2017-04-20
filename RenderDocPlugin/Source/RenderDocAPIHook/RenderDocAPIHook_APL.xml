@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--RenderDocAPIHook plugin additions-->
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+	<!-- init section is always evaluated once per architecture -->
+	<init>
+		<log text="RenderDocAPIHook init"/>
+		<!-- currently only support armv7 -->
+		<setBool result="bSupported" value="false"/>
+		<isArch arch="armeabi-v7a">
+			<setBool result="bSupported" value="true"/>
+		</isArch>
+	</init>
+
+	<!-- optional updates applied to AndroidManifest.xml -->
+	<androidManifestUpdates>
+    <addPermission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <addPermission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <addPermission android:name="android.permission.INTERNET"/>
+	</androidManifestUpdates>
+
+	<!-- optional additions to proguard
+	<proguardAdditions>
+	</proguardAdditions>
+	-->
+  
+	<!-- optional files or directories to copy to Intermediate/Android/APK -->
+	<resourceCopies>
+		<isArch arch="armeabi-v7a">
+			<copyFile src="$S(EngineDir)/Plugins/UE4RenderDocPlugin/RenderDocPlugin/Source/RenderDocAPIHook/bin/librenderdoc.so" dst="$S(BuildDir)/libs/armeabi-v7a/librenderdoc.so" />
+		</isArch>
+	</resourceCopies>
+
+	<!-- optional libraries to load in GameActivity.java before libUE4.so -->
+  <soLoadLibrary_trs>
+		<!-- need this if plugin enabled and supported architecture, even if not packaged for GearVR -->
+		<if condition="bSupported">
+			<true>
+				<loadLibrary name="renderdoc" failmsg="RenderDocAPIHook not loaded, graphics debugging unavailable" />
+			</true>
+		</if>
+	</soLoadLibrary_trs>
+</root>

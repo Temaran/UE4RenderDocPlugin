@@ -18,6 +18,12 @@
 			"Type" : "Developer",
 			"LoadingPhase" : "PostConfigInit",
 			"WhitelistPlatforms": [ "Win32", "Win64" ]
-		}
+		},
+		{
+			"Name": "RenderDocAPIHook",
+            "Type": "Runtime",
+            "LoadingPhase": "PreDefault",
+			"WhitelistPlatforms": [ "Android" ]
+        }
 	]
 }
