@@ -136,7 +136,7 @@ void FRenderDocPluginLoader::Initialize()
 		FString RenderdocPath;
 		// TODO: rework the logic here by improving error checking and reporting
 		IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get();
-		if (DesktopPlatform)
+		if (DesktopPlatform && FWindowsPlatformMisc::CoInitialize())
 		{
 			FString Filter = TEXT("Renderdoc executable|renderdocui.exe");
 			TArray<FString> OutFiles;
