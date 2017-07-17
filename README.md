@@ -4,6 +4,16 @@ UE4RenderDocPlugin
 A plugin that adds easy access to Renderdoc inside Unreal Engine 4.  
 Currently, this plugin only runs on Windows systems.
 
+
+
+ANNOUNCEMENT:
+At the start of the year, I created a pull request to make this plugin a part of the engine, and now with 4.17 released, it seems to be merged. I might still work on experimental stuff in this repo, but it is of course easier to just use the integrated plugin from now on instead :)
+
+/Temaran
+
+
+
+
 Shoutouts
 ----------
 
