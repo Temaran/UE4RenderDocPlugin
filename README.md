@@ -7,7 +7,7 @@ Currently, this plugin only runs on Windows systems.
 
 
 ANNOUNCEMENT:
-At the start of the year, I created a pull request to make this plugin a part of the engine, and looking at the 4.17 preview, it seems to be merged. I might still work on experimental stuff in this repo, but it is of course easier to just use the integrated plugin from now on instead :)
+At the start of the year, I created a pull request to make this plugin a part of the engine, and looking at the 4.17 preview, it seems to be merged. I might still work on experimental stuff in this repo, but it is of course easier to just use the integrated plugin when 4.17 is released if they decide to integrate it into the release. :)
 
 /Temaran
 
