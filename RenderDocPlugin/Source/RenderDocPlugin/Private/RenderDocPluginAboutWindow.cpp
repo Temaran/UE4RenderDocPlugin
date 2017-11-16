@@ -62,7 +62,7 @@ void SRenderDocPluginAboutWindow::Construct(const FArguments& InArgs)
 		.InitialOpacity(1.0f)
 		.FocusWhenFirstShown(true)
 		.bDragAnywhere(false)
-		.ActivationPolicy(EWindowActivationPolicy::FirstShown)
+		.ActivateWhenFirstShown(true)
 		.ClientSize(FVector2D(400, 400))
 		.ScreenPosition(FVector2D((float)(GEditor->GetActiveViewport()->GetSizeXY().X) / 2.0,
 		(float)(GEditor->GetActiveViewport()->GetSizeXY().Y) / 2.0))
