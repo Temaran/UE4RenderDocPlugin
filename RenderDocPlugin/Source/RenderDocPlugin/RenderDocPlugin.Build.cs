@@ -22,45 +22,43 @@
 * THE SOFTWARE.
 ******************************************************************************/
 
-namespace UnrealBuildTool.Rules
+using UnrealBuildTool;
+using System.IO;
+
+public class RenderDocPlugin : ModuleRules
 {
-	using System.IO;
+    public RenderDocPlugin(ReadOnlyTargetRules Target) : base(Target)
+    {
+        PrivateDependencyModuleNames.AddRange(new string[] { });
 
-	public class RenderDocPlugin : ModuleRules
-	{
-		public RenderDocPlugin(TargetInfo Target)
-		{
-			PrivateDependencyModuleNames.AddRange(new string[] { });
+        PublicIncludePaths.AddRange(new string[] { "RenderDocPlugin/Public" });
+        PrivateIncludePaths.AddRange(new string[] { "RenderDocPlugin/Private" });
 
-			PublicIncludePaths.AddRange(new string[] { "RenderDocPlugin/Public" });
-			PrivateIncludePaths.AddRange(new string[] { "RenderDocPlugin/Private" });
+        PublicDependencyModuleNames.AddRange(new string[]
+        {
+                 "Core"
+                ,"CoreUObject"
+                ,"Engine"
+                ,"InputCore"
+                ,"DesktopPlatform"
+                ,"Projects"
+                ,"RenderCore"
+                ,"InputDevice"
+                ,"RHI"              // RHI module: required for accessing the UE4 flag GUsingNullRHI.
+        });
 
-			PublicDependencyModuleNames.AddRange(new string[]
-			{
-				 "Core"
-				,"CoreUObject"
-				,"Engine"
-				,"InputCore"
-				,"DesktopPlatform"
-				,"Projects"
-				,"RenderCore"
-				,"InputDevice"
-				,"RHI"				// RHI module: required for accessing the UE4 flag GUsingNullRHI.
-			});
-
-			if (UEBuildConfiguration.bBuildEditor == true)
-			{
-				DynamicallyLoadedModuleNames.AddRange(new string[] { "LevelEditor" });
-				PublicDependencyModuleNames.AddRange(new string[]
-				{
-					 "Slate"
-					,"SlateCore"
-					,"EditorStyle"
-					,"UnrealEd"
-					,"MainFrame"
-					,"GameProjectGeneration"
-				});
-			}
-		}
-	}
+        if (UEBuildConfiguration.bBuildEditor == true)
+        {
+            DynamicallyLoadedModuleNames.AddRange(new string[] { "LevelEditor" });
+            PublicDependencyModuleNames.AddRange(new string[]
+            {
+                     "Slate"
+                    ,"SlateCore"
+                    ,"EditorStyle"
+                    ,"UnrealEd"
+                    ,"MainFrame"
+                    ,"GameProjectGeneration"
+            });
+        }
+    }
 }

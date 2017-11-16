@@ -122,7 +122,8 @@ void FRenderDocPluginLoader::Initialize()
 	{
 		FString RenderdocPath;
 		FWindowsPlatformMisc::QueryRegKey(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Classes\\RenderDoc.RDCCapture.1\\DefaultIcon\\"), TEXT(""), RenderdocPath);
-		RenderDocDLL = LoadAndCheckRenderDocLibrary(RenderDocAPI, RenderdocPath);
+		FString FolderPath = FPaths::GetPath(RenderdocPath);
+		RenderDocDLL = LoadAndCheckRenderDocLibrary(RenderDocAPI, FolderPath);
 		if (RenderDocDLL)
 			UpdateConfigFiles(RenderdocPath);
 	}
