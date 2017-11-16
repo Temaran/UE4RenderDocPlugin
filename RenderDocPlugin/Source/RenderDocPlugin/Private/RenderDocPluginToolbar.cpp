@@ -96,7 +96,7 @@ void FRenderDocPluginEditorExtension::Initialize(FRenderDocPluginModule* ThePlug
 	ExtensionManager->AddExtender(ToolbarExtender);
 
 	IsEditorInitialized = false;
-	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
+	FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer();
 	LoadedDelegateHandle = SlateRenderer->OnSlateWindowRendered().AddRaw(this, &FRenderDocPluginEditorExtension::OnEditorLoaded);
 }
 
@@ -110,7 +110,7 @@ void FRenderDocPluginEditorExtension::OnEditorLoaded(SWindow& SlateWindow, void*
 	// --> YAGER by SKrysanov 6/11/2014 : fixed crash on removing this callback in render thread.
 	if (IsInGameThread())
 	{
-		FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer().Get();
+		FSlateRenderer* SlateRenderer = FSlateApplication::Get().GetRenderer();
 		SlateRenderer->OnSlateWindowRendered().Remove(LoadedDelegateHandle);
 	}
 	// <-- YAGER by SKrysanov 6/11/2014
